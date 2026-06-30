@@ -6,8 +6,11 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/Scenes/DaytimeScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/NighttimeScene.unity
+    guid: f3202952548c8e8468746ec272576cbe
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: af74c293c19d4b249b16188bf83cd5e3, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
