@@ -876,6 +876,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b0f80677718ea647917094865ca0d41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
+  playerTransform: {fileID: 330585546}
+  safeDistance: 15
+  maxViewDistance: 100
+  viewAngle: 110
+  useRandomSeed: 0
+  mapSeed: 25154324
   startRoomData: {fileID: 11400000, guid: 54c7ee0b7fa01ec4f9a77cb7827944cf, type: 2}
   straightCorridorsPool:
   - {fileID: 11400000, guid: f6bcc9344094ed84a89b0d1741749f2f, type: 2}
