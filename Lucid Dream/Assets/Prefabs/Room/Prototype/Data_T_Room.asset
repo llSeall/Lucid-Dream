@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e1818507ec2ec914ea0a89816544fd86, type: 3}
-  m_Name: Data_NormalRoom_T
+  m_Name: Data_T_Room
   m_EditorClassIdentifier: Assembly-CSharp::RoomData
   roomID: TRoom
   roomPrefab: {fileID: 6738679583308154758, guid: ada2eb3c15443ef438366bab90e3d24f, type: 3}

@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5539364527241357794}
   m_Layer: 0
-  m_Name: L_Room
+  m_Name: Corner_Corridor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

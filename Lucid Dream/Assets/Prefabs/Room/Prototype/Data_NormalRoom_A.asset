@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1818507ec2ec914ea0a89816544fd86, type: 3}
   m_Name: Data_NormalRoom_A
   m_EditorClassIdentifier: Assembly-CSharp::RoomData
-  roomID: Room01
+  roomID: Room
   roomPrefab: {fileID: 4346472429304161905, guid: 41f324f512893764384a236392ad14a7, type: 3}
   roomSize: 0
   isSecretRoom: 0
