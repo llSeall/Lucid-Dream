@@ -1,4 +1,3 @@
 repository "Lucid Dream 2026-06-25_18-08-54/Lucid Dream@18967152145322@cloud"
   path "/"
-    br "/main"
-    co "/main"
+    smartbranch "/main"
