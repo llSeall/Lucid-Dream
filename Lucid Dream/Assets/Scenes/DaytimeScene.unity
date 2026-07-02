@@ -606,6 +606,7 @@ GameObject:
   - component: {fileID: 336380208}
   - component: {fileID: 336380209}
   - component: {fileID: 336380210}
+  - component: {fileID: 336380211}
   m_Layer: 0
   m_Name: -----System-----
   m_TagString: Untagged
@@ -648,6 +649,8 @@ MonoBehaviour:
     currentSanity: 100
     collectedItems:
     - 
+    npcSaveStates: []
+    claimedNPCRewards: []
 --- !u!114 &336380206
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -720,6 +723,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 525dd5e32eba1cf469835abe4778f9d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryTester
+--- !u!114 &336380211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 336380203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eeb76855291c13141bde4803ec2d218f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCManager
 --- !u!1 &360146110
 GameObject:
   m_ObjectHideFlags: 0
@@ -730,8 +745,10 @@ GameObject:
   m_Component:
   - component: {fileID: 360146112}
   - component: {fileID: 360146111}
+  - component: {fileID: 360146113}
+  - component: {fileID: 360146114}
   m_Layer: 0
-  m_Name: 415_20260612004825_0
+  m_Name: ame
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -811,6 +828,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &360146113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360146110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d31a00fd1b98a44a783efc135c8a8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCEntity
+  npcConfiguration: {fileID: 11400000, guid: 1eaa16f093c0e5a44a523020d6836e45, type: 2}
+--- !u!65 &360146114
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360146110}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 11.6, y: 19.430002, z: 4.6620855}
+  m_Center: {x: 0, y: 0, z: 2.2310424}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1160,8 +1211,9 @@ GameObject:
   m_Component:
   - component: {fileID: 526544268}
   - component: {fileID: 526544267}
+  - component: {fileID: 526544269}
   m_Layer: 0
-  m_Name: 415_20260614164339_0
+  m_Name: bob
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1241,6 +1293,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &526544269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526544266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d31a00fd1b98a44a783efc135c8a8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCEntity
+  npcConfiguration: {fileID: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2453,8 +2518,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2115825064}
   - component: {fileID: 2115825063}
+  - component: {fileID: 2115825065}
   m_Layer: 0
-  m_Name: 415_20260614134313_0
+  m_Name: how
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2534,6 +2600,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2115825065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115825062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d31a00fd1b98a44a783efc135c8a8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCEntity
+  npcConfiguration: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

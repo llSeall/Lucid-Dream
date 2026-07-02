@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class TimeManager : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class TimeManager : MonoBehaviour
     [Range(0f, 24f)]
     public float currentHour = 8f;
     public float timeSpeed = 0.05f;
+
+    // สัญญาณ Event ปลอดภัยส่งบอกให้ NPC ตรวจเช็คการเปิด/ปิดตัวละครตามตารางวัน
+    public static event Action OnDayChangedSafe;
 
     private void Awake()
     {
@@ -42,33 +46,29 @@ public class TimeManager : MonoBehaviour
             if (currentHour >= 24f)
             {
                 currentHour = 0f;
+                StartNewDay(); // หมุนครบวันสั่งขึ้นวันใหม่และเซฟเกมอัตโนมัติ
             }
         }
     }
 
     public void ResetTime()
     {
-        if (currentState == GameState.Daytime)
-        {
-            currentHour = 8f;
-        }
-        else
-        {
-            currentHour = 0f;
-        }
-        Debug.Log("[TimeManager] ResetTime() ถูกเรียกใช้งานสำเร็จเพื่อคืนค่าเวลาเริ่มต้น");
+        if (currentState == GameState.Daytime) currentHour = 8f;
+        else currentHour = 0f;
     }
 
     public void SyncWithSaveManager()
     {
         if (SaveManager.Instance != null && SaveManager.Instance.gameData != null)
         {
-            // 🔥 [ปรับปรุง] ดึงค่าชั่วโมงที่บันทึกไว้ใน JSON ตรงๆ ไม่โดน Hardcode ปัดเศษทิ้งอีกต่อไป
             currentDay = SaveManager.Instance.gameData.currentDay;
             currentState = SaveManager.Instance.gameData.currentState;
             currentHour = SaveManager.Instance.gameData.currentHour;
 
-            Debug.Log($"⏳ [TimeManager] โหลดเวลาสำเร็จ: วันที่ {currentDay} / เวลา {currentHour:0.00} น. / สถานะ {currentState}");
+            Debug.Log($"⏳ [TimeManager] โหลดเวลาสำเร็จ: วันที่ {currentDay}");
+
+            // สั่งให้ NPC ทั่วทั้งแผนที่อัปเดตตำแหน่งตามวันในไฟล์เซฟทันที
+            OnDayChangedSafe?.Invoke();
         }
     }
 
@@ -80,6 +80,10 @@ public class TimeManager : MonoBehaviour
 
         Debug.Log($"<color=orange>🌅 [TimeManager] เริ่มต้นเช้าวันใหม่! วันที่: {currentDay}</color>");
 
+        // เรียกให้ NPC เปลี่ยนตารางการเกิดสปอน
+        OnDayChangedSafe?.Invoke();
+
+        // 💾 บันทึกเซฟหลักของเกมที่จุดตื่นนอน (Checkpoint)
         if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
     }
 
@@ -90,6 +94,9 @@ public class TimeManager : MonoBehaviour
 
         Debug.Log($"<color=purple>🌌 [TimeManager] เข้าสู่มิติโลกความฝัน... (เวลาหยุดเดิน)</color>");
 
+        OnDayChangedSafe?.Invoke();
+
+        // 💾 บันทึกเซฟหลักของเกมตอนเข้านอน (Checkpoint)
         if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
     }
 
@@ -97,8 +104,8 @@ public class TimeManager : MonoBehaviour
     {
 #if ENABLE_INPUT_SYSTEM
         if (UnityEngine.InputSystem.Keyboard.current == null) return;
-        if (UnityEngine.InputSystem.Keyboard.current.f3Key.wasPressedThisFrame) StartNewDay();    
-        if (UnityEngine.InputSystem.Keyboard.current.f4Key.wasPressedThisFrame) EnterDreamWorld(); 
+        if (UnityEngine.InputSystem.Keyboard.current.f3Key.wasPressedThisFrame) StartNewDay();
+        if (UnityEngine.InputSystem.Keyboard.current.f4Key.wasPressedThisFrame) EnterDreamWorld();
 #else
         if (Input.GetKeyDown(KeyCode.F3)) StartNewDay();
         if (Input.GetKeyDown(KeyCode.F4)) EnterDreamWorld();
