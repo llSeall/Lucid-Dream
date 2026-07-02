@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 922983336030553557}
   - component: {fileID: 3090503180202362882}
   - component: {fileID: 6725538815388943865}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -243,6 +243,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2426933670797911046}
   - component: {fileID: 6816854672350348770}
+  - component: {fileID: 5168359618975393456}
   m_Layer: 0
   m_Name: Room
   m_TagString: Untagged
@@ -290,6 +291,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.99999917, y: 34.593094, z: 0.9874341}
   m_Center: {x: 0, y: 16.79655, z: 0.0007916923}
+--- !u!114 &5168359618975393456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4346472429304161905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bbc154959cd2654987d98e44598e88b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomProperty
+  entrancePoint: {fileID: 4071834845072223029}
+  exitPoints:
+  - {fileID: 750591346938654561}
+  collidersFolder: {fileID: 8283431534243716269}
 --- !u!1 &5094451138268633142
 GameObject:
   m_ObjectHideFlags: 0
@@ -423,7 +440,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8283431534243716269}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Colliders
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -550,7 +567,7 @@ GameObject:
   - component: {fileID: 5745916148897958514}
   - component: {fileID: 8683555280188445819}
   - component: {fileID: 3802490622268311587}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -662,7 +679,7 @@ GameObject:
   - component: {fileID: 7743663567076728476}
   - component: {fileID: 8592477868284399658}
   - component: {fileID: 8393848639827040816}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

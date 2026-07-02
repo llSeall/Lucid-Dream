@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e1818507ec2ec914ea0a89816544fd86, type: 3}
-  m_Name: Data_NormalRoom_Up
+  m_Name: Data_Up
   m_EditorClassIdentifier: Assembly-CSharp::RoomData
-  roomID: Room3
+  roomID: RoomUp
   roomPrefab: {fileID: 8958210714888630271, guid: c317ce84b8741fb42b3983cba1824d84, type: 3}
   roomSize: 0
   isSecretRoom: 0

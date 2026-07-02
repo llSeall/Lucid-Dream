@@ -41,6 +41,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5162184354498144720}
   - component: {fileID: 1922948522659385340}
+  - component: {fileID: 1672219432250663420}
   m_Layer: 0
   m_Name: StraightCorridor
   m_TagString: Untagged
@@ -88,6 +89,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.99999917, y: 13.983753, z: 4.7007785}
   m_Center: {x: 0, y: 6.4918747, z: 0.32956234}
+--- !u!114 &1672219432250663420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 973645677250853731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bbc154959cd2654987d98e44598e88b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomProperty
+  entrancePoint: {fileID: 7937014014184815991}
+  exitPoints:
+  - {fileID: 5100267400213505095}
+  collidersFolder: {fileID: 114360955086775821}
 --- !u!1 &2855531614100267841
 GameObject:
   m_ObjectHideFlags: 0
@@ -100,7 +117,7 @@ GameObject:
   - component: {fileID: 1351593555510802463}
   - component: {fileID: 2089093744064107365}
   - component: {fileID: 660466043819793956}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -209,7 +226,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 114360955086775821}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Colliders
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -401,7 +418,7 @@ GameObject:
   - component: {fileID: 4309212868147318587}
   - component: {fileID: 8086216530107773621}
   - component: {fileID: 4456467964934799831}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -603,7 +620,7 @@ GameObject:
   - component: {fileID: 1273166700486094392}
   - component: {fileID: 2944370036923063631}
   - component: {fileID: 1363391742328910939}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
