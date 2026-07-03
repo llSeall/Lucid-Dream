@@ -13,6 +13,45 @@ MonoBehaviour:
   m_Name: Item_01_Diary
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemID: Item_01_Diary
-  itemName: Diary
   itemType: 0
-  storyText: Test
+  itemName:
+    m_TableReference:
+      m_TableCollectionName: GUID:26a5cc7bb73c3ef4f9d0d2ee7d6679a1
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  itemDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  itemIcon: {fileID: 0}
+  noteBackground:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+  storyText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  speedMultiplier: 0
+  maxSanityBonus: 0
+  references:
+    version: 2
+    RefIds: []

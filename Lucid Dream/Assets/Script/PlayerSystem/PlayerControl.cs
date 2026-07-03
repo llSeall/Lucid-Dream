@@ -151,7 +151,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void OnJumpPressed(InputAction.CallbackContext context)
     {
-        // ถ้าย่อตัวอยู่ จะไม่สามารถกระโดดได้ (หรือเอาเงื่อนไข !isCrouching ออกหากต้องการให้กระโดดตอนย่อได้)
+        // 🛑 [เพิ่มดักจับ] ถ้าหน้าจอสนทนาทำงานอยู่ ห้ามรับคำสั่งกระโดดเด็ดขาด
+        if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
+
+        // ถ้าย่อตัวอยู่ จะไม่สามารถกระโดดได้
         if (!isCrouching)
         {
             lastJumpPressedTime = Time.time;
@@ -160,6 +163,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void OnJumpReleased(InputAction.CallbackContext context)
     {
+        // 🛑 [เพิ่มดักจับ] ถ้าหน้าจอสนทนาทำงานอยู่ ไม่ต้องประมวลผลยกเลิกแรงกระโดด
+        if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
+
         if (rb.linearVelocity.y > 0f)
         {
             Vector3 vel = rb.linearVelocity;
@@ -170,6 +176,15 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void Update()
     {
+        // 🛑 [โซนล็อกผู้เล่นตอนคุย NPC]
+        // ถ้าคลาส DialogueUIController แจ้งว่ากล่องข้อความกำลังแสดงอยู่
+        if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
+        {
+            targetInput = Vector3.zero; // ล้างค่าอินพุตเดินให้เป็นศูนย์
+            lookInput = Vector2.zero;   // ล้างค่าอินพุตเมาส์หันจอให้เป็นศูนย์
+            return; // ↩️ ดีดตัวออกไปเลย ไม่ต้องคำนวณการเคลื่อนไหว เมาส์หันกล้อง หรือระบบส่ายหัว (Head Bob)
+        }
+
         if (moveAction != null)
         {
             Vector2 moveInput = moveAction.ReadValue<Vector2>();
@@ -186,7 +201,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         transform.eulerAngles = new Vector3(0f, yaw, 0f);
         if (playerCamera != null) playerCamera.localEulerAngles = new Vector3(pitch, 0f, 0f);
 
-        // 🛡️ [แก้ปัญหาเลเยอร์] เรียกใช้ฟังก์ชันเช็คพื้นแบบไม่สนเลเยอร์
+        // 🛡️ เรียกใช้ฟังก์ชันเช็คพื้นแบบไม่สนเลเยอร์
         grounded = CheckGroundedNoLayer();
         if (grounded)
         {
@@ -216,6 +231,15 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void FixedUpdate()
     {
+        // 🛑 [โซนล็อกฟิสิกส์ตอนคุย NPC]
+        // ป้องกันกรณีผู้เล่นวิ่งมาแรงๆ แล้วกดคุย NPC แล้วตัวจะสไลด์ไหลต่อ 
+        if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
+        {
+            // บังคับให้ความเร็วแนวราบ (X, Z) หยุดนิ่งสนิททันที ส่วนแกนดิ่ง (Y) ปล่อยให้ตกตามแรงโน้มถ่วงปกติ
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            return; // ↩️ ดีดตัวออกไปเลย ไม่ต้องคำนวณการออกแรงวิ่งขยับตัว
+        }
+
         Vector3 cameraRight = (playerCamera != null) ? playerCamera.right : transform.right;
         Vector3 cameraForward = (playerCamera != null) ? playerCamera.forward : transform.forward;
 
@@ -247,12 +271,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
     // 🛡️ ฟังก์ชันเช็คพื้นอัจฉริยะ: แตะอะไรก็ได้ที่เป็นของแข็งก็นับหมด ยกเว้นตัวผู้เล่นเอง
     bool CheckGroundedNoLayer()
     {
-        // ยิงทรงกลมตรวจสอบวัตถุทั้งหมดรอบจุด groundCheck (~0 คือเลือกเอาทุกเลเยอร์ในเกม)
         Collider[] hitColliders = Physics.OverlapSphere(groundCheck.position, groundCheckRadius, ~0, QueryTriggerInteraction.Ignore);
 
         foreach (Collider col in hitColliders)
         {
-            // ถ้าวัตถุที่เจอไม่ใช่ตัวเราเอง และไม่ใช่ object ลูกที่อยู่ในตัวเรา แปลว่าเรายืนอยู่บนพื้นจริง!
             if (col.gameObject != gameObject && !col.transform.IsChildOf(transform))
             {
                 return true;
@@ -266,15 +288,12 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (capsuleCollider == null) return;
 
-        // 1. ค่อยๆ ปรับความสูงของ Capsule Collider
         float targetHeight = isCrouching ? crouchHeight : defaultHeight;
         capsuleCollider.height = Mathf.Lerp(capsuleCollider.height, targetHeight, crouchSmoothing * Time.deltaTime);
 
-        // 2. ปรับค่า Center Y ของแคปซูลสอดคล้องกับความสูง เพื่อให้เท้าผู้เล่นติดพื้นพอดี (ไม่ลอยหรือจมดิน)
         float halfHeightDifference = (defaultHeight - capsuleCollider.height) / 2f;
         capsuleCollider.center = new Vector3(capsuleCollider.center.x, defaultCenterY - halfHeightDifference, capsuleCollider.center.z);
 
-        // 3. ค่อยๆ ยุบตำแหน่งฐานของกล้องลงมาตามความสูงที่หายไป
         float targetCameraY = isCrouching ? originalCameraPosition.y - (defaultHeight - crouchHeight) * 0.5f : originalCameraPosition.y;
         currentBaseCameraPos.y = Mathf.Lerp(currentBaseCameraPos.y, targetCameraY, crouchSmoothing * Time.deltaTime);
     }
@@ -297,7 +316,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         horizontalVel.y = 0f;
         float speed = horizontalVel.magnitude;
 
-        // อิงความถี่ตามความเร็วปัจจุบัน (ถ้าย่อเดิน head bob ก็จะช้าลงตามความเหมาะสม)
         float currentMoveSpeedLimit = isCrouching ? crouchSpeed : walkSpeed;
         if (speed > 0.1f)
         {
@@ -310,7 +328,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         targetCameraOffset = new Vector3(bobX, bobY, 0f);
         currentCameraOffset = Vector3.Lerp(currentCameraOffset, targetCameraOffset, headBobSmoothing * Time.deltaTime);
 
-        // ✨ เปลี่ยนจากคำนวณอิง originalCameraPosition มาเป็น currentBaseCameraPos เพื่อให้ส่ายหัวขณะย่อตัวได้สมบูรณ์แบบ
         playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
     }
 

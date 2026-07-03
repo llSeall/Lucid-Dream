@@ -22,7 +22,10 @@ public class NPCEntity : MonoBehaviour
     {
         if (isPlayerInRange)
         {
-            // ตรวจสอบการกดปุ่ม E ตามระบบ Input ของโปรเจกต์
+            // ถ้ากล่องข้อความเปิดอยู่ ไม่ต้องจับการกด E ของตัวละครซ้ำ (ปล่อยให้ UI คุมระบบปิดกล่อง)
+            if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
+                return;
+
 #if ENABLE_INPUT_SYSTEM
             bool pressedE = UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.eKey.wasPressedThisFrame;
 #else
@@ -31,8 +34,6 @@ public class NPCEntity : MonoBehaviour
 
             if (pressedE)
             {
-                // 🔍 บันทึกเช็คจุดที่ 1: ปุ่ม E กดติดไหม
-                Debug.Log($"[NPCEntity] -> ยืนยัน! ตรวจพบการกดปุ่ม E ที่ตัววัตถุ: {gameObject.name}");
                 OnInteract();
             }
         }
@@ -74,28 +75,47 @@ public class NPCEntity : MonoBehaviour
         }
     }
 
+    // ✨ ฟังก์ชันนี้มีได้เพียงตัวเดียวในสคริปต์ ห้ามประกาศซ้ำ
     public void OnInteract()
     {
-        // 🔍 บันทึกเช็คจุดที่ 2: เช็คว่าลืมลากไฟล์ Config ใส่ช่องใน Inspector หรือเปล่า
         if (npcConfiguration == null)
         {
-            Debug.LogError($"<color=red><b>❌ [Error] กด E แล้วแต่คุยไม่ได้! เพราะคุณลืมลากไฟล์ NPC Config มาใส่ในช่องของวัตถุ [{gameObject.name}] ในหน้า Inspector ครับ</b></color>");
+            Debug.LogError($"❌ [Error] ลืมลากไฟล์ NPC Config ใส่ในช่องของ [{gameObject.name}] ใน Inspector ครับ");
             return;
         }
 
-        // 🔍 บันทึกเช็คจุดที่ 3: เช็คว่าในฉากมีวัตถุ NPCManager เปิดทำงานอยู่ไหม
         if (NPCManager.Instance == null)
         {
-            Debug.LogError("<color=red><b>❌ [Error] ไม่พบ NPCManager ในฉาก! ตรวจดูว่าได้สร้าง GameObject ชื่อ NPCManager และแปะสคริปต์ไว้ในฉากเปิดเกมแล้วหรือยัง</b></color>");
+            Debug.LogError("❌ [Error] ไม่พบ NPCManager ในฉาก! ตรวจดูว่าได้เปิดวัตถุคุมระบบแล้วหรือยัง");
             return;
         }
 
         int currentDay = TimeManager.Instance != null ? TimeManager.Instance.currentDay : 1;
 
-        // ประมวลผลและดึงบทพูด
+        // 1. ดึงบทพูดประจำวันที่ผ่านระบบแปลภาษา (Localization) มาแล้ว
         string dialogueResult = NPCManager.Instance.InteractWithNPC(npcConfiguration, currentDay);
 
-        // 📢 บันทึกเช็คจุดที่ 4: พ่นบทพูดออกทาง Console ตัวจริง
+        // 2. ดึงชื่อ NPC ที่ผ่านระบบแปลภาษามาจากตารางเดียวกันด้วย
+        string localizedName = npcConfiguration.npcID;
+        try
+        {
+            if (!string.IsNullOrEmpty(npcConfiguration.npcNameKey))
+            {
+                localizedName = UnityEngine.Localization.Settings.LocalizationSettings.StringDatabase
+                    .GetLocalizedString(npcConfiguration.localizationTableName, npcConfiguration.npcNameKey);
+            }
+        }
+        catch
+        {
+            localizedName = npcConfiguration.npcID; // แผนสำรองกรณีตารางภาษาไม่มีคีย์นี้
+        }
+
+        // 3. ส่งข้อมูลชื่อและบทพูดขึ้นสู่หน้าจอ UI ของจริง
+        if (DialogueUIController.Instance != null)
+        {
+            DialogueUIController.Instance.ShowDialogue(localizedName, dialogueResult);
+        }
+
         Debug.Log($"<color=yellow>💬 <b>[{npcConfiguration.npcID}] พูดว่า:</b> {dialogueResult}</color>");
     }
 }

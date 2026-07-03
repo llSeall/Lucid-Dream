@@ -6,60 +6,55 @@ using System.IO;
 public class MainMenuController : MonoBehaviour
 {
     [Header("📋 UI Elements")]
-    [SerializeField] private Button continueButton;
-    [SerializeField] private string firstSceneName = "GameplayScene"; // ชื่อฉากตื่นนอนวันแรกของคุณ
+    [SerializeField] private Button continueButton; //[cite: 18]
+    [SerializeField] private string firstSceneName = "GameplayScene"; //[cite: 18]
+
+    [Header("สล็อตตั้งต้นสำหรับกด Continue หน้าเมนูหลัก")]
+    [Range(1, 3)][SerializeField] private int defaultMenuSlot = 1;
 
     private void Start()
     {
-        CheckSaveFile();
+        CheckSaveFile(); //[cite: 18]
     }
 
-    // 🔍 เช็คว่าในเครื่องมีไฟล์เซฟไหม ถ้าไม่มีให้กดปุ่ม Continue ไม่ได้
     private void CheckSaveFile()
     {
-        if (continueButton == null) return;
+        if (continueButton == null) return; //[cite: 18]
 
-        // ดึงชื่อไฟล์จาก SaveManager มาเช็คพิกัด
-        if (SaveManager.Instance != null)
+        if (SaveManager.Instance != null) //[cite: 15, 18]
         {
-            string savePath = Path.Combine(Application.persistentDataPath, SaveManager.Instance.saveFileName);
-
-            // ถ้ามีไฟล์เซฟอยู่จริง ให้เปิดปุ่ม Continue แต่ถ้าไม่มีให้ปิดไว้
-            continueButton.interactable = File.Exists(savePath);
+            // ทำการตรวจเช็คไฟล์ประจำสล็อตที่กำหนดไว้[cite: 15, 18]
+            string savePath = Path.Combine(Application.persistentDataPath, $"{SaveManager.Instance.saveFileNamePrefix}{defaultMenuSlot}.json"); //[cite: 15, 18]
+            continueButton.interactable = File.Exists(savePath); //[cite: 18]
         }
         else
         {
-            continueButton.interactable = false;
+            continueButton.interactable = false; //[cite: 18]
         }
     }
 
-    // 🆕 ฟังก์ชันสำหรับผูกกับปุ่ม New Game
     public void OnClickNewGame()
     {
-        if (SaveManager.Instance != null)
+        if (SaveManager.Instance != null) //[cite: 15, 18]
         {
-            SaveManager.Instance.ClearSave(); // ล้างข้อมูลเก่าทิ้งทั้งหมดเพื่อเริ่มใหม่ร้อยเปอร์เซ็นต์
+            SaveManager.Instance.currentSlot = defaultMenuSlot; //[cite: 15]
+            SaveManager.Instance.ClearSave(defaultMenuSlot); // ล้างสล็อตเก่าทิ้งเพื่อเริ่มประวัติศาสตร์ใหม่[cite: 15, 18]
         }
-
-        // โหลดเข้าฉากเริ่มเกมวันแรก
-        SceneManager.LoadScene(firstSceneName);
+        SceneManager.LoadScene(firstSceneName); //[cite: 18]
     }
 
-    // 🔄 ฟังก์ชันสำหรับผูกกับปุ่ม Continue
     public void OnClickContinue()
     {
-        if (SaveManager.Instance != null)
+        if (SaveManager.Instance != null) //[cite: 15, 18]
         {
-            // เรียกคำสั่งโหลดเซฟดั้งเดิมที่คุณเขียนไว้ 
-            // ตัวมันจะทำหน้าที่ปลุก Manager ทุกตัว และสั่ง GameManager โหลดฉากให้เองอัตโนมัติ!
-            SaveManager.Instance.LoadGame();
+            // สั่งโหลดข้อมูลล่าสุดจากสล็อตเมนูหลัก ทะลุมิติกลับไปจุดเซฟดั้งเดิม[cite: 15, 18]
+            SaveManager.Instance.LoadGame(defaultMenuSlot, true);
         }
     }
 
-    // ❌ ฟังก์ชันสำหรับผูกกับปุ่ม Quit Game
     public void OnClickQuitGame()
     {
-        Debug.Log("[MainMenu] ผู้เล่นกดปิดเกม");
-        Application.Quit();
+        Debug.Log("[MainMenu] ผู้เล่นกดปิดเกม"); //[cite: 18]
+        Application.Quit(); //[cite: 18]
     }
 }

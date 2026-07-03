@@ -38,10 +38,6 @@ public class PlayerStats : MonoBehaviour
         currentSanity += amount;
         currentSanity = Mathf.Clamp(currentSanity, 0f, maxSanity);
 
-        if (SaveManager.Instance != null)
-        {
-            SaveManager.Instance.gameData.currentSanity = currentSanity;
-        }
 
         OnSanityChanged();
     }
