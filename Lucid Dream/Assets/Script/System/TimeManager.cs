@@ -1,103 +1,110 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement; // ✨ เพิ่มบรรทัดนี้เข้ามาเพื่อให้รู้จัก SceneManager ครับ
 
 public class TimeManager : MonoBehaviour
 {
-    public static TimeManager Instance { get; private set; } //[cite: 16]
+    public static TimeManager Instance { get; private set; }
 
     [Header("Time & Day Settings")]
-    public int currentDay = 1; //[cite: 16]
-    public GameState currentState = GameState.Daytime; //[cite: 16]
+    public int currentDay = 1;
+    public GameState currentState = GameState.Daytime;
 
-    [Range(0f, 24f)] public float currentHour = 8f; //[cite: 16]
-    public float timeSpeed = 0.05f; //[cite: 16]
+    [Range(0f, 24f)] public float currentHour = 8f;
+    public float timeSpeed = 0.05f;
 
-    public static event Action OnDayChangedSafe; //[cite: 16]
+    public static event Action OnDayChangedSafe;
 
     private void Awake()
     {
         if (Instance == null)
         {
-            Instance = this; //[cite: 16]
-            DontDestroyOnLoad(gameObject); //[cite: 16]
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Destroy(gameObject); //[cite: 16]
+            Destroy(gameObject);
         }
     }
 
     private void Update()
     {
-        RunGameTime(); //[cite: 16]
-        HandleCheatKeys(); //[cite: 16]
+        // ⏱️ เช็คชื่อซีน ถ้าเป็นหน้าเมนูหลัก ให้หยุดเดินเวลาทันที
+        if (SceneManager.GetActiveScene().name == "MainMenuScene")
+        {
+            return;
+        }
+
+        RunGameTime();
+        HandleCheatKeys();
     }
 
     private void RunGameTime()
     {
-        if (currentState == GameState.Daytime) //[cite: 16, 17]
+        if (currentState == GameState.Daytime)
         {
-            currentHour += Time.deltaTime * timeSpeed; //[cite: 16]
+            currentHour += Time.deltaTime * timeSpeed;
 
-            if (currentHour >= 24f) //[cite: 16]
+            if (currentHour >= 24f)
             {
-                currentHour = 0f; //[cite: 16]
-                StartNewDay(); //[cite: 16]
+                currentHour = 0f;
+                StartNewDay();
             }
         }
     }
 
     public void ResetTime()
     {
-        if (currentState == GameState.Daytime) currentHour = 8f; //[cite: 16, 17]
-        else currentHour = 0f; //[cite: 16]
+        if (currentState == GameState.Daytime) currentHour = 8f;
+        else currentHour = 0f;
     }
 
     public void SyncWithSaveManager()
     {
-        if (SaveManager.Instance != null && SaveManager.Instance.gameData != null) //[cite: 15, 16]
+        if (SaveManager.Instance != null && SaveManager.Instance.gameData != null)
         {
-            currentDay = SaveManager.Instance.gameData.currentDay; //[cite: 15, 16]
-            currentState = SaveManager.Instance.gameData.currentState; //[cite: 15, 16]
-            currentHour = SaveManager.Instance.gameData.currentHour; //[cite: 15, 16]
+            currentDay = SaveManager.Instance.gameData.currentDay;
+            currentState = SaveManager.Instance.gameData.currentState;
+            currentHour = SaveManager.Instance.gameData.currentHour;
 
-            Debug.Log($"⏳ [TimeManager] โันติเวลาตามข้อมูลเซฟย้อนอดีต: Day {currentDay}"); //[cite: 16]
-            OnDayChangedSafe?.Invoke(); //[cite: 16]
+            Debug.Log($"⏳ [TimeManager] โอนย้ายเวลาตามข้อมูลเซฟสำเร็จ: Day {currentDay}");
+            OnDayChangedSafe?.Invoke();
         }
     }
 
     public void StartNewDay()
     {
-        currentDay++; //[cite: 16]
-        currentState = GameState.Daytime; //[cite: 16, 17]
-        currentHour = 8f; //[cite: 16]
+        currentDay++;
+        currentState = GameState.Daytime;
+        currentHour = 8f;
 
-        Debug.Log($"<color=orange>🌅 [TimeManager] อัปเดตเช้าวันใหม่! วันที่: {currentDay}</color>"); //[cite: 16]
-        OnDayChangedSafe?.Invoke(); //[cite: 16]
+        Debug.Log($"<color=orange>🌅 [TimeManager] อัปเดตเช้าวันใหม่! วันที่: {currentDay}</color>");
+        OnDayChangedSafe?.Invoke();
 
-        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame(); //[cite: 15, 16]
+        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
     }
 
     public void EnterDreamWorld()
     {
-        currentState = GameState.Nighttime; //[cite: 16, 17]
-        currentHour = 0f; //[cite: 16]
+        currentState = GameState.Nighttime;
+        currentHour = 0f;
 
-        Debug.Log($"<color=purple>🌌 [TimeManager] เข้าสู่มิติโลกความฝัน... (เวลาหยุดเดิน)</color>"); //[cite: 16]
-        OnDayChangedSafe?.Invoke(); //[cite: 16]
+        Debug.Log($"<color=purple>🌌 [TimeManager] เข้าสู่มิติโลกความฝัน... (เวลาหยุดเดิน)</color>");
+        OnDayChangedSafe?.Invoke();
 
-        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame(); //[cite: 15, 16]
+        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
     }
 
     private void HandleCheatKeys()
     {
-#if ENABLE_INPUT_SYSTEM
-        if (UnityEngine.InputSystem.Keyboard.current == null) return; //[cite: 16]
-        if (UnityEngine.InputSystem.Keyboard.current.f3Key.wasPressedThisFrame) StartNewDay(); //[cite: 16]
-        if (UnityEngine.InputSystem.Keyboard.current.f4Key.wasPressedThisFrame) EnterDreamWorld(); //[cite: 16]
+#if ENABLE_INPUT_SYSTEM        
+        if (UnityEngine.InputSystem.Keyboard.current == null) return; 
+        if (UnityEngine.InputSystem.Keyboard.current.f3Key.wasPressedThisFrame) StartNewDay(); 
+        if (UnityEngine.InputSystem.Keyboard.current.f4Key.wasPressedThisFrame) EnterDreamWorld(); 
 #else
-        if (Input.GetKeyDown(KeyCode.F3)) StartNewDay(); //[cite: 16]
-        if (Input.GetKeyDown(KeyCode.F4)) EnterDreamWorld(); //[cite: 16]
+        if (Input.GetKeyDown(KeyCode.F3)) StartNewDay();
+        if (Input.GetKeyDown(KeyCode.F4)) EnterDreamWorld();
 #endif
     }
 }

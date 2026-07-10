@@ -257,7 +257,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         // ✨ คำนวณความเร็วตามสถานะ ย่อตัว / วิ่ง / เดินปกติ
         float speed = isCrouching ? crouchSpeed : (running ? runSpeed : walkSpeed);
-
+        if (InventoryManager.Instance != null)
+        {
+            speed *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+        }
         Vector3 desiredHorizontalVel = (cameraRight * targetInput.x + cameraForward * targetInput.z) * speed;
 
         Vector3 currentVel = rb.linearVelocity;
@@ -317,6 +320,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
         float speed = horizontalVel.magnitude;
 
         float currentMoveSpeedLimit = isCrouching ? crouchSpeed : walkSpeed;
+        if (InventoryManager.Instance != null)
+        {
+            currentMoveSpeedLimit *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+        }
         if (speed > 0.1f)
         {
             bobTimer += Time.deltaTime * headBobFrequency * (speed / currentMoveSpeedLimit);

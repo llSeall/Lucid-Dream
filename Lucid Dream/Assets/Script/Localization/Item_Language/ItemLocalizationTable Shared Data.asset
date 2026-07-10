@@ -14,7 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
   m_TableCollectionName: ItemLocalizationTable
   m_TableCollectionNameGuidString: 26a5cc7bb73c3ef4f9d0d2ee7d6679a1
-  m_Entries: []
+  m_Entries:
+  - m_Id: 396414325157888
+    m_Key: Passive_SpeedBoots_01
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397096570646528
+    m_Key: Passive_SpeedBoots_01_Note
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2603935546798080
+    m_Key: Passive_SpeedBoots_01_First
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

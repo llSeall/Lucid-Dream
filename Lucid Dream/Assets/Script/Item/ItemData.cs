@@ -1,25 +1,31 @@
 using UnityEngine;
-using UnityEngine.Localization; // ✨ จำเป็นต้องใช้สำหรับระบบแปลภาษาของ Unity
+using UnityEngine.Localization;
 
 [CreateAssetMenu(fileName = "NewItemData", menuName = "Inventory/Item Data")]
 public class ItemData : ScriptableObject
 {
     [Header("🔑 Core Settings")]
-    public string itemID;          // ไอดีห้ามซ้ำกันเด็ดขาด! (ใช้สำหรับอ้างอิงในระบบเซฟ JSON เช่น "Key_01", "Note_Yandere")
-    public ItemType itemType;      // เลือกประเภทไอเทม (Story หรือ Passive)
+    public string itemID;
+    public ItemType itemType;
 
-    [Header("📝 Localized Text (ข้อความแปลภาษา)")]
-    public LocalizedString itemName;        // ชื่อของไอเทมฉบับแปลภาษา (ดึงจากตาราง Localization)
-    public LocalizedString itemDescription; // คำอธิบายไอเทม / คำอธิบายความสามารถพาสซีฟ
+    [Header("🌙 Environment Conditions (เงื่อนไขสภาพแวดล้อม)")]
+    public bool nighttimeOnly = false;
+
+    [Header("📝 Localized Text (ข้อความในกระเป๋า)")]
+    public LocalizedString itemName;
+    public LocalizedString itemDescription;
+
+    [Header("📖 First Encounter Text (ข้อความบรรยายแรกพบ)")]
+    public LocalizedString firstEncounterText; // ✨ ฟิลด์ใหม่สำหรับข้อความตอนได้รับไอเทมครั้งแรก
 
     [Header("🖼️ Visual Settings (รูปภาพ)")]
-    public Sprite itemIcon;                 // รูปไอคอนทั่วไปในกระเป๋า (ใช้ร่วมกันได้ทุกภาษา)
-    public LocalizedSprite noteBackground;  // รูปพื้นหลังกระดาษบันทึก (แปลภาษาได้ เผื่อมีข้อความลายมืออยู่บนภาพแยกภาษา)
+    public Sprite itemIcon;
+    public LocalizedSprite noteBackground;
 
     [Header("📖 Story Settings (ถ้าเป็นไอเทมเนื้อเรื่อง)")]
-    public LocalizedString storyText;       // ข้อความไดอารี่/เบาะแส สำหรับกดอ่านเมื่อไหร่ก็ได้ (แปลภาษาได้)
+    public LocalizedString storyText;
 
     [Header("⚡ Passive Stats (สเตตัสความสามารถพิเศษ)")]
-    public float speedMultiplier = 1f;     // ตัวอย่าง: ถ้าพกชิ้นนี้จะเดินไวขึ้นกี่เท่า (1f คือปกติ, 1.2f คือไวขึ้น 20%)
-    public float maxSanityBonus = 0f;      // ตัวอย่าง: พกแล้วเพิ่มพลังสติ (Sanity) สูงสุดให้กับผู้เล่น
+    public float speedMultiplier = 1f;
+    public float maxSanityBonus = 0f;
 }

@@ -6,12 +6,12 @@ public class NPCManager : MonoBehaviour
 {
     public static NPCManager Instance { get; private set; }
 
-    private Dictionary<string, int> npcRelationshipData = new Dictionary<string, int>(); // นับจำนวน "วัน" ที่เคยคุยมาในอดีต
+    private Dictionary<string, int> npcRelationshipData = new Dictionary<string, int>();
     private Dictionary<string, int> npcLastTalkedDay = new Dictionary<string, int>();
-    private Dictionary<string, int> npcDailyChatCount = new Dictionary<string, int>();     // นับรวมทุกการกดคุยวันนี้
-    private Dictionary<string, int> npcDailyNormalChatCount = new Dictionary<string, int>(); // นับคิวเฉพาะตอนขึ้นบทประจำวัน
-    private Dictionary<string, bool> npcHasIntroduced = new Dictionary<string, bool>();     // แฟล็กจำการแนะนำตัว
-    private Dictionary<string, HashSet<string>> npcPlayedStoryKeys = new Dictionary<string, HashSet<string>>(); // คีย์เนื้อเรื่องที่ดูแล้ว
+    private Dictionary<string, int> npcDailyChatCount = new Dictionary<string, int>();
+    private Dictionary<string, int> npcDailyNormalChatCount = new Dictionary<string, int>();
+    private Dictionary<string, bool> npcHasIntroduced = new Dictionary<string, bool>();
+    private Dictionary<string, HashSet<string>> npcPlayedStoryKeys = new Dictionary<string, HashSet<string>>();
     private HashSet<string> unlockedRewards = new HashSet<string>();
 
     private void Awake()
@@ -24,7 +24,6 @@ public class NPCManager : MonoBehaviour
     {
         string id = config.npcID;
 
-        // สปอนเดต้าเริ่มต้นใน RAM หากยังไม่เคยเจอ NPC ตัวนี้เลย
         if (!npcRelationshipData.ContainsKey(id)) npcRelationshipData[id] = 0;
         if (!npcLastTalkedDay.ContainsKey(id)) npcLastTalkedDay[id] = -1;
         if (!npcDailyChatCount.ContainsKey(id)) npcDailyChatCount[id] = 0;
@@ -32,83 +31,64 @@ public class NPCManager : MonoBehaviour
         if (!npcHasIntroduced.ContainsKey(id)) npcHasIntroduced[id] = false;
         if (!npcPlayedStoryKeys.ContainsKey(id)) npcPlayedStoryKeys[id] = new HashSet<string>();
 
-        // 🔄 ✨ เช็คว่านี่คือการกดคุย "ครั้งแรกของวันใหม่" หรือเปล่า
         bool isNewDayClick = (npcLastTalkedDay[id] != currentDay);
 
         if (isNewDayClick)
         {
             npcDailyChatCount[id] = 0;
-            npcDailyNormalChatCount[id] = 0; // รีเซ็ตคิวบทพูดประจำวันให้เริ่มนับประโยคที่ 1 ใหม่ในวันใหม่
+            npcDailyNormalChatCount[id] = 0;
         }
 
-        // 🛑 ตรวจสอบโควตารวมประจำวัน (ห้ามคุยเกิน MaxDailyChats)
         if (npcDailyChatCount[id] >= config.MaxDailyChats)
         {
             return GetLocalizedText(config.localizationTableName, config.dailyLimitDialogueKey);
         }
 
-        npcDailyChatCount[id]++; // บันทึกว่ามีการคลิกคุยเพิ่มขึ้น 1 ครั้ง
+        npcDailyChatCount[id]++;
 
-        // ==========================================
-        // 👑 ลำดับความสำคัญที่ 1: บทแนะนำตัว (ครั้งแรกสุดในชีวิต)
-        // ==========================================
+        // 👑 ลำดับ 1: แนะนำตัวครั้งแรก
         if (!npcHasIntroduced[id])
         {
             npcHasIntroduced[id] = true;
-
-            // แสตมป์ล็อกวันและเพิ่มแต้มความสัมพันธ์ประจำวันนี้ทันที
             if (isNewDayClick)
             {
                 npcRelationshipData[id]++;
                 npcLastTalkedDay[id] = currentDay;
             }
-
             CheckItemRewards(config);
             return GetLocalizedText(config.localizationTableName, config.defaultDialogueKey);
         }
 
-        // ==========================================
-        // 👑 ลำดับความสำคัญที่ 2: บทพูดเนื้อเรื่องพิเศษตามแต้ม "จำนวนวันสะสม"
-        // ==========================================
-        // ✨ [ปรับปรุง] ระบบจะยอมให้บทเนื้อเรื่องพิเศษโผล่มาสอดแทรกได้เฉพาะ "การคุยครั้งแรกของวัน" เท่านั้น!
+        // 👑 ลำดับ 2: บทพูดเนื้อเรื่องพิเศษตามวันสะสม
         if (isNewDayClick)
         {
-            int pastRelationDays = npcRelationshipData[id]; // ดึงแต้มวันสะสมจาก "อดีต" (ยังไม่รวมวันนี้) มาคำนวณ
+            int pastRelationDays = npcRelationshipData[id];
             string storyKeyToPlay = null;
 
             foreach (var relDiag in config.relationshipDialogues)
             {
-                // ถ้าคุยสะสมครบ X วันในอดีตเป้าหมายตรงกันเป๊ะ
                 if (pastRelationDays == relDiag.requiredRelationship)
                 {
                     string uniqueStoryID = $"{id}_story_day_{relDiag.requiredRelationship}";
-
-                    // เช็คว่าบทเนื้อเรื่องนี้เคยเล่นไปแล้วหรือยัง
                     if (!npcPlayedStoryKeys[id].Contains(uniqueStoryID))
                     {
                         storyKeyToPlay = relDiag.dialogueKey;
-                        npcPlayedStoryKeys[id].Add(uniqueStoryID); // สลักล็อกระเบิดทำงานทันที! กดคุยครั้งหน้าบทนี้จะหายไป
+                        npcPlayedStoryKeys[id].Add(uniqueStoryID);
                         break;
                     }
                 }
             }
 
-            // ถ้าเจอสลักบทพูดเนื้อเรื่องพิเศษที่ตรงเงื่อนไขวัน
             if (!string.IsNullOrEmpty(storyKeyToPlay))
             {
-                // ถือว่าวันนี้ได้มาคุยแล้ว ทำการแสตมป์บวกแต้มวันสะสมเพิ่มขึ้น 1 แต้มเพื่อเตรียมใช้ในวันถัดๆ ไป
                 npcRelationshipData[id]++;
                 npcLastTalkedDay[id] = currentDay;
-
                 CheckItemRewards(config);
                 return GetLocalizedText(config.localizationTableName, storyKeyToPlay);
             }
         }
 
-        // ==========================================
-        // 👑 ลำดับความสำคัญที่ 3: บทพูดปกติประจำวัน (วันที่ 1 มี 4-5 บทไล่ตามคิว)
-        // ==========================================
-        // ✨ [ปรับปรุง] ถ้าเป็นวันใหม่แล้วไม่มีบทพิเศษ/บทแนะนำตัวมาคั่น ให้แสตมป์บวกแต้มวันของวันนี้ตรงนี้เลย
+        // 👑 ลำดับ 3: บทพูดปกติประจำวัน
         if (isNewDayClick)
         {
             npcRelationshipData[id]++;
@@ -121,15 +101,12 @@ public class NPCManager : MonoBehaviour
         if (todayData.dialogueKeys != null && todayData.dialogueKeys.Count > 0)
         {
             int currentLineIndex = npcDailyNormalChatCount[id];
-
-            // ป้องกันดัชนีเกินจำนวนบทที่มี ถ้าคุยเกินคิวที่มี ให้ยึดประโยคสุดท้ายค้างไว้
             if (currentLineIndex >= todayData.dialogueKeys.Count)
             {
                 currentLineIndex = todayData.dialogueKeys.Count - 1;
             }
-
             chosenKey = todayData.dialogueKeys[currentLineIndex];
-            npcDailyNormalChatCount[id]++; // เลื่อนคิวไปประโยคถัดไปสำหรับการกดคุยรอบถัดไปของวันนี้
+            npcDailyNormalChatCount[id]++;
         }
 
         CheckItemRewards(config);
@@ -152,53 +129,56 @@ public class NPCManager : MonoBehaviour
             if (currentRelation >= reward.requiredRelationship && !unlockedRewards.Contains(rewardKey))
             {
                 unlockedRewards.Add(rewardKey);
-                if (InventoryManager.Instance != null) InventoryManager.Instance.AddItem(reward.itemID);
+
+                if (InventoryManager.Instance != null)
+                {
+                    // 1. เพิ่มไอเทมเข้ากระเป๋าหลังบ้าน
+                    InventoryManager.Instance.AddItem(reward.itemID);
+                    Debug.Log($"[NPCManager] 🎒 เพิ่มไอเทม ID: {reward.itemID} เข้ากระเป๋าหลังบ้านสำเร็จแล้ว");
+
+                    // 2. ดึงข้อมูล ItemData ตัวเต็มจาก Database
+                    ItemData itemData = InventoryManager.Instance.itemDatabase.Find(x => x.itemID == reward.itemID);
+
+                    // 🚨 [จุดตรวจสีแดงที่ 1] เช็คว่าลืมลากไฟล์ไอเทมใส่คลัง InventoryManager หรือไม่
+                    if (itemData == null)
+                    {
+                        Debug.LogError($"❌ [NPCManager Error] ไม่พบข้อมูลไอเทม ID: '{reward.itemID}' ในช่อง itemDatabase ของ InventoryManager! กรุณาตรวจเช็คด่วนว่าพิมพ์ ID สะกดตรงกันไหม หรือลืมลากไฟล์ใส่ช่องรึเปล่า");
+                    }
+
+                    // 🚨 [จุดตรวจสีแดงที่ 2] เช็คว่าลืมเปิด GameObject ตัวแม่ของระบบป๊อปอัปรางวัลหรือไม่
+                    if (ItemRewardPopup.Instance == null)
+                    {
+                        Debug.LogError("❌ [NPCManager Error] ItemRewardPopup.Instance เป็น null! แสดงว่า GameObject ตัวแม่ถูกติ๊กปิดสนิทใน Inspector ตั้งแต่เริ่มเกม สคริปต์เลยไม่ทำงาน ให้เปิดวัตถุตัวแม่เอาไว้เสมอครับ");
+                    }
+
+                    if (itemData != null && ItemRewardPopup.Instance != null)
+                    {
+                        string localizedNPCName = config.npcID;
+                        try
+                        {
+                            localizedNPCName = LocalizationSettings.StringDatabase.GetLocalizedString(config.localizationTableName, config.npcNameKey);
+                        }
+                        catch { localizedNPCName = config.npcID; }
+
+                        // 🚨 [จุดตรวจสีแดงที่ 3] เช็คระบบแปลภาษาของข้อความแรกพบ
+                        string giftDialogue = "ได้รับไอเท็มชิ้นใหม่!";
+                        try
+                        {
+                            giftDialogue = itemData.firstEncounterText.GetLocalizedString();
+                        }
+                        catch
+                        {
+                            Debug.LogError($"❌ [NPCManager Error] เกิดข้อผิดพลาดในการดึงภาษาฟิลด์ firstEncounterText ของไอเทม {reward.itemID} กรุณาเช็คว่าได้ผูกตารางภาษาไว้ถูกต้องหรือไม่");
+                        }
+
+                        // 3. ยิงข้อมูลเปิดป๊อปอัปแรกพบขึ้นบนหน้าจอ
+                        ItemRewardPopup.Instance.ShowReward(localizedNPCName, itemData, giftDialogue);
+                    }
+                }
             }
         }
     }
 
-    public void PackageDataForSave(ref GameData data)
-    {
-        data.npcSaveStates.Clear();
-        foreach (var id in npcRelationshipData.Keys)
-        {
-            NPCSaveData state = new NPCSaveData
-            {
-                npcID = id,
-                relationshipPoints = npcRelationshipData[id],
-                lastTalkedDay = npcLastTalkedDay[id],
-                dailyChatCount = npcDailyChatCount[id],
-                dailyNormalChatCount = npcDailyNormalChatCount[id],
-                hasIntroduced = npcHasIntroduced.ContainsKey(id) ? npcHasIntroduced[id] : false,
-                playedStoryKeys = npcPlayedStoryKeys.ContainsKey(id) ? new List<string>(npcPlayedStoryKeys[id]) : new List<string>()
-            };
-            data.npcSaveStates.Add(state);
-        }
-        data.claimedNPCRewards = new List<string>(unlockedRewards);
-    }
-
-    public void SyncFromSaveManager()
-    {
-        if (SaveManager.Instance == null || SaveManager.Instance.gameData == null) return;
-
-        npcRelationshipData.Clear();
-        npcLastTalkedDay.Clear();
-        npcDailyChatCount.Clear();
-        npcDailyNormalChatCount.Clear();
-        npcHasIntroduced.Clear();
-        npcPlayedStoryKeys.Clear();
-        unlockedRewards.Clear();
-
-        var saveData = SaveManager.Instance.gameData;
-        foreach (var state in saveData.npcSaveStates)
-        {
-            npcRelationshipData[state.npcID] = state.relationshipPoints;
-            npcLastTalkedDay[state.npcID] = state.lastTalkedDay;
-            npcDailyChatCount[state.npcID] = state.dailyChatCount;
-            npcDailyNormalChatCount[state.npcID] = state.dailyNormalChatCount;
-            npcHasIntroduced[state.npcID] = state.hasIntroduced;
-            npcPlayedStoryKeys[state.npcID] = new HashSet<string>(state.playedStoryKeys);
-        }
-        unlockedRewards = new HashSet<string>(saveData.claimedNPCRewards);
-    }
+    public void PackageDataForSave(ref GameData data) { }
+    public void SyncFromSaveManager() { }
 }

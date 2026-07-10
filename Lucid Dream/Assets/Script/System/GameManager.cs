@@ -61,7 +61,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 🔥 [เพิ่มใหม่] ฟังก์ชันย้ายฉากตอนโหลดเซฟโดยเฉพาะ เพื่อไม่ให้ลอจิกเวลาไปบวกวันซ้ำซ้อน
     public void LoadSceneForState(GameState state)
     {
         currentState = state;
@@ -84,7 +83,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleCheatKeys()
     {
-#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM        
         if (UnityEngine.InputSystem.Keyboard.current == null) return;
         if (UnityEngine.InputSystem.Keyboard.current.f1Key.wasPressedThisFrame) ChangeState(GameState.Daytime);
         if (UnityEngine.InputSystem.Keyboard.current.f2Key.wasPressedThisFrame) ChangeState(GameState.Nighttime);

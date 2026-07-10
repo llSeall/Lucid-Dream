@@ -1,100 +1,115 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using System.Collections; //
+using System.Collections.Generic; //[cite: 10]
+using UnityEngine; //[cite: 10]
 
-public class InventoryManager : MonoBehaviour
+public class InventoryManager : MonoBehaviour //[cite: 10]
 {
-    public static InventoryManager Instance { get; private set; }
+    public static InventoryManager Instance { get; private set; } //[cite: 10]
 
-    [Header("Item Database")]
-    public List<ItemData> itemDatabase = new List<ItemData>();
+    [Header("Item Database")] //[cite: 10]
+    public List<ItemData> itemDatabase = new List<ItemData>(); //[cite: 10]
 
-    [Header("Current Inventory")]
-    public List<string> ownedItemIDs = new List<string>();
+    [Header("Current Inventory")] //[cite: 10]
+    public List<string> ownedItemIDs = new List<string>(); //[cite: 10]
 
-    private void Awake()
+    private void Awake() //[cite: 10]
     {
-        if (Instance == null)
+        if (Instance == null) //[cite: 10]
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Instance = this; //[cite: 10]
+            DontDestroyOnLoad(gameObject); //[cite: 10]
         }
-        else
+        else //[cite: 10]
         {
-            Destroy(gameObject);
-        }
-    }
-
-    public void AddItem(string id)
-    {
-        if (!ownedItemIDs.Contains(id))
-        {
-            ownedItemIDs.Add(id);
-            Debug.Log($"<color=green><b>[Inventory] เพิ่มไอเทม {id} เข้ากระเป๋าสำเร็จ! (รอการบันทึกเมื่อจบวัน)</b></color>");
+            Destroy(gameObject); //[cite: 10]
         }
     }
 
-    public void RemoveItem(string id)
+    /// <summary>
+    /// ✨ ฟังก์ชันใหม่: คำนวณบัฟความเร็วเดิน/วิ่งรวมจากไอเทมทั้งหมดในกระเป๋า โดยตรวจสอบช่วงเวลาในเกมด้วย
+    /// </summary>
+    public float GetTotalSpeedMultiplier()
     {
-        if (ownedItemIDs.Contains(id))
+        float totalMultiplier = 1f;
+
+        // ความปลอดภัย: ถ้าไม่มี GameManager หรือไม่มีของในกระเป๋า ให้คืนค่าความเร็วปกติ (1 เท่า)
+        if (GameManager.Instance == null || ownedItemIDs.Count == 0) return totalMultiplier;
+
+        // เช็คว่าปัจจุบันเป็นเวลากลางคืน/โลกความฝันหรือไม่
+        bool isNighttime = (GameManager.Instance.currentState == GameState.Nighttime);
+
+        foreach (string id in ownedItemIDs)
         {
-            ownedItemIDs.Remove(id);
-            Debug.Log($"<color=red><b>[Inventory] ลบไอเทม {id} ออกจากกระเป๋าแล้ว</b></color>");
+            ItemData data = itemDatabase.Find(x => x.itemID == id);
+            if (data != null && data.itemType == ItemType.PassiveOrCustom)
+            {
+                // 🚨 เงื่อนไขเด็ด: ถ้าไอเทมนี้ระบุว่าต้องเป็นกลางคืนเท่านั้น แต่ปัจจุบันเป็นกลางวัน -> ข้ามชิ้นนี้ไป ไม่นำมาบวกพลัง
+                if (data.nighttimeOnly && !isNighttime)
+                {
+                    continue;
+                }
+
+                // สะสมพลังบัฟความเร็ว (คิดแบบส่วนต่าง เช่น สปีด 1.5f จะกลายเป็นบวกเพิ่ม 0.5f)
+                totalMultiplier += (data.speedMultiplier - 1f);
+            }
+        }
+
+        return totalMultiplier;
+    }
+
+    public void AddItem(string id) //[cite: 10]
+    {
+        if (!ownedItemIDs.Contains(id)) //[cite: 10]
+        {
+            ownedItemIDs.Add(id); //[cite: 10]
+            Debug.Log($"<color=green><b>[Inventory] เพิ่มไอเทม {id} เข้ากระเป๋าสำเร็จ!</b></color>"); //[cite: 10]
         }
     }
 
-    public bool HasItem(string id)
+    public void RemoveItem(string id) //[cite: 10]
     {
-        return ownedItemIDs.Contains(id);
-    }
-
-    public void InspectItem(string id)
-    {
-        ItemData data = itemDatabase.Find(x => x.itemID == id);
-        if (data == null)
+        if (ownedItemIDs.Contains(id)) //[cite: 10]
         {
-            Debug.LogError($"[Inventory] ไม่พบข้อมูลไอเทม ID: {id} ใน Database!");
-            return;
-        }
-
-        // ✨ ดึงข้อความที่ผ่านการแปลภาษาตามภาษาของเกมในปัจจุบันมาเก็บไว้ในตัวแปร
-        string localizedName = data.itemName.GetLocalizedString();
-        string localizedDesc = data.itemDescription.GetLocalizedString();
-
-        switch (data.itemType)
-        {
-            case ItemType.StoryArchive:
-                // ดึงเนื้อหาบันทึกฉบับแปลภาษาออกมา
-                string localizedStory = data.storyText.GetLocalizedString();
-                Debug.Log($"<color=cyan><b>[📖 เปิดอ่านบันทึก: {localizedName}]</b></color>\n{localizedStory}");
-
-                // 💡 [คำแนะนำการต่อยอดระบบ UI ในอนาคต] สามารถโยนตัวแปรส่งไปแสดงบนหน้าจอจริงได้เลย เช่น:
-                // InventoryUIWindow.Instance.OpenReadingWindow(localizedName, localizedStory, data.noteBackground);
-                break;
-
-            case ItemType.PassiveOrCustom:
-                Debug.Log($"<color=yellow><b>[🎒 ไอเทมพาสซีฟ: {localizedName}]</b></color>\n{localizedDesc}");
-                break;
+            ownedItemIDs.Remove(id); //[cite: 10]
         }
     }
 
-    // ✨ [ฟังก์ชันใหม่] แพ็คข้อมูลไอเทมปัจจุบันส่งกลับคืนให้ SaveManager ไปเขียนบันทึกลงไฟล์ JSON ตอนจบวัน
-    public void PackageDataForSave(ref GameData data)
+    public bool HasItem(string id) //[cite: 10]
     {
-        if (data != null)
+        return ownedItemIDs.Contains(id); //[cite: 10]
+    }
+
+    public void InspectItem(string id) //[cite: 10]
+    {
+        ItemData data = itemDatabase.Find(x => x.itemID == id); //[cite: 10]
+        if (data == null) return; //[cite: 10]
+
+        string localizedName = data.itemName.GetLocalizedString(); //[cite: 10]
+        string localizedDesc = data.itemDescription.GetLocalizedString(); //[cite: 10]
+
+        switch (data.itemType) //[cite: 10]
         {
-            data.collectedItems = new List<string>(ownedItemIDs);
-            Debug.Log($"📦 [Inventory] แพ็คของในกระเป๋า {ownedItemIDs.Count} ชิ้น เตรียมบันทึกลง Checkpoint");
+            case ItemType.StoryArchive: //[cite: 10]
+                string localizedStory = data.storyText.GetLocalizedString(); //[cite: 10]
+                Debug.Log($"<color=cyan><b>[📖 เปิดอ่านบันทึก: {localizedName}]</b></color>\n{localizedStory}"); //[cite: 10]
+                break; //[cite: 10]
+
+            case ItemType.PassiveOrCustom: //[cite: 10]
+                Debug.Log($"<color=yellow><b>[🎒 ไอเทมพาสซีฟ: {localizedName}]</b></color>\n{localizedDesc}"); //[cite: 10]
+                break; //[cite: 10]
         }
     }
 
-    // 🔄 โหลดข้อมูลไอเทมจากสมุดเซฟกลับเข้ากระเป๋าเป้ตอนเปิดเกม
-    public void SyncFromSaveManager()
+    public void PackageDataForSave(ref GameData data) //[cite: 10]
     {
-        if (SaveManager.Instance != null && SaveManager.Instance.gameData != null)
+        if (data != null) data.collectedItems = new List<string>(ownedItemIDs); //[cite: 10]
+    }
+
+    public void SyncFromSaveManager() //[cite: 10]
+    {
+        if (SaveManager.Instance != null && SaveManager.Instance.gameData != null) //[cite: 10]
         {
-            ownedItemIDs = new List<string>(SaveManager.Instance.gameData.collectedItems);
-            Debug.Log($"🎒 [Inventory] โหลดไอเทมจากไฟล์เซฟสำเร็จ ตอนนี้พกของอยู่ {ownedItemIDs.Count} ชิ้น");
+            ownedItemIDs = new List<string>(SaveManager.Instance.gameData.collectedItems); //[cite: 10]
         }
     }
 }

@@ -17,7 +17,19 @@ MonoBehaviour:
   m_SharedData: {fileID: 11400000, guid: 26a5cc7bb73c3ef4f9d0d2ee7d6679a1, type: 2}
   m_Metadata:
     m_Items: []
-  m_TableData: []
+  m_TableData:
+  - m_Id: 396414325157888
+    m_Localized: SpeedBoots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397096570646528
+    m_Localized: AddSpeed x0.5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2603935546798080
+    m_Localized: you can run speed 0.5x
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

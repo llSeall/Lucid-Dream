@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemID: Item_01_Diary
   itemType: 0
+  nighttimeOnly: 0
   itemName:
     m_TableReference:
       m_TableCollectionName: GUID:26a5cc7bb73c3ef4f9d0d2ee7d6679a1
