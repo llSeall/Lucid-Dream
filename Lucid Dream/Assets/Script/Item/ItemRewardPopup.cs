@@ -64,11 +64,10 @@ public class ItemRewardPopup : MonoBehaviour
     {
         if (popupPanel == null || itemData == null) return;
 
-        Debug.Log($"[ItemRewardPopup] 📺 สั่งเปิดหน้าต่างแสดงรางวัลไอเทมชิ้น: {itemData.itemID} สำเร็จ!");
-
         string translatedItemName = itemData.itemName.GetLocalizedString();
 
-        if (titleText != null) titleText.text = $"🎁 ได้รับไอเท็มจาก <b><color=yellow>{npcName}</color></b>";
+        // ตั้งค่า UI
+        if (titleText != null) titleText.text = $" ได้รับไอเท็มจาก <b><color=yellow>{npcName}</color></b>";
         if (itemNameText != null) itemNameText.text = translatedItemName;
         if (dialogueText != null) dialogueText.text = firstEncounterDialogue;
         if (itemImage != null) itemImage.sprite = itemData.itemIcon;
@@ -77,11 +76,10 @@ public class ItemRewardPopup : MonoBehaviour
         IsPopupActive = true;
         openedThisFrame = true;
 
-        // ล็อกตัวละครไว้ห้ามขยับ
+        // 🔥 เรียกใช้ Event เริ่มไดอะล็อกทันที เพื่อสั่งล็อกตัวละครแบบเดียวกับบทพูดปกติ
         DialogueUIController.OnDialogueStart?.Invoke();
     }
 
-    // ✨ ฟังก์ชันใหม่: ใช้สำหรับฝากบทพูดรายวันให้มาต่อคิวไว้
     public void SetPendingDialogue(string npcName, string dialogueText)
     {
         savedNpcName = npcName;
@@ -92,21 +90,20 @@ public class ItemRewardPopup : MonoBehaviour
     public void ClosePopup()
     {
         popupPanel.SetActive(false);
-        IsPopupActive = false;
+        IsPopupActive = false; // ปิดสถานะตรงนี้ก่อน เพื่อให้ IsDialogueActive ตัวแปรกลางทำงานถูกต้อง
 
-        // 🔥 [จุดสำคัญ] ถ้ามีบทพูดปกติฝากคิวไว้ ให้เปิดมันขึ้นมาทันทีหลังจากกล่องของรางวัลปิดลง!
         if (hasPendingDialogue)
         {
-            hasPendingDialogue = false; // รีเซ็ตสถานะคิว
+            hasPendingDialogue = false;
             if (DialogueUIController.Instance != null)
             {
+                // ส่งต่อไปหน้าต่างบทพูดปกติ (มันจะล็อกผู้เล่นต่อเนื่องให้เอง)
                 DialogueUIController.Instance.ShowDialogue(savedNpcName, savedDialogueText);
-                // ไม่ต้องสั่ง OnDialogueEnd เพราะกล่องสนทนาปกติจะมารับช่วงคุมการล็อกตัวละครต่อให้เองครับ
             }
         }
         else
         {
-            // ถ้าไม่มีอะไรค้างคาในคิวแล้ว ถึงปลดล็อกตัวละครให้เดินได้ตามปกติ
+            // 🔥 ถ้าไม่มีบทพูดอะไรมาต่อคิวแล้ว ให้ยิง Event ปลดล็อกผู้เล่นให้กลับมาเดินได้ทันที
             DialogueUIController.OnDialogueEnd?.Invoke();
         }
     }

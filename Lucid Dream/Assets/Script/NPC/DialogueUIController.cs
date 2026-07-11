@@ -15,7 +15,10 @@ public class DialogueUIController : MonoBehaviour
     public static Action OnDialogueStart;
     public static Action OnDialogueEnd;
 
-    public bool IsDialogueActive => dialoguePanel != null && dialoguePanel.activeSelf;
+    // 💡 [จุดแก้ไขสำคัญ] ปรับให้ค่าความแอคทีฟ รวมไปถึงตอนที่หน้าต่างรับไอเทม (ItemRewardPopup) กำลังเปิดอยู่ด้วย
+    // ทำให้สคริปต์ผู้เล่นที่คอยเช็คค่านี้อยู่ จะสั่งหยุดเดินทันทีเมื่อหน้าต่างไอเทมเปิดขึ้นมา!
+    public bool IsDialogueActive => (dialoguePanel != null && dialoguePanel.activeSelf) ||
+                                    (ItemRewardPopup.Instance != null && ItemRewardPopup.Instance.IsPopupActive);
 
     private bool openedThisFrame = false;
 
@@ -29,10 +32,11 @@ public class DialogueUIController : MonoBehaviour
 
     private void Update()
     {
-        if (IsDialogueActive && !openedThisFrame)
+        // 💡 [จุดแก้ไข] เช็คเฉพาะตอนที่ "ตัวกล่องข้อความปกติ" เปิดอยู่เท่านั้น ถึงจะกดปิดไดอะล็อกตรงนี้
+        // เพื่อป้องกันไม่ให้ปุ่มกดไปแย่งหน้าที่ของกล่องรับไอเทมครับ
+        if (dialoguePanel != null && dialoguePanel.activeSelf && !openedThisFrame)
         {
-            // ✨ [แก้ไขแล้ว] เหลือแค่ปุ่ม E และ Spacebar เท่านั้น (ตัดปุ่มเมาส์ซ้ายออก)
-#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM            
             bool closePressed = UnityEngine.InputSystem.Keyboard.current != null && 
                                (UnityEngine.InputSystem.Keyboard.current.eKey.wasPressedThisFrame || 
                                 UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame);
@@ -70,7 +74,10 @@ public class DialogueUIController : MonoBehaviour
     {
         dialoguePanel.SetActive(false);
 
-        // 🔥 แจ้งเตือนระบบว่า "คุยจบแล้วนะ" (เพื่อให้สคริปต์ผู้เล่นเดินได้ตามปกติ)
-        OnDialogueEnd?.Invoke();
+        // 🔥 แจ้งเตือนระบบว่า "คุยจบแล้วนะ" (จะยิงปลดล็อกก็ต่อเมื่อไม่มีหน้าต่างไอเทมเปิดค้างอยู่เท่านั้น)
+        if (ItemRewardPopup.Instance == null || !ItemRewardPopup.Instance.IsPopupActive)
+        {
+            OnDialogueEnd?.Invoke();
+        }
     }
 }

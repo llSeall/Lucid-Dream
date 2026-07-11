@@ -134,6 +134,14 @@ public class MainMenuManager : MonoBehaviour
         confirmationPanel.SetActive(false);
     }
 
+    /// <summary>
+    /// ✨ ฟังก์ชันใหม่: สำหรับกดปุ่มย้อนกลับจากหน้าเลือกสล็อตเพื่อกลับไปหน้าเมนูหลัก
+    /// </summary>
+    public void OnClickBackToMainMenu()
+    {
+        ShowMainMenu();
+    }
+
     private void ExecuteStartNewGame(int slotID)
     {
         if (SaveManager.Instance == null) return;

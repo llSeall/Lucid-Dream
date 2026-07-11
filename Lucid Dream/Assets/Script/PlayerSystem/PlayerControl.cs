@@ -84,6 +84,13 @@ public class PlayerController3D_InputAction : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>(); // ✨
 
+        // 🔒 [จุดแก้ไขบั๊กตัวเอียง 1] สั่งเปิด Freeze Rotation แกน X และ Z ใน Rigidbody ผ่านโค้ด 
+        // เพื่อป้องกันไม่ให้แรงฟิสิกส์หรือการชนทำตัวละครล้มหรือเอียงเด็ดขาด
+        if (rb != null)
+        {
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        }
+
         if (playerCamera == null && Camera.main != null) playerCamera = Camera.main.transform;
 
         if (groundCheck == null)
@@ -132,6 +139,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         lookAction = playerActionMap.FindAction("Look");
         jumpAction = playerActionMap.FindAction("Jump");
         sprintAction = playerActionMap.FindAction("Sprint");
+        inputActionAsset.FindActionMap("Player").FindAction("Crouch");
         crouchAction = playerActionMap.FindAction("Crouch"); // ✨ ดึงค่าปุ่มย่อตัว
 
         if (moveAction == null) Debug.LogError("'Move' action not found!");
@@ -176,13 +184,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void Update()
     {
-        // 🛑 [โซนล็อกผู้เล่นตอนคุย NPC]
-        // ถ้าคลาส DialogueUIController แจ้งว่ากล่องข้อความกำลังแสดงอยู่
+        // 🛑 [โซนล็อกผู้เล่นตอนคุย NPC - ปรับปรุงแก้ไขใหม่]
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
         {
             targetInput = Vector3.zero; // ล้างค่าอินพุตเดินให้เป็นศูนย์
             lookInput = Vector2.zero;   // ล้างค่าอินพุตเมาส์หันจอให้เป็นศูนย์
-            return; // ↩️ ดีดตัวออกไปเลย ไม่ต้องคำนวณการเคลื่อนไหว เมาส์หันกล้อง หรือระบบส่ายหัว (Head Bob)
+
+            // 🔒 [จุดแก้ไขบั๊กตัวเอียง 2] บังคับรีเซ็ตองศาตัวละครให้ตั้งตรง (X=0, Z=0) เสมอ แม้ตอนที่กำลังคุยอยู่
+            transform.eulerAngles = new Vector3(0f, yaw, 0f);
+
+            return; // ↩️ ดีดตัวออกไปเลย ไม่ต้องคำนวณการเคลื่อนไหวอื่นๆ
         }
 
         if (moveAction != null)
@@ -232,12 +243,15 @@ public class PlayerController3D_InputAction : MonoBehaviour
     void FixedUpdate()
     {
         // 🛑 [โซนล็อกฟิสิกส์ตอนคุย NPC]
-        // ป้องกันกรณีผู้เล่นวิ่งมาแรงๆ แล้วกดคุย NPC แล้วตัวจะสไลด์ไหลต่อ 
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
         {
             // บังคับให้ความเร็วแนวราบ (X, Z) หยุดนิ่งสนิททันที ส่วนแกนดิ่ง (Y) ปล่อยให้ตกตามแรงโน้มถ่วงปกติ
             rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
-            return; // ↩️ ดีดตัวออกไปเลย ไม่ต้องคำนวณการออกแรงวิ่งขยับตัว
+
+            // 🔒 [จุดแก้ไขบั๊กตัวเอียง 3] ล้างแรงหมุนค้างทางฟิสิกส์ (Angular Velocity) ให้เป็นศูนย์ทันที ตัวจะได้ไม่บิดตัวเลี้ยวโค้ง
+            rb.angularVelocity = Vector3.zero;
+
+            return; // ↩️ ดีดตัวออกไปเลย
         }
 
         Vector3 cameraRight = (playerCamera != null) ? playerCamera.right : transform.right;
@@ -271,7 +285,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         rb.linearVelocity = newVel;
     }
 
-    // 🛡️ ฟังก์ชันเช็คพื้นอัจฉริยะ: แตะอะไรก็ได้ที่เป็นของแข็งก็นับหมด ยกเว้นตัวผู้เล่นเอง
+    // 🛡️ ฟังก์ชันเช็คพื้นอัจฉริยะ
     bool CheckGroundedNoLayer()
     {
         Collider[] hitColliders = Physics.OverlapSphere(groundCheck.position, groundCheckRadius, ~0, QueryTriggerInteraction.Ignore);
