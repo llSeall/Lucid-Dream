@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class PlayerStats : MonoBehaviour
@@ -9,6 +8,9 @@ public class PlayerStats : MonoBehaviour
     [Header("Sanity Settings")]
     public float maxSanity = 100f;
     public float currentSanity;
+
+    // Event สำหรับให้ UI ดักฟังการเปลี่ยนแปลงของค่าสติ
+    public static event Action<float, float> OnSanityChanged; // (current, max)
 
     private void Awake()
     {
@@ -38,20 +40,26 @@ public class PlayerStats : MonoBehaviour
         currentSanity += amount;
         currentSanity = Mathf.Clamp(currentSanity, 0f, maxSanity);
 
-
-        OnSanityChanged();
+        OnSanityCheck();
+        OnSanityChanged?.Invoke(currentSanity, maxSanity);
     }
 
     public void SyncWithSaveManager()
     {
-        if (SaveManager.Instance != null)
+        if (SaveManager.Instance != null && SaveManager.Instance.gameData != null)
         {
             currentSanity = SaveManager.Instance.gameData.currentSanity;
-            Debug.Log($"<color=lime>❤️ [PlayerStats] ซิงค์ค่าสติจาก SaveManager สำเร็จ! ปัจจุบันคือ: {currentSanity}</color>");
         }
+        else
+        {
+            currentSanity = maxSanity; // ค่าเริ่มต้นถ้าไม่มีเซฟ
+        }
+
+        OnSanityChanged?.Invoke(currentSanity, maxSanity);
+        Debug.Log($"<color=lime>❤️ [PlayerStats] ซิงค์ค่าสติสำเร็จ: {currentSanity}/{maxSanity}</color>");
     }
 
-    private void OnSanityChanged()
+    private void OnSanityCheck()
     {
         if (currentSanity <= 30f)
         {
@@ -74,8 +82,8 @@ public class PlayerStats : MonoBehaviour
     {
 #if ENABLE_INPUT_SYSTEM
         if (UnityEngine.InputSystem.Keyboard.current == null) return;
-        if (UnityEngine.InputSystem.Keyboard.current.f5Key.wasPressedThisFrame) ModifySanity(-15f); 
-        if (UnityEngine.InputSystem.Keyboard.current.f6Key.wasPressedThisFrame) ModifySanity(20f);  
+        if (UnityEngine.InputSystem.Keyboard.current.f5Key.wasPressedThisFrame) ModifySanity(-15f);
+        if (UnityEngine.InputSystem.Keyboard.current.f6Key.wasPressedThisFrame) ModifySanity(20f);
 #else
         if (Input.GetKeyDown(KeyCode.F5)) ModifySanity(-15f);
         if (Input.GetKeyDown(KeyCode.F6)) ModifySanity(20f);

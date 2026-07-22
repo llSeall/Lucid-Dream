@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
-using UnityEngine.SceneManagement; // ✨ ตรวจสอบให้มั่นใจว่ามีบรรทัดนี้อยู่ด้านบนสุด
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class NPCSaveData
@@ -20,7 +20,10 @@ public class GameData
 {
     public int currentDay = 1;
     public GameState currentState = GameState.Daytime;
-    public float currentHour = 8f;
+
+    // ✨ [แก้ไข] เปลี่ยนจาก currentHour (float) มาเป็น currentAP (int)
+    public int currentAP = 3;
+
     public float currentSanity = 100f;
     public string mapSeed = "";
     public List<string> collectedItems = new List<string>();
@@ -54,7 +57,6 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    // ✨ [เพิ่มระบบเบ็ดเสร็จ] ลงทะเบียนเปิดระบบดักจับเมื่อฉากโหลดเสร็จสมบูรณ์
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -75,13 +77,12 @@ public class SaveManager : MonoBehaviour
         HandleCheatKeys();
     }
 
-    // ✨ ฟังก์ชันนี้จะทำงานอัตโนมัติ "หลังจาก" ซีนใหม่ตื่นขึ้นมาเสร็จเรียบร้อยแล้ว
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // กรุณาเปลี่ยนชื่อคำว่า "MainMenuScene" ให้ตรงกับชื่อซีนเมนูของคุณ
+        // หากอยู่ในหน้า Main Menu จะยังไม่กระจายข้อมูลเซฟ
         if (scene.name == "MainMenuScene") return;
 
-        // ยิงข้อมูลเซฟแจกจ่ายให้ทุกแมเนเจอร์ในฉากเกมทันทีที่พวกเขาตื่นนอนครบทุกคน
+        // ยิงข้อมูลเซฟแจกจ่ายให้ทุก Manager ทันทีเมื่อโหลดฉากใหม่เสร็จสมบูรณ์
         NotifyAllManagersToSync();
         Debug.Log("<color=cyan><b>📡 [SaveManager] ฉากโหลดเสร็จสิ้น ทำการซิงค์เดต้าเซฟเข้าสู่ระบบหลักเรียบร้อย!</b></color>");
     }
@@ -90,11 +91,12 @@ public class SaveManager : MonoBehaviour
     {
         try
         {
+            // ✨ [แก้ไข] ดึงค่า AP ล่าสุดจาก TimeManager มาเก็บไว้ใน GameData
             if (TimeManager.Instance != null)
             {
                 gameData.currentDay = TimeManager.Instance.currentDay;
                 gameData.currentState = TimeManager.Instance.currentState;
-                gameData.currentHour = TimeManager.Instance.currentHour;
+                gameData.currentAP = TimeManager.Instance.currentAP;
             }
 
             if (PlayerStats.Instance != null) gameData.currentSanity = PlayerStats.Instance.currentSanity;
@@ -105,7 +107,7 @@ public class SaveManager : MonoBehaviour
             string json = JsonUtility.ToJson(gameData, true);
             File.WriteAllText(GetSaveFilePath(currentSlot), json);
 
-            Debug.Log($"<color=green><b>💾 [Slot {currentSlot}] บันทึกความคืบหน้า วันที่ {gameData.currentDay} ({gameData.currentState}) เรียบร้อย!</b></color>");
+            Debug.Log($"<color=green><b>💾 [Slot {currentSlot}] บันทึกสำเร็จ! วันที่ {gameData.currentDay} | สถานะ: {gameData.currentState} | AP คงเหลือ: {gameData.currentAP}</b></color>");
         }
         catch (System.Exception e)
         {
@@ -129,8 +131,7 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             gameData = JsonUtility.FromJson<GameData>(json);
 
-            // ❌ ถอดการสั่งซิงค์ตรงนี้ออก เพื่อรอไปสั่งใน OnSceneLoaded ด้านบนแทนฉากจะได้ไม่ Null
-
+            // เปลี่ยนฉากตามสถานะ (Daytime -> ฉากบ้าน/เมือง, Nighttime -> ฉากโลกความฝัน)
             if (GameManager.Instance != null)
                 GameManager.Instance.LoadSceneForState(gameData.currentState);
         }

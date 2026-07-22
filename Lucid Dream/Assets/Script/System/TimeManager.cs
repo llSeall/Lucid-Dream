@@ -1,18 +1,20 @@
 using System;
 using UnityEngine;
-using UnityEngine.SceneManagement; // ✨ เพิ่มบรรทัดนี้เข้ามาเพื่อให้รู้จัก SceneManager ครับ
+using UnityEngine.SceneManagement;
 
 public class TimeManager : MonoBehaviour
 {
     public static TimeManager Instance { get; private set; }
 
-    [Header("Time & Day Settings")]
+    [Header("Day & AP Settings")]
     public int currentDay = 1;
     public GameState currentState = GameState.Daytime;
 
-    [Range(0f, 24f)] public float currentHour = 8f;
-    public float timeSpeed = 0.05f;
+    public int maxAP = 3;
+    public int currentAP = 3;
 
+    // Events สำหรับอัปเดต UI และระบบอื่นๆ ในเกม
+    public static event Action OnAPChanged;
     public static event Action OnDayChangedSafe;
 
     private void Awake()
@@ -28,83 +30,114 @@ public class TimeManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        SyncWithSaveManager();
+    }
+
     private void Update()
     {
-        // ⏱️ เช็คชื่อซีน ถ้าเป็นหน้าเมนูหลัก ให้หยุดเดินเวลาทันที
-        if (SceneManager.GetActiveScene().name == "MainMenuScene")
-        {
-            return;
-        }
-
-        RunGameTime();
+        if (SceneManager.GetActiveScene().name == "MainMenuScene") return;
         HandleCheatKeys();
     }
 
-    private void RunGameTime()
+    /// <summary>
+    /// หักแต้ม AP ตามจำนวนที่ระบุ (ใช้เฉพาะช่วงกลางวัน)
+    /// </summary>
+    public bool UseAP(int amount = 1)
     {
-        if (currentState == GameState.Daytime)
+        if (currentState != GameState.Daytime)
         {
-            currentHour += Time.deltaTime * timeSpeed;
+            Debug.LogWarning("⚠️ [TimeManager] ไม่สามารถใช้ AP นอกช่วงเวลากลางวันได้!");
+            return false;
+        }
 
-            if (currentHour >= 24f)
+        if (currentAP >= amount)
+        {
+            currentAP -= amount;
+            Debug.Log($"<color=yellow>⚡ [TimeManager] ใช้ไป {amount} AP! เหลือ AP: {currentAP}/{maxAP}</color>");
+
+            // ส่งสัญญาณแจ้ง UI ให้รีเฟรชหน้าจอ
+            OnAPChanged?.Invoke();
+
+            // 🌙 ถ้า AP หมด -> สั่ง GameManager เปลี่ยนฉากเข้าสู่โลกความฝันทันที
+            if (currentAP <= 0)
             {
-                currentHour = 0f;
-                StartNewDay();
+                Debug.Log("<color=red>🌙 [TimeManager] AP หมดแล้ว! กำลังเข้าสู่โลกความฝัน...</color>");
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.ChangeState(GameState.Nighttime);
+                }
             }
+
+            return true;
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ [TimeManager] แต้ม AP ไม่เพียงพอ!");
+            return false;
         }
     }
 
-    public void ResetTime()
+    /// <summary>
+    /// เริ่มต้นวันใหม่ (กลางวัน) รีเซ็ต AP กลับเป็นค่าสูงสุด
+    /// </summary>
+    public void StartNewDay()
     {
-        if (currentState == GameState.Daytime) currentHour = 8f;
-        else currentHour = 0f;
+        currentDay++;
+        currentState = GameState.Daytime;
+        currentAP = maxAP; // รีเซ็ต AP เต็มจำนวน
+
+        Debug.Log($"<color=orange>🌅 [TimeManager] อัปเดตเช้าวันใหม่! วันที่: {currentDay} | AP รีเซ็ตเป็น {currentAP}</color>");
+
+        OnAPChanged?.Invoke();
+        OnDayChangedSafe?.Invoke();
+
+        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
     }
 
+    /// <summary>
+    /// เข้าสู่โลกความฝัน (กลางคืน) รีเซ็ต AP เป็น 0
+    /// </summary>
+    public void EnterDreamWorld()
+    {
+        currentState = GameState.Nighttime;
+        currentAP = 0; // ในโลกความฝันไม่มี AP ให้ใช้
+
+        Debug.Log($"<color=purple>🌌 [TimeManager] เข้าสู่มิติโลกความฝัน... (เข้าสู่ช่วงกลางคืน)</color>");
+
+        OnAPChanged?.Invoke();
+        OnDayChangedSafe?.Invoke();
+
+        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
+    }
+
+    /// <summary>
+    /// ดึงค่า AP และวันล่าสุดจากระบบ SaveManager
+    /// </summary>
     public void SyncWithSaveManager()
     {
         if (SaveManager.Instance != null && SaveManager.Instance.gameData != null)
         {
             currentDay = SaveManager.Instance.gameData.currentDay;
             currentState = SaveManager.Instance.gameData.currentState;
-            currentHour = SaveManager.Instance.gameData.currentHour;
+            currentAP = SaveManager.Instance.gameData.currentAP;
 
-            Debug.Log($"⏳ [TimeManager] โอนย้ายเวลาตามข้อมูลเซฟสำเร็จ: Day {currentDay}");
+            Debug.Log($"⏳ [TimeManager] โอนย้ายข้อมูลสำเร็จ: Day {currentDay} | State: {currentState} | AP: {currentAP}");
+            OnAPChanged?.Invoke();
             OnDayChangedSafe?.Invoke();
         }
-    }
-
-    public void StartNewDay()
-    {
-        currentDay++;
-        currentState = GameState.Daytime;
-        currentHour = 8f;
-
-        Debug.Log($"<color=orange>🌅 [TimeManager] อัปเดตเช้าวันใหม่! วันที่: {currentDay}</color>");
-        OnDayChangedSafe?.Invoke();
-
-        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
-    }
-
-    public void EnterDreamWorld()
-    {
-        currentState = GameState.Nighttime;
-        currentHour = 0f;
-
-        Debug.Log($"<color=purple>🌌 [TimeManager] เข้าสู่มิติโลกความฝัน... (เวลาหยุดเดิน)</color>");
-        OnDayChangedSafe?.Invoke();
-
-        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
     }
 
     private void HandleCheatKeys()
     {
 #if ENABLE_INPUT_SYSTEM        
-        if (UnityEngine.InputSystem.Keyboard.current == null) return; 
-        if (UnityEngine.InputSystem.Keyboard.current.f3Key.wasPressedThisFrame) StartNewDay(); 
-        if (UnityEngine.InputSystem.Keyboard.current.f4Key.wasPressedThisFrame) EnterDreamWorld(); 
+        if (UnityEngine.InputSystem.Keyboard.current == null) return;
+        if (UnityEngine.InputSystem.Keyboard.current.f3Key.wasPressedThisFrame) StartNewDay();
+        if (UnityEngine.InputSystem.Keyboard.current.f4Key.wasPressedThisFrame) UseAP(1);
 #else
         if (Input.GetKeyDown(KeyCode.F3)) StartNewDay();
-        if (Input.GetKeyDown(KeyCode.F4)) EnterDreamWorld();
+        if (Input.GetKeyDown(KeyCode.F4)) UseAP(1);
 #endif
     }
 }

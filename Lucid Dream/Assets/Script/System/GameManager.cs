@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,7 +10,7 @@ public class GameManager : MonoBehaviour
     [Header("Game States")]
     public GameState currentState = GameState.Daytime;
 
-    [Header("Scene Names (ต้องสะกดให้ตรงกับใน Unity)")]
+    [Header("Scene Names")]
     public string daytimeSceneName = "DaytimeScene";
     public string nighttimeSceneName = "NighttimeScene";
 
@@ -29,6 +27,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// เปลี่ยนสถานะเกม + เรียกฟังก์ชันใน TimeManager + โหลด Scene ใหม่
+    /// </summary>
     public void ChangeState(GameState newState)
     {
         currentState = newState;
@@ -44,19 +45,16 @@ public class GameManager : MonoBehaviour
                 TimeManager.Instance.EnterDreamWorld();
             }
         }
-        else
-        {
-            if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
-        }
 
+        // สลับ Scene ตามสถานะใหม่
         if (currentState == GameState.Daytime)
         {
-            Debug.Log("<color=yellow>--- [GameManager] กำลังตื่นนอน... โหลดเข้าสู่โลกความจริง (กลางวัน) ---</color>");
+            Debug.Log("<color=yellow>--- [GameManager] สลับฉากสู่โลกความจริง (Daytime) ---</color>");
             SceneManager.LoadScene(daytimeSceneName);
         }
         else if (currentState == GameState.Nighttime)
         {
-            Debug.Log("<color=purple>--- [GameManager] กำลังเข้าสู่ห้วงนิทรา... โหลดเข้าสู่โลกความฝัน (กลางคืน) ---</color>");
+            Debug.Log("<color=purple>--- [GameManager] สลับฉากสู่โลกความฝัน (Nighttime) ---</color>");
             SceneManager.LoadScene(nighttimeSceneName);
         }
     }
@@ -66,12 +64,10 @@ public class GameManager : MonoBehaviour
         currentState = state;
         if (currentState == GameState.Daytime)
         {
-            Debug.Log("<color=yellow>--- [GameManager] โหลดฉากโลกความจริงจากเซฟเก่าสำเร็จ ---</color>");
             SceneManager.LoadScene(daytimeSceneName);
         }
         else if (currentState == GameState.Nighttime)
         {
-            Debug.Log("<color=purple>--- [GameManager] โหลดฉากโลกความฝันจากเซฟเก่าสำเร็จ ---</color>");
             SceneManager.LoadScene(nighttimeSceneName);
         }
     }
