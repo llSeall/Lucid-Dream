@@ -27,8 +27,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float groundCheckRadius = 0.2f;
 
     [Header("Crouch Settings ✨")]
-    [SerializeField] float crouchHeight = 1f;       // ความสูงตอนย่อ (ปกติแคปซูลของ Unity สูง 2)
-    [SerializeField] float crouchSmoothing = 10f;   // ความเร็วในการหมอบ/ลุก
+    [SerializeField] float crouchHeight = 1f;          // ความสูงคอลไลเดอร์ตอนย่อ
+    [SerializeField] float crouchCameraYOffset = 0.6f;    // 🎥 ระยะที่กล้องจะต่ำลงมาจากปกติเมื่อย่อตัว
+    [SerializeField] float crouchSmoothing = 10f;      // ความเร็วในการหมอบ/ลุก
 
     [Header("Mouse Look")]
     [SerializeField] float mouseSensitivity = 2f;
@@ -84,8 +85,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>(); // ✨
 
-        // 🔒 [จุดแก้ไขบั๊กตัวเอียง 1] สั่งเปิด Freeze Rotation แกน X และ Z ใน Rigidbody ผ่านโค้ด 
-        // เพื่อป้องกันไม่ให้แรงฟิสิกส์หรือการชนทำตัวละครล้มหรือเอียงเด็ดขาด
+        // 🔒 สั่งเปิด Freeze Rotation แกน X และ Z ใน Rigidbody ผ่านโค้ด 
         if (rb != null)
         {
             rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -139,7 +139,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         lookAction = playerActionMap.FindAction("Look");
         jumpAction = playerActionMap.FindAction("Jump");
         sprintAction = playerActionMap.FindAction("Sprint");
-        inputActionAsset.FindActionMap("Player").FindAction("Crouch");
         crouchAction = playerActionMap.FindAction("Crouch"); // ✨ ดึงค่าปุ่มย่อตัว
 
         if (moveAction == null) Debug.LogError("'Move' action not found!");
@@ -159,7 +158,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void OnJumpPressed(InputAction.CallbackContext context)
     {
-        // 🛑 [เพิ่มดักจับ] ถ้าหน้าจอสนทนาทำงานอยู่ ห้ามรับคำสั่งกระโดดเด็ดขาด
+        // 🛑 ถ้าหน้าจอสนทนาทำงานอยู่ ห้ามรับคำสั่งกระโดดเด็ดขาด
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
 
         // ถ้าย่อตัวอยู่ จะไม่สามารถกระโดดได้
@@ -171,7 +170,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void OnJumpReleased(InputAction.CallbackContext context)
     {
-        // 🛑 [เพิ่มดักจับ] ถ้าหน้าจอสนทนาทำงานอยู่ ไม่ต้องประมวลผลยกเลิกแรงกระโดด
+        // 🛑 ถ้าหน้าจอสนทนาทำงานอยู่ ไม่ต้องประมวลผลยกเลิกแรงกระโดด
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
 
         if (rb.linearVelocity.y > 0f)
@@ -184,16 +183,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void Update()
     {
-        // 🛑 [โซนล็อกผู้เล่นตอนคุย NPC - ปรับปรุงแก้ไขใหม่]
+        // 🛑 [โซนล็อกผู้เล่นตอนคุย NPC]
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
         {
             targetInput = Vector3.zero; // ล้างค่าอินพุตเดินให้เป็นศูนย์
             lookInput = Vector2.zero;   // ล้างค่าอินพุตเมาส์หันจอให้เป็นศูนย์
 
-            // 🔒 [จุดแก้ไขบั๊กตัวเอียง 2] บังคับรีเซ็ตองศาตัวละครให้ตั้งตรง (X=0, Z=0) เสมอ แม้ตอนที่กำลังคุยอยู่
             transform.eulerAngles = new Vector3(0f, yaw, 0f);
-
-            return; // ↩️ ดีดตัวออกไปเลย ไม่ต้องคำนวณการเคลื่อนไหวอื่นๆ
+            return;
         }
 
         if (moveAction != null)
@@ -220,10 +217,24 @@ public class PlayerController3D_InputAction : MonoBehaviour
             jumpsLeft = maxJumps;
         }
 
-        // ✨ ระบบอัปเดตสถานะและการประมวลผลการย่อตัว (Crouch Logic)
-        if (crouchAction != null)
+        // ✨ [อัปเดตใหม่] ระบบประมวลผลการย่อตัว + ตรวจเช็คสิ่งกีดขวางเหนือหัว (Ceiling Check)
+        bool crouchKeyPressed = (crouchAction != null) && crouchAction.IsPressed();
+
+        if (crouchKeyPressed)
         {
-            isCrouching = crouchAction.IsPressed();
+            isCrouching = true;
+        }
+        else
+        {
+            // ปล่อยปุ่มย่อแล้ว -> เช็คว่ามีหลังคา/เพดานทับหัวอยู่หรือไม่
+            if (HasCeilingAbove())
+            {
+                isCrouching = true; // มีเพดานทับหัวอยู่ บังคับย่อค้างไว้ก่อน!
+            }
+            else
+            {
+                isCrouching = false; // หัวโปร่งแล้ว ยืนขึ้นได้
+            }
         }
         HandleCrouching();
 
@@ -245,13 +256,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
         // 🛑 [โซนล็อกฟิสิกส์ตอนคุย NPC]
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
         {
-            // บังคับให้ความเร็วแนวราบ (X, Z) หยุดนิ่งสนิททันที ส่วนแกนดิ่ง (Y) ปล่อยให้ตกตามแรงโน้มถ่วงปกติ
             rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
-
-            // 🔒 [จุดแก้ไขบั๊กตัวเอียง 3] ล้างแรงหมุนค้างทางฟิสิกส์ (Angular Velocity) ให้เป็นศูนย์ทันที ตัวจะได้ไม่บิดตัวเลี้ยวโค้ง
             rb.angularVelocity = Vector3.zero;
-
-            return; // ↩️ ดีดตัวออกไปเลย
+            return;
         }
 
         Vector3 cameraRight = (playerCamera != null) ? playerCamera.right : transform.right;
@@ -300,18 +307,50 @@ public class PlayerController3D_InputAction : MonoBehaviour
         return false;
     }
 
+    // 🔍 [เพิ่มใหม่] ฟังก์ชันยิง SphereCast ตรวจจับสิ่งกีดขวางเหนือหัวผู้เล่น
+    bool HasCeilingAbove()
+    {
+        if (capsuleCollider == null) return false;
+
+        float radius = capsuleCollider.radius * 0.85f; // ใช้รัศมีเล็กกว่า Capsule เล็กน้อยเพื่อป้องกันการติดขอบตัวเอง
+
+        // จุดเริ่มต้นยิงจากระดับหัวตอนย่อตัว
+        Vector3 origin = transform.position + Vector3.up * (crouchHeight - radius);
+
+        // ระยะความสูงที่ต้องการตรวจสอบเพิ่มขึ้นไปจนถึงระดับตอนยืนปกติ
+        float checkDistance = defaultHeight - crouchHeight;
+
+        if (checkDistance <= 0f) return false;
+
+        // ยิงทรงกลมขึ้นข้างบนเพื่อตรวจสอบว่ามีอะไรขวางไหม
+        RaycastHit[] hits = Physics.SphereCastAll(origin, radius, Vector3.up, checkDistance, ~0, QueryTriggerInteraction.Ignore);
+
+        foreach (RaycastHit hit in hits)
+        {
+            // ละเว้นการชนกับตัวเองและวัตถุลูกของตัวละคร
+            if (hit.collider.gameObject != gameObject && !hit.collider.transform.IsChildOf(transform))
+            {
+                return true; // พบสิ่งกีดขวางเหนือหัว!
+            }
+        }
+
+        return false; // โล่ง โปร่งสบาย ยืนได้
+    }
+
     // ✨ ฟังก์ชันจัดการสไลด์หดตัวคอลไลเดอร์และลดระดับกล้องลงตอนย่อตัว
     void HandleCrouching()
     {
         if (capsuleCollider == null) return;
 
+        // 1. ปรับระดับความสูงและจุดศูนย์กลางของ Capsule Collider
         float targetHeight = isCrouching ? crouchHeight : defaultHeight;
         capsuleCollider.height = Mathf.Lerp(capsuleCollider.height, targetHeight, crouchSmoothing * Time.deltaTime);
 
         float halfHeightDifference = (defaultHeight - capsuleCollider.height) / 2f;
         capsuleCollider.center = new Vector3(capsuleCollider.center.x, defaultCenterY - halfHeightDifference, capsuleCollider.center.z);
 
-        float targetCameraY = isCrouching ? originalCameraPosition.y - (defaultHeight - crouchHeight) * 0.5f : originalCameraPosition.y;
+        // 2. คำนวณความสูงเป้าหมายของกล้องตอนย่อตัว
+        float targetCameraY = isCrouching ? (originalCameraPosition.y - crouchCameraYOffset) : originalCameraPosition.y;
         currentBaseCameraPos.y = Mathf.Lerp(currentBaseCameraPos.y, targetCameraY, crouchSmoothing * Time.deltaTime);
     }
 
@@ -327,28 +366,38 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void UpdateHeadBob()
     {
-        if (!enableHeadBob || playerCamera == null) return;
+        if (playerCamera == null) return;
 
-        Vector3 horizontalVel = rb.linearVelocity;
-        horizontalVel.y = 0f;
-        float speed = horizontalVel.magnitude;
-
-        float currentMoveSpeedLimit = isCrouching ? crouchSpeed : walkSpeed;
-        if (InventoryManager.Instance != null)
+        if (enableHeadBob)
         {
-            currentMoveSpeedLimit *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+            Vector3 horizontalVel = rb.linearVelocity;
+            horizontalVel.y = 0f;
+            float speed = horizontalVel.magnitude;
+
+            float currentMoveSpeedLimit = isCrouching ? crouchSpeed : walkSpeed;
+            if (InventoryManager.Instance != null)
+            {
+                currentMoveSpeedLimit *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+            }
+
+            if (speed > 0.1f)
+            {
+                bobTimer += Time.deltaTime * headBobFrequency * (speed / currentMoveSpeedLimit);
+            }
+
+            float bobX = Mathf.Sin(bobTimer * Mathf.PI * 2f) * swayAmount;
+            float bobY = Mathf.Sin(bobTimer * Mathf.PI * 4f) * headBobAmount;
+
+            targetCameraOffset = new Vector3(bobX, bobY, 0f);
         }
-        if (speed > 0.1f)
+        else
         {
-            bobTimer += Time.deltaTime * headBobFrequency * (speed / currentMoveSpeedLimit);
+            targetCameraOffset = Vector3.zero;
         }
 
-        float bobX = Mathf.Sin(bobTimer * Mathf.PI * 2f) * swayAmount;
-        float bobY = Mathf.Sin(bobTimer * Mathf.PI * 4f) * headBobAmount;
-
-        targetCameraOffset = new Vector3(bobX, bobY, 0f);
         currentCameraOffset = Vector3.Lerp(currentCameraOffset, targetCameraOffset, headBobSmoothing * Time.deltaTime);
 
+        // อัปเดตพิกัดกล้องเสมอ
         playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
     }
 
@@ -368,6 +417,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             Gizmos.color = Color.green;
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+
+        //  วาดเส้นจำลองระบบเช็คสิ่งกีดขวางเหนือหัวใน Editor
+        if (capsuleCollider != null)
+        {
+            Gizmos.color = isCrouching ? Color.red : Color.cyan;
+            float radius = capsuleCollider.radius * 0.85f;
+            Vector3 origin = transform.position + Vector3.up * (crouchHeight - radius);
+            float checkDistance = defaultHeight - crouchHeight;
+            Gizmos.DrawWireSphere(origin + Vector3.up * checkDistance, radius);
         }
     }
 }

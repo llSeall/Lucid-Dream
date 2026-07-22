@@ -101,6 +101,13 @@ public class LevelGenerator : MonoBehaviour
     {
         if (generationCoroutine != null) StopCoroutine(generationCoroutine);
         generationCoroutine = StartCoroutine(GenerateBranchingMapRoutine());
+        // 📄 เพิ่มบรรทัดนี้ใน LevelGenerator.cs หลังจากแมพเจนสำเร็จ 100%
+        Unity.AI.Navigation.NavMeshSurface navSurface = GetComponent<Unity.AI.Navigation.NavMeshSurface>();
+        if (navSurface != null)
+        {
+            navSurface.BuildNavMesh(); // 🔨 อบทางเดิน NavMesh ทันทีตามรูปร่างด่านที่สุ่มได้
+            Debug.Log("<color=green>🧠 [NavMesh] สร้างทางเดิน AI สำหรับแมพสุ่มสำเร็จ!</color>");
+        }
     }
 
     private System.Collections.IEnumerator GenerateBranchingMapRoutine()
@@ -557,5 +564,15 @@ public class LevelGenerator : MonoBehaviour
     public void SetCurrentDay(int day)
     {
         currentDay = day;
+    }
+    // ➕ เพิ่มฟังก์ชันนี้ลงใน LevelGenerator.cs
+    public GameObject GetRandomSpawnedRoom()
+    {
+        if (spawnedRoomInstances != null && spawnedRoomInstances.Count > 0)
+        {
+            // สุ่มหยิบห้องในด่านส่งกลับไป
+            return spawnedRoomInstances[Random.Range(0, spawnedRoomInstances.Count)];
+        }
+        return null;
     }
 }
