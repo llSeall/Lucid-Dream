@@ -191,9 +191,9 @@ GameObject:
   - component: {fileID: 4817338597714625645}
   - component: {fileID: 944161760122835813}
   - component: {fileID: 8438727238851731259}
-  - component: {fileID: 3399139307578838712}
+  - component: {fileID: 2911291029746159425}
   m_Layer: 0
-  m_Name: Bed
+  m_Name: Bed_Night
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -260,7 +260,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 4.6363072, y: 4.180113, z: 7.484723}
   m_Center: {x: 0.003023386, y: 1.5900567, z: 0.023287773}
---- !u!114 &3399139307578838712
+--- !u!114 &2911291029746159425
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -269,9 +269,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5301105385527008983}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a99147a8db661c44998ecec959cc41c0, type: 3}
+  m_Script: {fileID: 11500000, guid: 4bceb7ea35995994e9b1001a8f51721e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BedInteraction
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonBedInteraction
   interactKey: 101
   interactionDistance: 3
   interactionPromptUI: {fileID: 0}
