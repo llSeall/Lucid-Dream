@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class NPCEntity : MonoBehaviour
@@ -76,10 +77,16 @@ public class NPCEntity : MonoBehaviour
 
         int currentDay = TimeManager.Instance != null ? TimeManager.Instance.currentDay : 1;
 
-        // 1. ประมวลผลบทพูดประจำวัน (และแจกไอเทมหลังบ้านผ่านลอจิกภายใน)
-        string dialogueResult = NPCManager.Instance.InteractWithNPC(npcConfiguration, currentDay);
+        if (NPCManager.Instance.IsNPCLockedToday(npcConfiguration.npcID, currentDay))
+        {
+            return;
+        }
 
-        // 2. แปลชื่อ NPC
+        // ✨ รับค่าคิวบทพูด List<string>
+        List<string> dialogueResult = NPCManager.Instance.InteractWithNPC(npcConfiguration, currentDay);
+
+        if (dialogueResult == null || dialogueResult.Count == 0) return;
+
         string localizedName = npcConfiguration.npcID;
         try
         {
@@ -91,16 +98,13 @@ public class NPCEntity : MonoBehaviour
         }
         catch { localizedName = npcConfiguration.npcID; }
 
-        // ✨ [ลอจิกจัดคิวใหม่] เช็คสถานะการเปิดป๊อปอัปไอเทม
         if (ItemRewardPopup.Instance != null && ItemRewardPopup.Instance.IsPopupActive)
         {
-            // 🎁 ถ้าระบบเปิดกล่องรางวัลขึ้นมาแล้ว ให้ส่งบทพูดปกติไป "ฝากคิวต่อท้ายไว้ก่อน" อย่าเพิ่งขึ้นจอ!
-            ItemRewardPopup.Instance.SetPendingDialogue(localizedName, dialogueResult);
-            Debug.Log($"[NPCEntity] มีการแจกไอเทม! ส่งบทพูดของ {localizedName} เข้าไปต่อคิวใน ItemRewardPopup แล้ว");
+            ItemRewardPopup.Instance.SetPendingDialogue(localizedName, string.Join("\n\n", dialogueResult));
         }
         else if (DialogueUIController.Instance != null)
         {
-            // 💬 ถ้าไม่มีการแจกของในรอบนี้ ให้เปิดกล่องสนทนาปกติของ NPC ทันทีตามปกติ
+            // ✨ ส่ง List<string> เข้า UI Controller โดยตรง
             DialogueUIController.Instance.ShowDialogue(localizedName, dialogueResult);
         }
     }

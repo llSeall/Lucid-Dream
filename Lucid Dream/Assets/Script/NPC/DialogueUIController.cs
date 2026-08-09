@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
-using System; // ✨ เพิ่มเข้ามาเพื่อใช้ Action
+using System;
+using System.Collections.Generic; // ✨ เพิ่มใช้งาน List
 
 public class DialogueUIController : MonoBehaviour
 {
@@ -11,16 +12,17 @@ public class DialogueUIController : MonoBehaviour
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private TMP_Text dialogueText;
 
-    // ✨ Event สำหรับให้สคริปต์อื่น (เช่น สคริปต์เดินของตัวละคร) มาลงทะเบียนฟังเพื่อล็อก/ปลดล็อกการเดิน
     public static Action OnDialogueStart;
     public static Action OnDialogueEnd;
 
-    // 💡 [จุดแก้ไขสำคัญ] ปรับให้ค่าความแอคทีฟ รวมไปถึงตอนที่หน้าต่างรับไอเทม (ItemRewardPopup) กำลังเปิดอยู่ด้วย
-    // ทำให้สคริปต์ผู้เล่นที่คอยเช็คค่านี้อยู่ จะสั่งหยุดเดินทันทีเมื่อหน้าต่างไอเทมเปิดขึ้นมา!
     public bool IsDialogueActive => (dialoguePanel != null && dialoguePanel.activeSelf) ||
                                     (ItemRewardPopup.Instance != null && ItemRewardPopup.Instance.IsPopupActive);
 
     private bool openedThisFrame = false;
+
+    // ✨ เพิ่มคิวจัดการบทพูดทีละบั้บเบิ้ล
+    private List<string> currentDialogueLines = new List<string>();
+    private int currentLineIndex = 0;
 
     private void Awake()
     {
@@ -32,8 +34,6 @@ public class DialogueUIController : MonoBehaviour
 
     private void Update()
     {
-        // 💡 [จุดแก้ไข] เช็คเฉพาะตอนที่ "ตัวกล่องข้อความปกติ" เปิดอยู่เท่านั้น ถึงจะกดปิดไดอะล็อกตรงนี้
-        // เพื่อป้องกันไม่ให้ปุ่มกดไปแย่งหน้าที่ของกล่องรับไอเทมครับ
         if (dialoguePanel != null && dialoguePanel.activeSelf && !openedThisFrame)
         {
 #if ENABLE_INPUT_SYSTEM            
@@ -46,7 +46,7 @@ public class DialogueUIController : MonoBehaviour
 
             if (closePressed)
             {
-                CloseDialogue();
+                AdvanceDialogue(); // ✨ กดเพื่อเลื่อนไปประโยคถัดไป
             }
         }
     }
@@ -56,25 +56,52 @@ public class DialogueUIController : MonoBehaviour
         if (openedThisFrame) openedThisFrame = false;
     }
 
-    public void ShowDialogue(string npcName, string text)
+    // ✨ รองรับการส่งบทพูดหลายๆ ประโยคเข้ามา (List<string>)
+    public void ShowDialogue(string npcName, List<string> lines)
     {
         if (dialoguePanel == null || nameText == null || dialogueText == null) return;
+        if (lines == null || lines.Count == 0) return;
+
+        currentDialogueLines = lines;
+        currentLineIndex = 0;
 
         nameText.text = npcName;
-        dialogueText.text = text;
+        dialogueText.text = currentDialogueLines[currentLineIndex];
         dialoguePanel.SetActive(true);
 
         openedThisFrame = true;
 
-        // 🔥 แจ้งเตือนระบบว่า "เริ่มคุยแล้วนะ" (เพื่อให้สคริปต์ผู้เล่นสั่งหยุดเดิน)
         OnDialogueStart?.Invoke();
+    }
+
+    // ✨ Overload รองรับข้อความเดี่ยวแบบเดิม
+    public void ShowDialogue(string npcName, string text)
+    {
+        ShowDialogue(npcName, new List<string> { text });
+    }
+
+    // ✨ ฟังก์ชันกดข้ามบทพูดทีละประโยค
+    public void AdvanceDialogue()
+    {
+        currentLineIndex++;
+
+        // หากยังมีบทพูดถัดไปในคิว ให้เปลี่ยนข้อความ
+        if (currentLineIndex < currentDialogueLines.Count)
+        {
+            dialogueText.text = currentDialogueLines[currentLineIndex];
+        }
+        else
+        {
+            CloseDialogue(); // ถ้าครบหมดแล้วให้ปิด UI
+        }
     }
 
     public void CloseDialogue()
     {
         dialoguePanel.SetActive(false);
+        currentDialogueLines.Clear();
+        currentLineIndex = 0;
 
-        // 🔥 แจ้งเตือนระบบว่า "คุยจบแล้วนะ" (จะยิงปลดล็อกก็ต่อเมื่อไม่มีหน้าต่างไอเทมเปิดค้างอยู่เท่านั้น)
         if (ItemRewardPopup.Instance == null || !ItemRewardPopup.Instance.IsPopupActive)
         {
             OnDialogueEnd?.Invoke();
