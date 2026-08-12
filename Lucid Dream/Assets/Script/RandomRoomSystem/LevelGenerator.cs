@@ -511,7 +511,9 @@ public class LevelGenerator : MonoBehaviour
         if (playerTransform == null) return;
         RoomVisibility optimization = roomInstance.GetComponent<RoomVisibility>();
         if (optimization == null) optimization = roomInstance.AddComponent<RoomVisibility>();
-        optimization.SetupOptimization(playerTransform, safeDistance, maxViewDistance, viewAngle);
+
+        // ✨ ส่งค่าดีเลย์ 2.0 วินาทีไปให้ RoomVisibility
+        optimization.SetupOptimization(playerTransform, safeDistance, maxViewDistance, viewAngle, 2.0f);
     }
 
     private bool IsOverlappingWithOthers(GameObject targetRoom, GameObject parentRoom)

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class RoomVisibility : MonoBehaviour
@@ -6,71 +7,95 @@ public class RoomVisibility : MonoBehaviour
     private Transform playerTransform;
     private GameObject graphicsContainer;
 
-    private float safeDistance;     // ⭕ ระยะวงกลมรอบตัวที่ "ต้องเปิดเสมอ" กันห้องที่เรายืนอยู่หาย
-    private float maxViewDistance;  // 📏 ระยะมองเห็นสูงสุดข้างหน้า (มองไกลแค่ไหน)
-    private float viewAngle;        // 👁️ องศากรวยสายตา (เช่น 90 หรือ 120 องศาข้างหน้า)
+    private Renderer[] roomRenderers;
+    private bool currentVisibilityState = true;
 
-    private float checkInterval = 0.2f; // ⏱️ เพิ่มความถี่ในการเช็คเป็น 0.2 วินาทีเพื่อให้ตอบสนองตอนหันหน้าไวขึ้น
+    private float safeDistance;     // ⭕ ระยะวงกลมรอบตัวที่ "ต้องเปิดเสมอ"
+    private float maxViewDistance;  // 📏 ระยะมองเห็นสูงสุดข้างหน้า
+    private float viewAngle;        // 👁️ องศากรวยสายตา
 
-    public void SetupOptimization(Transform player, float safeDist, float maxDist, float angle)
+    private float checkInterval = 0.2f;
+
+    // ✨ เพิ่มเวลาดีเลย์ก่อนเริ่มซ่อนภาพ (หน่วงเวลาให้ NavMesh และ AI โหลดแมพครบ 100% ก่อน)
+    [Header("⏱️ Initialization Settings")]
+    [Tooltip("ระยะเวลารอ (วินาที) ให้แมพโหลดและอบ NavMesh ครบก่อนเริ่มระบบซ่อนภาพ")]
+    [SerializeField] private float initialDelay = 2.0f;
+
+    public void SetupOptimization(Transform player, float safeDist, float maxDist, float angle, float delay = 2.0f)
     {
         playerTransform = player;
         safeDistance = safeDist;
         maxViewDistance = maxDist;
         viewAngle = angle;
+        initialDelay = delay;
 
         Transform graphicsTransform = transform.Find("Graphics");
         if (graphicsTransform != null) graphicsContainer = graphicsTransform.gameObject;
         else if (transform.childCount > 0) graphicsContainer = transform.GetChild(0).gameObject;
 
-        if (graphicsContainer != null) StartCoroutine(VisibilityCheckLoop());
+        if (graphicsContainer != null)
+        {
+            roomRenderers = graphicsContainer.GetComponentsInChildren<Renderer>(true);
+            StartCoroutine(VisibilityCheckLoop());
+        }
     }
 
     private IEnumerator VisibilityCheckLoop()
     {
+        // ⏳ 1. รอให้เวลาผ่านไปตาม initialDelay เพื่อให้ NavMesh และ GhostAI โหลดแมพทั้งหมดเสร็จสมบูรณ์
+        yield return new WaitForSeconds(initialDelay);
+
+        // 🔄 2. เมื่อครบกำหนดเวลาดีเลย์แล้ว ค่อยเริ่มลูปเช็คกรวยสายตาและสั่งซ่อนภาพ
         while (true)
         {
-            if (playerTransform != null && graphicsContainer != null)
+            if (playerTransform != null && roomRenderers != null && roomRenderers.Length > 0)
             {
-                // 1. หาความห่างระหว่างผู้เล่นกับห้อง
                 float distance = Vector3.Distance(playerTransform.position, transform.position);
                 bool shouldBeVisible = false;
 
-                // 2. เงื่อนไขแรก: อยู่ในระยะปลอดภัยรอบตัวไหม? (ถ้าใช่ เปิดแน่ๆ ไม่ต้องสนทิศทาง)
+                // เช็คระยะปลอดภัยรอบตัว
                 if (distance <= safeDistance)
                 {
                     shouldBeVisible = true;
                 }
-                // 3. เงื่อนไขที่สอง: ถ้าอยู่นอกระยะปลอดภัย แต่อยู่ในระยะมองเห็นสูงสุดข้างหน้า?
+                // เช็คระยะสายตาและองศากรวยการมองเห็น
                 else if (distance <= maxViewDistance)
                 {
-                    //คำนวณหาทิศทางจากตัวผู้เล่นพุ่งไปหาห้อง
                     Vector3 directionToRoom = (transform.position - playerTransform.position).normalized;
-
-                    // ปรับค่าแนวตั้ง (Y) ให้เป็น 0 เพื่อคิดองศาแค่ในแนวราบขนานพื้น (กันบั๊กเวลาผู้เล่นก้มหรือเงยหน้า)
                     directionToRoom.y = 0;
+
                     Vector3 playerForward = playerTransform.forward;
                     playerForward.y = 0;
                     playerForward.Normalize();
 
-                    // หาองศาระหว่าง "ทางที่หันหน้าไป" กับ "ทางที่ห้องตั้งอยู่"
                     float angleBetween = Vector3.Angle(playerForward, directionToRoom);
 
-                    // ถ้าระยะองศาน้อยกว่าครึ่งหนึ่งของกรวยสายตา แปลว่า "ห้องนี้อยู่ข้างหน้าเรา" ➔ สั่งเปิด!
                     if (angleBetween <= viewAngle / 2f)
                     {
                         shouldBeVisible = true;
                     }
                 }
 
-                // สั่งเปิดหรือปิดตามผลลัพธ์คณิตศาสตร์ข้างบน
-                if (graphicsContainer.activeSelf != shouldBeVisible)
+                // สลับการแสดงผลเฉพาะ Renderer
+                if (currentVisibilityState != shouldBeVisible)
                 {
-                    graphicsContainer.SetActive(shouldBeVisible);
+                    currentVisibilityState = shouldBeVisible;
+                    SetRenderersEnabled(shouldBeVisible);
                 }
             }
 
             yield return new WaitForSeconds(checkInterval);
+        }
+    }
+
+    private void SetRenderersEnabled(bool isEnabled)
+    {
+        for (int i = 0; i < roomRenderers.Length; i++)
+        {
+            if (roomRenderers[i] != null)
+            {
+                roomRenderers[i].enabled = isEnabled;
+            }
         }
     }
 }

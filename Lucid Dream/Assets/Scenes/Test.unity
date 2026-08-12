@@ -494,7 +494,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b0f80677718ea647917094865ca0d41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  playerTransform: {fileID: 0}
+  playerTransform: {fileID: 2144493367}
   safeDistance: 15
   maxViewDistance: 100
   viewAngle: 110
@@ -529,7 +529,7 @@ MonoBehaviour:
   mapCollisionLayer:
     serializedVersion: 2
     m_Bits: 64
-  bedPrefab: {fileID: 201417792561177190, guid: 4b3711b0059a8734c85885adcf9d92b4, type: 3}
+  bedPrefab: {fileID: 5301105385527008983, guid: 5259ca6813a74394199cc1ff14b4b13f, type: 3}
 --- !u!4 &792044421
 Transform:
   m_ObjectHideFlags: 0

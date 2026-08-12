@@ -35,12 +35,16 @@ public class GhostAI : MonoBehaviour
     [Header("⚙️ Despawn & Teleport Settings")]
     [Tooltip("ระยะห่างระหว่างผีกับผู้เล่นที่ผีจะเริ่มเช็คเพื่อการหายตัว")]
     [SerializeField] private float despawnDistance = 22f;
-    [Tooltip("ระยะห่างขั้นต่ำจากผู้เล่นตอนผีสปอน/วาร์ปเกิดใหม่ (เพิ่มค่านี่เพื่อให้เกิดห่างผู้เล่นขึ้น)")]
-    [SerializeField] private float minSpawnDistance = 25f;
+
+    // ✨ [ปรับเพิ่ม Inspector] ควบคุมระยะการสุ่มเกิดทั่วด่าน
+    [Tooltip("ระยะห่างขั้นต่ำจากผู้เล่นตอนผีเกิดใหม่ (ผีจะไม่เกิดใกล้กว่าระยะนี้)")]
+    [SerializeField] private float minSpawnDistance = 18f;
+    [Tooltip("ระยะห่างสูงสุดจากผู้เล่นในการสุ่มจุดเกิดใหม่")]
+    [SerializeField] private float maxSpawnDistance = 50f;
 
     [Header("🧠 AI Status (Read Only)")]
     [SerializeField] private GhostState currentState = GhostState.Wandering;
-    [SerializeField] private bool isGhostActive = false; // สถานะว่าผีเกิดแล้วหรือยัง
+    [SerializeField] private bool isGhostActive = false;
 
     private NavMeshAgent agent;
     private bool isTeleporting = false;
@@ -56,24 +60,17 @@ public class GhostAI : MonoBehaviour
     private void Start()
     {
         FindPlayerReferences();
-
-        // 1. ซ่อนผีและปิดการทำงานชั่วคราว
         SetGhostVisibility(false);
-
-        // 2. เริ่มรันเวลานับถอยหลังก่อนเกิด
         StartCoroutine(SpawnTimerRoutine());
     }
 
     private void Update()
     {
-        // ถ้าผียังไม่เกิด หรือไม่มีตัวผู้เล่น หรือกำลังวาร์ป ให้ข้าม Update ไปเลย
         if (!isGhostActive || playerTransform == null || isTeleporting) return;
         if (!agent.isActiveAndEnabled || !agent.isOnNavMesh) return;
 
-        // 🔍 ระบบตรวจจับสายตาเรียลไทม์
         bool canSeePlayerNow = CanSeePlayer();
 
-        // ⚙️ FSM: การสลับสถานะของ AI
         switch (currentState)
         {
             case GhostState.Wandering:
@@ -123,9 +120,6 @@ public class GhostAI : MonoBehaviour
         CheckDespawnCondition();
     }
 
-    /// <summary>
-    /// ⏱️ คอร์รูทีนนับถอยหลังตามระยะเวลาที่ตั้งไว้ก่อนสั่งเสกผีลงด่าน
-    /// </summary>
     private IEnumerator SpawnTimerRoutine()
     {
         spawnCountdown = initialSpawnDelay;
@@ -136,51 +130,37 @@ public class GhostAI : MonoBehaviour
             yield return null;
         }
 
-        // เมื่อครบเวลา ให้สุ่มวาร์ปผีไปเกิดในห้องที่ห่างจากผู้เล่น
         yield return StartCoroutine(InitialSpawnRoutine());
     }
 
-    /// <summary>
-    /// 👻 ทำการสุ่มหาห้องที่อยู่ไกลผู้เล่นตามระยะ minSpawnDistance แล้วเปิดตัวผี
-    /// </summary>
     private IEnumerator InitialSpawnRoutine()
     {
         Vector3 spawnPos = Vector3.zero;
-        bool validSpotFound = false;
-        int attempts = 0;
 
-        while (!validSpotFound && attempts < 30)
-        {
-            attempts++;
-            GameObject farRoom = GetFartherRoomFromPlayer();
-
-            if (farRoom != null)
-            {
-                if (NavMesh.SamplePosition(farRoom.transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
-                {
-                    spawnPos = hit.position;
-                    validSpotFound = true;
-                }
-            }
-            yield return null;
-        }
-
-        if (validSpotFound)
+        // ✨ ใช้ระบบสุ่มพิกัดบน NavMesh พื้นที่เดินได้จริงทั่วด่าน
+        if (TryGetRandomNavMeshPointFarFromPlayer(out spawnPos))
         {
             agent.Warp(spawnPos);
         }
+        else
+        {
+            // สำรอง: กรณีสุ่มไม่เจอ ให้ดึงห้องสุ่มทั่วไป
+            GameObject fallbackRoom = GetRandomRoomFromLevel();
+            if (fallbackRoom != null && NavMesh.SamplePosition(fallbackRoom.transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                spawnPos = hit.position;
+                agent.Warp(spawnPos);
+            }
+        }
 
-        // เปิดตัวผีให้มองเห็นและเริ่มทำงาน
         SetGhostVisibility(true);
         isGhostActive = true;
 
         ChangeState(GhostState.Wandering);
-        Debug.Log($"<color=red>⚠️ [GhostAI] ถึงเวลาแล้ว! ผีสปอนขึ้นมาในด่านเรียบร้อยแล้วที่ตำแหน่ง: {spawnPos}</color>");
+        Debug.Log($"<color=red>⚠️ [GhostAI] ถึงเวลาแล้ว! ผีสปอนขึ้นมาบน NavMesh ที่ตำแหน่ง: {spawnPos}</color>");
+        yield break;
     }
 
-    /// <summary>
-    /// 👁️ สั่งเปิด/ปิด การมองเห็น และ Collider ของตัวผี
-    /// </summary>
     private void SetGhostVisibility(bool visible)
     {
         Renderer[] renderers = GetComponentsInChildren<Renderer>();
@@ -193,42 +173,78 @@ public class GhostAI : MonoBehaviour
     }
 
     /// <summary>
-    /// 📍 ฟังก์ชันคัดกรองหาห้องที่มีระยะห่างจากผู้เล่นมากกว่า minSpawnDistance
+    /// 🎲 สุ่มพิกัดบน NavMesh ทั่วแมพโดยกระจายตามห้อง/โถงเดิน และเช็กระยะห่างจากผู้เล่น
     /// </summary>
-    private GameObject GetFartherRoomFromPlayer()
+    private bool TryGetRandomNavMeshPointFarFromPlayer(out Vector3 resultPos)
     {
-        if (LevelGenerator.Instance == null || playerTransform == null) return null;
+        resultPos = Vector3.zero;
+        if (playerTransform == null) return false;
 
-        List<GameObject> candidateRooms = new List<GameObject>();
+        int attempts = 0;
+        int maxAttempts = 35;
 
-        // ดึงห้องทั้งหมดมาเช็คระยะ
-        var roomsField = typeof(LevelGenerator).GetField("spawnedRoomInstances", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (roomsField != null)
+        // 🔹 1. สุ่มกระจายบน NavMesh ตามตำแหน่งห้องและทางเดินที่มีในฉาก
+        List<GameObject> allRooms = GetRoomsFromLevelGenerator();
+        if (allRooms != null && allRooms.Count > 0)
         {
-            List<GameObject> allRooms = roomsField.GetValue(LevelGenerator.Instance) as List<GameObject>;
-            if (allRooms != null)
+            while (attempts < maxAttempts)
             {
-                foreach (GameObject room in allRooms)
-                {
-                    if (room == null) continue;
-                    float dist = Vector3.Distance(room.transform.position, playerTransform.position);
+                attempts++;
+                GameObject randomRoom = allRooms[Random.Range(0, allRooms.Count)];
+                if (randomRoom == null) continue;
 
-                    // เลือกเฉพาะห้องที่ห่างเกินระยะขั้นต่ำ
-                    if (dist >= minSpawnDistance)
+                // สุ่มกระจายรัศมีรอบห้องนั้นๆ (ไม่ใช่แค่จุดศูนย์กลาง)
+                Vector3 randomOffset = Random.insideUnitSphere * 10f;
+                randomOffset.y = 0;
+                Vector3 checkPoint = randomRoom.transform.position + randomOffset;
+
+                if (NavMesh.SamplePosition(checkPoint, out NavMeshHit hit, 6f, NavMesh.AllAreas))
+                {
+                    float distToPlayer = Vector3.Distance(hit.position, playerTransform.position);
+                    // ตรวจสอบว่าพิกัดที่ได้ ห่างจากผู้เล่นอยู่ในช่วง minSpawnDistance ถึง maxSpawnDistance
+                    if (distToPlayer >= minSpawnDistance && distToPlayer <= maxSpawnDistance)
                     {
-                        candidateRooms.Add(room);
+                        resultPos = hit.position;
+                        return true;
                     }
                 }
             }
         }
 
-        if (candidateRooms.Count > 0)
+        // 🔹 2. Fallback: สุ่มเป็นวงแหวนรอบตัวผู้เล่นบน NavMesh
+        attempts = 0;
+        while (attempts < maxAttempts)
         {
-            return candidateRooms[Random.Range(0, candidateRooms.Count)];
+            attempts++;
+            Vector3 randomDir = Random.onUnitSphere;
+            randomDir.y = 0;
+            randomDir.Normalize();
+
+            float randomDist = Random.Range(minSpawnDistance, maxSpawnDistance);
+            Vector3 targetPoint = playerTransform.position + (randomDir * randomDist);
+
+            if (NavMesh.SamplePosition(targetPoint, out NavMeshHit hit, 8f, NavMesh.AllAreas))
+            {
+                if (Vector3.Distance(hit.position, playerTransform.position) >= minSpawnDistance)
+                {
+                    resultPos = hit.position;
+                    return true;
+                }
+            }
         }
 
-        // Fallback: ถ้าหาห้องที่ห่างมากๆ ไม่เจอ ให้ดึงห้องทั่วไปมาแทน
-        return LevelGenerator.Instance.GetRandomSpawnedRoom();
+        return false;
+    }
+
+    private List<GameObject> GetRoomsFromLevelGenerator()
+    {
+        if (LevelGenerator.Instance == null) return null;
+        var roomsField = typeof(LevelGenerator).GetField("spawnedRoomInstances", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (roomsField != null)
+        {
+            return roomsField.GetValue(LevelGenerator.Instance) as List<GameObject>;
+        }
+        return null;
     }
 
     private bool CanSeePlayer()
@@ -340,34 +356,26 @@ public class GhostAI : MonoBehaviour
         isTeleporting = true;
         if (agent.isOnNavMesh) agent.isStopped = true;
 
-        Vector3 newSpawnPosition = Vector3.zero;
-        bool validPositionFound = false;
-        int attempts = 0;
-
-        while (!validPositionFound && attempts < 20)
-        {
-            attempts++;
-            GameObject farRoom = GetFartherRoomFromPlayer();
-            if (farRoom != null)
-            {
-                if (NavMesh.SamplePosition(farRoom.transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
-                {
-                    newSpawnPosition = hit.position;
-                    validPositionFound = true;
-                }
-            }
-            yield return null;
-        }
-
-        if (validPositionFound)
+        // ✨ วาร์ปไปยังจุดบน NavMesh ที่สุ่มได้
+        if (TryGetRandomNavMeshPointFarFromPlayer(out Vector3 newSpawnPosition))
         {
             agent.Warp(newSpawnPosition);
             ChangeState(GhostState.Wandering);
-            Debug.Log($"<color=purple>👻 [GhostAI] วาร์ปหนี้ไปเกิดในห้องที่ห่างผู้เล่น: {newSpawnPosition}</color>");
+            Debug.Log($"<color=purple>👻 [GhostAI] วาร์ปหนีไปเกิดบน NavMesh ในระยะปลอดภัย: {newSpawnPosition}</color>");
+        }
+        else
+        {
+            GameObject fallbackRoom = GetRandomRoomFromLevel();
+            if (fallbackRoom != null && NavMesh.SamplePosition(fallbackRoom.transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+                ChangeState(GhostState.Wandering);
+            }
         }
 
         if (agent.isOnNavMesh) agent.isStopped = false;
         isTeleporting = false;
+        yield break;
     }
 
     private GameObject GetRandomRoomFromLevel()
