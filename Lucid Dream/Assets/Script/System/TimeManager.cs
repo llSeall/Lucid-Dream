@@ -8,10 +8,11 @@ public class TimeManager : MonoBehaviour
 
     [Header("Day & AP Settings")]
     public int currentDay = 1;
-    public GameState currentState = GameState.Daytime;
+    // 🛠️ เปลี่ยนสถานะเริ่มต้นเป็น Nighttime และ AP เป็น 0
+    public GameState currentState = GameState.Nighttime;
 
     public int maxAP = 3;
-    public int currentAP = 3;
+    public int currentAP = 0;
 
     // Events สำหรับอัปเดต UI และระบบอื่นๆ ในเกม
     public static event Action OnAPChanged;

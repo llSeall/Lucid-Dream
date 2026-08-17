@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("Game States")]
-    public GameState currentState = GameState.Daytime;
+    public GameState currentState = GameState.Nighttime;
 
     [Header("Scene Names")]
     public string daytimeSceneName = "DaytimeScene";

@@ -18,11 +18,10 @@ public class NPCSaveData
 [System.Serializable]
 public class GameData
 {
-    public int currentDay = 1;
-    public GameState currentState = GameState.Daytime;
-
-    // ✨ [แก้ไข] เปลี่ยนจาก currentHour (float) มาเป็น currentAP (int)
-    public int currentAP = 3;
+    // 🛠️ ปรับเป็น 0 เพื่อให้คืนแรก (บทฝึกสอน) ยังไม่นับวัน
+    public int currentDay = 0;
+    public GameState currentState = GameState.Nighttime;
+    public int currentAP = 0;
 
     public float currentSanity = 100f;
     public string mapSeed = "";
@@ -114,7 +113,6 @@ public class SaveManager : MonoBehaviour
             Debug.LogError($"❌ บันทึกเซฟล้มเหลว: {e.Message}");
         }
     }
-
     public void LoadGame(int slot, bool isContinue = true)
     {
         currentSlot = slot;
@@ -123,6 +121,9 @@ public class SaveManager : MonoBehaviour
         if (!File.Exists(path))
         {
             ResetData();
+            // 🛠️ เพิ่มบรรทัดนี้: หากเป็นเกมใหม่ (ไม่มีไฟล์เซฟ) ให้โหลดเข้าสู่ NighttimeScene ทันที
+            if (GameManager.Instance != null)
+                GameManager.Instance.LoadSceneForState(gameData.currentState);
             return;
         }
 
@@ -131,7 +132,6 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             gameData = JsonUtility.FromJson<GameData>(json);
 
-            // เปลี่ยนฉากตามสถานะ (Daytime -> ฉากบ้าน/เมือง, Nighttime -> ฉากโลกความฝัน)
             if (GameManager.Instance != null)
                 GameManager.Instance.LoadSceneForState(gameData.currentState);
         }
