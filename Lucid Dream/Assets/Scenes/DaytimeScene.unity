@@ -9852,7 +9852,7 @@ MonoBehaviour:
   isBed: 0
   interactKey: 101
   playerTag: Player
-  interactionPromptUI: {fileID: 0}
+  interactionPromptUI: {fileID: 601351051}
 --- !u!65 &970765999
 BoxCollider:
   m_ObjectHideFlags: 0
