@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(CapsuleCollider))] // บังคับให้มี CapsuleCollider สำหรับระบบย่อตัว
+[RequireComponent(typeof(CapsuleCollider))]
 public class PlayerController3D_InputAction : MonoBehaviour
 {
     [Header("References")]
@@ -13,8 +13,18 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [Header("Movement")]
     [SerializeField] float walkSpeed = 4f;
     [SerializeField] float runSpeed = 8f;
-    [SerializeField] float crouchSpeed = 2f; // ✨ ความเร็วตอนย่อตัว
+    [SerializeField] float crouchSpeed = 2f;
     [SerializeField] float acceleration = 30f;
+
+    [Header("Stamina Settings ✨")]
+    [SerializeField] float maxStamina = 100f;
+    [SerializeField] float staminaDrainRate = 25f;     // อัตรา Stamina ลดลงต่อวินาที
+    [SerializeField] float staminaRegenRate = 15f;     // อัตรา Stamina ฟื้นฟูต่อวินาที
+    [SerializeField] float staminaRegenDelay = 1f;     // เวลาคูลดาวน์ก่อนเริ่มฟื้นฟู Stamina
+    [SerializeField] RectTransform staminaFillRect;     // ✨ RectTransform ของ "เนื้อหลอด" (Pivot X ต้องเป็น 0.5)
+    [SerializeField] CanvasGroup staminaCanvasGroup;   // ✨ CanvasGroup ของ "กล่อง UI Stamina ทั้งหมด" ใช้คุมซ่อน/แสดง
+    [SerializeField] bool hideWhenFull = true;         // ✨ ติ๊กถูกเพื่อซ่อนหลอดตอนเต็ม (รวมถึงตอนเริ่มเกม)
+    [SerializeField] float fadeSpeed = 5f;             // ✨ ความเร็วในการจางเข้า-ออก ของหลอด UI
 
     [Header("Jump")]
     [SerializeField] float jumpForce = 7f;
@@ -26,10 +36,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [Header("Ground Check (No Layer Needed)")]
     [SerializeField] float groundCheckRadius = 0.2f;
 
-    [Header("Crouch Settings ✨")]
-    [SerializeField] float crouchHeight = 1f;          // ความสูงคอลไลเดอร์ตอนย่อ
-    [SerializeField] float crouchCameraYOffset = 0.6f;    // 🎥 ระยะที่กล้องจะต่ำลงมาจากปกติเมื่อย่อตัว
-    [SerializeField] float crouchSmoothing = 10f;      // ความเร็วในการหมอบ/ลุก
+    [Header("Crouch Settings")]
+    [SerializeField] float crouchHeight = 1f;
+    [SerializeField] float crouchCameraYOffset = 0.6f;
+    [SerializeField] float crouchSmoothing = 10f;
 
     [Header("Mouse Look")]
     [SerializeField] float mouseSensitivity = 2f;
@@ -54,11 +64,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private InputAction lookAction;
     private InputAction jumpAction;
     private InputAction sprintAction;
-    private InputAction crouchAction; // ✨
+    private InputAction crouchAction;
 
     // Movement variables
     Rigidbody rb;
-    CapsuleCollider capsuleCollider; // ✨
+    CapsuleCollider capsuleCollider;
     Vector3 targetInput = Vector3.zero;
     Vector2 lookInput = Vector2.zero;
     int jumpsLeft;
@@ -68,11 +78,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
     float yaw = 0f;
     float pitch = 0f;
 
+    // Stamina variables
+    private float currentStamina;
+    private float staminaRegenTimer;
+    private bool isSprinting;
+
     // Crouch & Height variables
     private float defaultHeight;
     private float defaultCenterY;
     private bool isCrouching;
-    private Vector3 currentBaseCameraPos; // ตำแหน่งฐานกล้องที่คำนวณการย่อตัวแล้ว
+    private Vector3 currentBaseCameraPos;
 
     // Head bob variables
     float bobTimer = 0f;
@@ -83,9 +98,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        capsuleCollider = GetComponent<CapsuleCollider>(); // ✨
+        capsuleCollider = GetComponent<CapsuleCollider>();
 
-        // 🔒 สั่งเปิด Freeze Rotation แกน X และ Z ใน Rigidbody ผ่านโค้ด 
         if (rb != null)
         {
             rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -103,7 +117,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         if (lockCursor) Cursor.lockState = CursorLockMode.Locked;
 
-        // บันทึกค่าเริ่มต้นของคอลไลเดอร์และการย่อตัว
         if (capsuleCollider != null)
         {
             defaultHeight = capsuleCollider.height;
@@ -116,7 +129,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
             currentBaseCameraPos = originalCameraPosition;
         }
 
-        // Initialize Input Actions
+        currentStamina = maxStamina; // Stamina เต็มเมื่อเริ่มต้น
+
+        // ✨ สั่งให้ซ่อนหลอด UI ตั้งแต่เริ่มเกมทันที
+        if (staminaCanvasGroup != null && hideWhenFull)
+        {
+            staminaCanvasGroup.alpha = 0f;
+        }
+
         SetupInputActions();
     }
 
@@ -139,13 +159,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         lookAction = playerActionMap.FindAction("Look");
         jumpAction = playerActionMap.FindAction("Jump");
         sprintAction = playerActionMap.FindAction("Sprint");
-        crouchAction = playerActionMap.FindAction("Crouch"); // ✨ ดึงค่าปุ่มย่อตัว
-
-        if (moveAction == null) Debug.LogError("'Move' action not found!");
-        if (lookAction == null) Debug.LogError("'Look' action not found!");
-        if (jumpAction == null) Debug.LogError("'Jump' action not found!");
-        if (sprintAction == null) Debug.LogError("'Sprint' action not found!");
-        if (crouchAction == null) Debug.LogWarning("'Crouch' action not found! Please create it in Input Actions.");
+        crouchAction = playerActionMap.FindAction("Crouch");
 
         if (jumpAction != null)
         {
@@ -158,10 +172,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void OnJumpPressed(InputAction.CallbackContext context)
     {
-        // 🛑 ถ้าหน้าจอสนทนาทำงานอยู่ ห้ามรับคำสั่งกระโดดเด็ดขาด
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
 
-        // ถ้าย่อตัวอยู่ จะไม่สามารถกระโดดได้
         if (!isCrouching)
         {
             lastJumpPressedTime = Time.time;
@@ -170,7 +182,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void OnJumpReleased(InputAction.CallbackContext context)
     {
-        // 🛑 ถ้าหน้าจอสนทนาทำงานอยู่ ไม่ต้องประมวลผลยกเลิกแรงกระโดด
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
 
         if (rb.linearVelocity.y > 0f)
@@ -183,12 +194,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void Update()
     {
-        // 🛑 [โซนล็อกผู้เล่นตอนคุย NPC]
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
         {
-            targetInput = Vector3.zero; // ล้างค่าอินพุตเดินให้เป็นศูนย์
-            lookInput = Vector2.zero;   // ล้างค่าอินพุตเมาส์หันจอให้เป็นศูนย์
-
+            targetInput = Vector3.zero;
+            lookInput = Vector2.zero;
             transform.eulerAngles = new Vector3(0f, yaw, 0f);
             return;
         }
@@ -209,7 +218,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         transform.eulerAngles = new Vector3(0f, yaw, 0f);
         if (playerCamera != null) playerCamera.localEulerAngles = new Vector3(pitch, 0f, 0f);
 
-        // 🛡️ เรียกใช้ฟังก์ชันเช็คพื้นแบบไม่สนเลเยอร์
         grounded = CheckGroundedNoLayer();
         if (grounded)
         {
@@ -217,26 +225,20 @@ public class PlayerController3D_InputAction : MonoBehaviour
             jumpsLeft = maxJumps;
         }
 
-        // ✨ [อัปเดตใหม่] ระบบประมวลผลการย่อตัว + ตรวจเช็คสิ่งกีดขวางเหนือหัว (Ceiling Check)
+        // Crouch
         bool crouchKeyPressed = (crouchAction != null) && crouchAction.IsPressed();
-
         if (crouchKeyPressed)
         {
             isCrouching = true;
         }
         else
         {
-            // ปล่อยปุ่มย่อแล้ว -> เช็คว่ามีหลังคา/เพดานทับหัวอยู่หรือไม่
-            if (HasCeilingAbove())
-            {
-                isCrouching = true; // มีเพดานทับหัวอยู่ บังคับย่อค้างไว้ก่อน!
-            }
-            else
-            {
-                isCrouching = false; // หัวโปร่งแล้ว ยืนขึ้นได้
-            }
+            isCrouching = HasCeilingAbove();
         }
         HandleCrouching();
+
+        // Stamina & UI
+        HandleStamina();
 
         // Jump buffer + coyote
         if (Time.time - lastJumpPressedTime <= jumpBufferTime)
@@ -251,9 +253,54 @@ public class PlayerController3D_InputAction : MonoBehaviour
         UpdateHeadBob();
     }
 
+    // ✨ ฟังก์ชันคำนวณ Stamina, ยุบเนื้อหลอดเข้าตรงกลาง และควบคุมการซ่อน/แสดงแบบนุ่มนวล
+    void HandleStamina()
+    {
+        bool wantsToSprint = (sprintAction != null) && sprintAction.IsPressed();
+        bool isMoving = targetInput.sqrMagnitude > 0.01f;
+
+        // จะลด Stamina ก็ต่อเมื่อ: กดวิ่ง + กำลังเดินขยับตัวอยู่ + ไม่ได้ย่อตัว + มี Stamina เหลืออยู่
+        if (wantsToSprint && isMoving && !isCrouching && currentStamina > 0f)
+        {
+            isSprinting = true;
+            currentStamina -= staminaDrainRate * Time.deltaTime;
+            currentStamina = Mathf.Max(currentStamina, 0f);
+            staminaRegenTimer = staminaRegenDelay;
+        }
+        else
+        {
+            isSprinting = false;
+
+            if (staminaRegenTimer > 0f)
+            {
+                staminaRegenTimer -= Time.deltaTime;
+            }
+            else
+            {
+                currentStamina += staminaRegenRate * Time.deltaTime;
+                currentStamina = Mathf.Min(currentStamina, maxStamina);
+            }
+        }
+
+        // 1. ปรับขนาดเฉพาะ "เนื้อหลอด (Fill)" ให้ยุบเข้าตรงกลาง
+        if (staminaFillRect != null)
+        {
+            float staminaRatio = currentStamina / maxStamina;
+            staminaFillRect.localScale = new Vector3(staminaRatio, 1f, 1f);
+        }
+
+        // 2. ควบคุมการซ่อน-แสดง UI แบบจางเข้า-ออก (Fade In / Fade Out)
+        if (staminaCanvasGroup != null)
+        {
+            // ถ้าเลือกซ่อนตอนเต็ม และ Stamina เต็มพอดี -> เป้าหมายคือจางหายไป (Alpha = 0)
+            // ถ้าระดับ Stamina ลดลง -> เป้าหมายคือแสดงขึ้นมา (Alpha = 1)
+            float targetAlpha = (hideWhenFull && currentStamina >= maxStamina) ? 0f : 1f;
+            staminaCanvasGroup.alpha = Mathf.MoveTowards(staminaCanvasGroup.alpha, targetAlpha, fadeSpeed * Time.deltaTime);
+        }
+    }
+
     void FixedUpdate()
     {
-        // 🛑 [โซนล็อกฟิสิกส์ตอนคุย NPC]
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive)
         {
             rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
@@ -269,15 +316,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         cameraRight.Normalize();
         cameraForward.Normalize();
 
-        // เช็คการวิ่ง (จะวิ่งไม่ได้ถ้าย่อตัวอยู่)
-        bool running = false;
-        if (sprintAction != null && !isCrouching)
-        {
-            running = sprintAction.IsPressed();
-        }
-
-        // ✨ คำนวณความเร็วตามสถานะ ย่อตัว / วิ่ง / เดินปกติ
-        float speed = isCrouching ? crouchSpeed : (running ? runSpeed : walkSpeed);
+        float speed = isCrouching ? crouchSpeed : (isSprinting ? runSpeed : walkSpeed);
         if (InventoryManager.Instance != null)
         {
             speed *= InventoryManager.Instance.GetTotalSpeedMultiplier();
@@ -292,7 +331,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         rb.linearVelocity = newVel;
     }
 
-    // 🛡️ ฟังก์ชันเช็คพื้นอัจฉริยะ
     bool CheckGroundedNoLayer()
     {
         Collider[] hitColliders = Physics.OverlapSphere(groundCheck.position, groundCheckRadius, ~0, QueryTriggerInteraction.Ignore);
@@ -307,49 +345,39 @@ public class PlayerController3D_InputAction : MonoBehaviour
         return false;
     }
 
-    // 🔍 [เพิ่มใหม่] ฟังก์ชันยิง SphereCast ตรวจจับสิ่งกีดขวางเหนือหัวผู้เล่น
     bool HasCeilingAbove()
     {
         if (capsuleCollider == null) return false;
 
-        float radius = capsuleCollider.radius * 0.85f; // ใช้รัศมีเล็กกว่า Capsule เล็กน้อยเพื่อป้องกันการติดขอบตัวเอง
-
-        // จุดเริ่มต้นยิงจากระดับหัวตอนย่อตัว
+        float radius = capsuleCollider.radius * 0.85f;
         Vector3 origin = transform.position + Vector3.up * (crouchHeight - radius);
-
-        // ระยะความสูงที่ต้องการตรวจสอบเพิ่มขึ้นไปจนถึงระดับตอนยืนปกติ
         float checkDistance = defaultHeight - crouchHeight;
 
         if (checkDistance <= 0f) return false;
 
-        // ยิงทรงกลมขึ้นข้างบนเพื่อตรวจสอบว่ามีอะไรขวางไหม
         RaycastHit[] hits = Physics.SphereCastAll(origin, radius, Vector3.up, checkDistance, ~0, QueryTriggerInteraction.Ignore);
 
         foreach (RaycastHit hit in hits)
         {
-            // ละเว้นการชนกับตัวเองและวัตถุลูกของตัวละคร
             if (hit.collider.gameObject != gameObject && !hit.collider.transform.IsChildOf(transform))
             {
-                return true; // พบสิ่งกีดขวางเหนือหัว!
+                return true;
             }
         }
 
-        return false; // โล่ง โปร่งสบาย ยืนได้
+        return false;
     }
 
-    // ✨ ฟังก์ชันจัดการสไลด์หดตัวคอลไลเดอร์และลดระดับกล้องลงตอนย่อตัว
     void HandleCrouching()
     {
         if (capsuleCollider == null) return;
 
-        // 1. ปรับระดับความสูงและจุดศูนย์กลางของ Capsule Collider
         float targetHeight = isCrouching ? crouchHeight : defaultHeight;
         capsuleCollider.height = Mathf.Lerp(capsuleCollider.height, targetHeight, crouchSmoothing * Time.deltaTime);
 
         float halfHeightDifference = (defaultHeight - capsuleCollider.height) / 2f;
         capsuleCollider.center = new Vector3(capsuleCollider.center.x, defaultCenterY - halfHeightDifference, capsuleCollider.center.z);
 
-        // 2. คำนวณความสูงเป้าหมายของกล้องตอนย่อตัว
         float targetCameraY = isCrouching ? (originalCameraPosition.y - crouchCameraYOffset) : originalCameraPosition.y;
         currentBaseCameraPos.y = Mathf.Lerp(currentBaseCameraPos.y, targetCameraY, crouchSmoothing * Time.deltaTime);
     }
@@ -396,8 +424,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
 
         currentCameraOffset = Vector3.Lerp(currentCameraOffset, targetCameraOffset, headBobSmoothing * Time.deltaTime);
-
-        // อัปเดตพิกัดกล้องเสมอ
         playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
     }
 
@@ -419,7 +445,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
 
-        //  วาดเส้นจำลองระบบเช็คสิ่งกีดขวางเหนือหัวใน Editor
         if (capsuleCollider != null)
         {
             Gizmos.color = isCrouching ? Color.red : Color.cyan;
