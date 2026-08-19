@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TutorialScenes.unity
     guid: aa26e60bd55278a49a5108a4a3621ee8
+  - enabled: 1
+    path: Assets/Scenes/TestAI.unity
+    guid: c88ca0b296e7b6d489cdee9b1ff1a056
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: af74c293c19d4b249b16188bf83cd5e3, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
