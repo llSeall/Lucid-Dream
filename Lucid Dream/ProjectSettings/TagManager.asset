@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - Interaction
+  - WallGap
   layers:
   - Default
   - TransparentFX

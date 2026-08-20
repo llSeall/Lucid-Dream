@@ -16,15 +16,33 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float crouchSpeed = 2f;
     [SerializeField] float acceleration = 30f;
 
+    [Header("Wall Squeeze Settings ✨")]
+    [Tooltip("ความเร็วขณะแทรกตัวในซอก")]
+    [SerializeField] float squeezeSpeed = 1.2f;
+    [Tooltip("ขนาดรัศมี CapsuleCollider ขณะแทรกตัว")]
+    [SerializeField] float squeezedRadius = 0.18f;
+    [Tooltip("ระยะมุมเอียงของกล้องแนวตั้ง (Z-Tilt)")]
+    [SerializeField] float squeezedCameraTiltZ = 12f;
+    [Tooltip("ตำแหน่งกล้องขยับขณะแทรกตัว")]
+    [SerializeField] Vector3 squeezedCameraOffset = new Vector3(0.2f, -0.1f, -0.2f);
+    [Tooltip("ค่า FOV กล้องเมื่อแทรกตัว")]
+    [SerializeField] float squeezedFOV = 50f;
+    [Tooltip("ความเร็วในการปรับขนาดและการหมุนกล้องในซอก")]
+    [SerializeField] float squeezeSmoothing = 8f;
+    [Tooltip("ความเร็วในการหมุนกลับตัวกล้อง (เมื่อกด S)")]
+    [SerializeField] float squeezeCamRotateSpeed = 6f;
+    [Tooltip("ชื่อ Tag ของ Trigger บริเวณช่องแคบ")]
+    [SerializeField] string wallGapTag = "WallGap";
+
     [Header("Stamina Settings ✨")]
     [SerializeField] float maxStamina = 100f;
-    [SerializeField] float staminaDrainRate = 25f;     // อัตรา Stamina ลดลงต่อวินาที
-    [SerializeField] float staminaRegenRate = 15f;     // อัตรา Stamina ฟื้นฟูต่อวินาที
-    [SerializeField] float staminaRegenDelay = 1f;     // เวลาคูลดาวน์ก่อนเริ่มฟื้นฟู Stamina
-    [SerializeField] RectTransform staminaFillRect;     // ✨ RectTransform ของ "เนื้อหลอด" (Pivot X ต้องเป็น 0.5)
-    [SerializeField] CanvasGroup staminaCanvasGroup;   // ✨ CanvasGroup ของ "กล่อง UI Stamina ทั้งหมด" ใช้คุมซ่อน/แสดง
-    [SerializeField] bool hideWhenFull = true;         // ✨ ติ๊กถูกเพื่อซ่อนหลอดตอนเต็ม (รวมถึงตอนเริ่มเกม)
-    [SerializeField] float fadeSpeed = 5f;             // ✨ ความเร็วในการจางเข้า-ออก ของหลอด UI
+    [SerializeField] float staminaDrainRate = 25f;
+    [SerializeField] float staminaRegenRate = 15f;
+    [SerializeField] float staminaRegenDelay = 1f;
+    [SerializeField] RectTransform staminaFillRect;
+    [SerializeField] CanvasGroup staminaCanvasGroup;
+    [SerializeField] bool hideWhenFull = true;
+    [SerializeField] float fadeSpeed = 5f;
 
     [Header("Jump")]
     [SerializeField] float jumpForce = 7f;
@@ -86,8 +104,21 @@ public class PlayerController3D_InputAction : MonoBehaviour
     // Crouch & Height variables
     private float defaultHeight;
     private float defaultCenterY;
+    private float defaultRadius;
     private bool isCrouching;
     private Vector3 currentBaseCameraPos;
+
+    // Wall Squeeze variables ✨
+    private bool isSqueezing = false;
+    private bool isInGapZone = false;
+    private float defaultFOV;
+    private float currentCameraTiltZ = 0f;
+    private Camera camComponent;
+    private Transform currentGapTransform;
+    private float squeezeBaseYaw;
+    private float squeezeTargetYaw;
+    private bool isFacingReverseInGap = false;
+    private bool sKeyPressedLastFrame = false;
 
     // Head bob variables
     float bobTimer = 0f;
@@ -121,17 +152,24 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             defaultHeight = capsuleCollider.height;
             defaultCenterY = capsuleCollider.center.y;
+            defaultRadius = capsuleCollider.radius;
         }
 
         if (playerCamera != null)
         {
             originalCameraPosition = playerCamera.localPosition;
             currentBaseCameraPos = originalCameraPosition;
+
+            camComponent = playerCamera.GetComponent<Camera>();
+            if (camComponent != null)
+            {
+                defaultFOV = camComponent.fieldOfView;
+                camComponent.nearClipPlane = 0.01f;
+            }
         }
 
-        currentStamina = maxStamina; // Stamina เต็มเมื่อเริ่มต้น
+        currentStamina = maxStamina;
 
-        // ✨ สั่งให้ซ่อนหลอด UI ตั้งแต่เริ่มเกมทันที
         if (staminaCanvasGroup != null && hideWhenFull)
         {
             staminaCanvasGroup.alpha = 0f;
@@ -174,7 +212,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
 
-        if (!isCrouching)
+        if (!isCrouching && !isSqueezing)
         {
             lastJumpPressedTime = Time.time;
         }
@@ -202,6 +240,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
             return;
         }
 
+        HandleSqueezeInput();
+
         if (moveAction != null)
         {
             Vector2 moveInput = moveAction.ReadValue<Vector2>();
@@ -210,13 +250,34 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         if (lookAction != null) lookInput = lookAction.ReadValue<Vector2>();
 
-        Vector2 mouse = lookInput * (mouseSensitivity * 0.01f);
-        yaw += mouse.x;
-        pitch -= mouse.y;
-        pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
+        if (isSqueezing)
+        {
+            bool sKeyPressed = targetInput.z < -0.5f;
+            if (sKeyPressed && !sKeyPressedLastFrame)
+            {
+                isFacingReverseInGap = !isFacingReverseInGap;
+            }
+            sKeyPressedLastFrame = sKeyPressed;
+
+            squeezeTargetYaw = squeezeBaseYaw + (isFacingReverseInGap ? 180f : 0f);
+
+            yaw = Mathf.LerpAngle(yaw, squeezeTargetYaw, Time.deltaTime * squeezeCamRotateSpeed);
+            pitch = Mathf.Lerp(pitch, 0f, Time.deltaTime * squeezeCamRotateSpeed);
+        }
+        else
+        {
+            Vector2 mouse = lookInput * (mouseSensitivity * 0.01f);
+            yaw += mouse.x;
+            pitch -= mouse.y;
+            pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
+        }
 
         transform.eulerAngles = new Vector3(0f, yaw, 0f);
-        if (playerCamera != null) playerCamera.localEulerAngles = new Vector3(pitch, 0f, 0f);
+
+        if (playerCamera != null)
+        {
+            playerCamera.localEulerAngles = new Vector3(pitch, 0f, currentCameraTiltZ);
+        }
 
         grounded = CheckGroundedNoLayer();
         if (grounded)
@@ -225,23 +286,24 @@ public class PlayerController3D_InputAction : MonoBehaviour
             jumpsLeft = maxJumps;
         }
 
-        // Crouch
         bool crouchKeyPressed = (crouchAction != null) && crouchAction.IsPressed();
-        if (crouchKeyPressed)
+        if (crouchKeyPressed && !isSqueezing)
         {
             isCrouching = true;
         }
-        else
+        else if (!isSqueezing)
         {
             isCrouching = HasCeilingAbove();
         }
-        HandleCrouching();
+        else
+        {
+            isCrouching = false;
+        }
 
-        // Stamina & UI
+        HandleCrouchingAndSqueezing();
         HandleStamina();
 
-        // Jump buffer + coyote
-        if (Time.time - lastJumpPressedTime <= jumpBufferTime)
+        if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing)
         {
             if (Time.time - lastGroundTime <= coyoteTime || jumpsLeft > 0)
             {
@@ -253,14 +315,82 @@ public class PlayerController3D_InputAction : MonoBehaviour
         UpdateHeadBob();
     }
 
-    // ✨ ฟังก์ชันคำนวณ Stamina, ยุบเนื้อหลอดเข้าตรงกลาง และควบคุมการซ่อน/แสดงแบบนุ่มนวล
+    void HandleSqueezeInput()
+    {
+        bool eKeyPressed = false;
+        if (Keyboard.current != null)
+        {
+            eKeyPressed = Keyboard.current.eKey.wasPressedThisFrame;
+        }
+
+        // ✨ กด E ได้เฉพาะ "ก่อนเข้าซอก" เท่านั้น (ขณะอยู่ในซอกจะกด E ซ้ำเพื่อยกเลิกไม่ได้ กันคอลไลเดอร์ขยายติดกำแพง)
+        if (isInGapZone && eKeyPressed && !isSqueezing)
+        {
+            isSqueezing = true;
+
+            if (currentGapTransform != null)
+            {
+                float gapYaw = currentGapTransform.eulerAngles.y;
+                float angleDiff = Mathf.DeltaAngle(transform.eulerAngles.y, gapYaw);
+
+                squeezeBaseYaw = (Mathf.Abs(angleDiff) > 90f) ? gapYaw + 180f : gapYaw;
+            }
+            else
+            {
+                squeezeBaseYaw = transform.eulerAngles.y;
+            }
+
+            squeezeTargetYaw = squeezeBaseYaw;
+            isFacingReverseInGap = false;
+            sKeyPressedLastFrame = false;
+        }
+
+        // ✨ เมื่อเดินพ้นพื้นที่ Trigger ช่องแคบ ยกเลิกสถานะแทรกตัวคืนค่าขนาดตัวละครอัตโนมัติ
+        if (!isInGapZone && isSqueezing)
+        {
+            isSqueezing = false;
+        }
+    }
+
+    void HandleCrouchingAndSqueezing()
+    {
+        if (capsuleCollider == null) return;
+
+        float targetRadius = isSqueezing ? squeezedRadius : defaultRadius;
+        capsuleCollider.radius = Mathf.Lerp(capsuleCollider.radius, targetRadius, squeezeSmoothing * Time.deltaTime);
+
+        float targetHeight = isCrouching ? crouchHeight : defaultHeight;
+        capsuleCollider.height = Mathf.Lerp(capsuleCollider.height, targetHeight, crouchSmoothing * Time.deltaTime);
+
+        float halfHeightDifference = (defaultHeight - capsuleCollider.height) / 2f;
+        capsuleCollider.center = new Vector3(capsuleCollider.center.x, defaultCenterY - halfHeightDifference, capsuleCollider.center.z);
+
+        if (playerCamera != null)
+        {
+            float targetCameraY = isCrouching ? (originalCameraPosition.y - crouchCameraYOffset) : originalCameraPosition.y;
+            Vector3 targetOffset = isSqueezing ? squeezedCameraOffset : Vector3.zero;
+
+            currentBaseCameraPos = Vector3.Lerp(currentBaseCameraPos, originalCameraPosition + targetOffset, squeezeSmoothing * Time.deltaTime);
+            currentBaseCameraPos.y = Mathf.Lerp(currentBaseCameraPos.y, targetCameraY, crouchSmoothing * Time.deltaTime);
+
+            float targetFOV = isSqueezing ? squeezedFOV : defaultFOV;
+            float targetTilt = isSqueezing ? squeezedCameraTiltZ : 0f;
+
+            if (camComponent != null)
+            {
+                camComponent.fieldOfView = Mathf.Lerp(camComponent.fieldOfView, targetFOV, squeezeSmoothing * Time.deltaTime);
+            }
+
+            currentCameraTiltZ = Mathf.Lerp(currentCameraTiltZ, targetTilt, squeezeSmoothing * Time.deltaTime);
+        }
+    }
+
     void HandleStamina()
     {
         bool wantsToSprint = (sprintAction != null) && sprintAction.IsPressed();
         bool isMoving = targetInput.sqrMagnitude > 0.01f;
 
-        // จะลด Stamina ก็ต่อเมื่อ: กดวิ่ง + กำลังเดินขยับตัวอยู่ + ไม่ได้ย่อตัว + มี Stamina เหลืออยู่
-        if (wantsToSprint && isMoving && !isCrouching && currentStamina > 0f)
+        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && currentStamina > 0f)
         {
             isSprinting = true;
             currentStamina -= staminaDrainRate * Time.deltaTime;
@@ -282,18 +412,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
             }
         }
 
-        // 1. ปรับขนาดเฉพาะ "เนื้อหลอด (Fill)" ให้ยุบเข้าตรงกลาง
         if (staminaFillRect != null)
         {
             float staminaRatio = currentStamina / maxStamina;
             staminaFillRect.localScale = new Vector3(staminaRatio, 1f, 1f);
         }
 
-        // 2. ควบคุมการซ่อน-แสดง UI แบบจางเข้า-ออก (Fade In / Fade Out)
         if (staminaCanvasGroup != null)
         {
-            // ถ้าเลือกซ่อนตอนเต็ม และ Stamina เต็มพอดี -> เป้าหมายคือจางหายไป (Alpha = 0)
-            // ถ้าระดับ Stamina ลดลง -> เป้าหมายคือแสดงขึ้นมา (Alpha = 1)
             float targetAlpha = (hideWhenFull && currentStamina >= maxStamina) ? 0f : 1f;
             staminaCanvasGroup.alpha = Mathf.MoveTowards(staminaCanvasGroup.alpha, targetAlpha, fadeSpeed * Time.deltaTime);
         }
@@ -308,20 +434,39 @@ public class PlayerController3D_InputAction : MonoBehaviour
             return;
         }
 
-        Vector3 cameraRight = (playerCamera != null) ? playerCamera.right : transform.right;
-        Vector3 cameraForward = (playerCamera != null) ? playerCamera.forward : transform.forward;
+        Vector3 desiredHorizontalVel;
 
-        cameraRight.y = 0f;
-        cameraForward.y = 0f;
-        cameraRight.Normalize();
-        cameraForward.Normalize();
-
-        float speed = isCrouching ? crouchSpeed : (isSprinting ? runSpeed : walkSpeed);
-        if (InventoryManager.Instance != null)
+        if (isSqueezing)
         {
-            speed *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+            Vector3 forwardDir = Quaternion.Euler(0, squeezeTargetYaw, 0) * Vector3.forward;
+            float moveForwardAmount = Mathf.Max(0f, targetInput.z);
+            float speed = squeezeSpeed;
+
+            if (InventoryManager.Instance != null)
+            {
+                speed *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+            }
+
+            desiredHorizontalVel = forwardDir * moveForwardAmount * speed;
         }
-        Vector3 desiredHorizontalVel = (cameraRight * targetInput.x + cameraForward * targetInput.z) * speed;
+        else
+        {
+            Vector3 cameraRight = (playerCamera != null) ? playerCamera.right : transform.right;
+            Vector3 cameraForward = (playerCamera != null) ? playerCamera.forward : transform.forward;
+
+            cameraRight.y = 0f;
+            cameraForward.y = 0f;
+            cameraRight.Normalize();
+            cameraForward.Normalize();
+
+            float speed = isCrouching ? crouchSpeed : (isSprinting ? runSpeed : walkSpeed);
+
+            if (InventoryManager.Instance != null)
+            {
+                speed *= InventoryManager.Instance.GetTotalSpeedMultiplier();
+            }
+            desiredHorizontalVel = (cameraRight * targetInput.x + cameraForward * targetInput.z) * speed;
+        }
 
         Vector3 currentVel = rb.linearVelocity;
         Vector3 horizontalVel = new Vector3(currentVel.x, 0f, currentVel.z);
@@ -368,20 +513,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         return false;
     }
 
-    void HandleCrouching()
-    {
-        if (capsuleCollider == null) return;
-
-        float targetHeight = isCrouching ? crouchHeight : defaultHeight;
-        capsuleCollider.height = Mathf.Lerp(capsuleCollider.height, targetHeight, crouchSmoothing * Time.deltaTime);
-
-        float halfHeightDifference = (defaultHeight - capsuleCollider.height) / 2f;
-        capsuleCollider.center = new Vector3(capsuleCollider.center.x, defaultCenterY - halfHeightDifference, capsuleCollider.center.z);
-
-        float targetCameraY = isCrouching ? (originalCameraPosition.y - crouchCameraYOffset) : originalCameraPosition.y;
-        currentBaseCameraPos.y = Mathf.Lerp(currentBaseCameraPos.y, targetCameraY, crouchSmoothing * Time.deltaTime);
-    }
-
     void DoJump()
     {
         if (jumpsLeft <= 0) return;
@@ -396,7 +527,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        if (enableHeadBob)
+        if (enableHeadBob && !isSqueezing)
         {
             Vector3 horizontalVel = rb.linearVelocity;
             horizontalVel.y = 0f;
@@ -427,6 +558,24 @@ public class PlayerController3D_InputAction : MonoBehaviour
         playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(wallGapTag))
+        {
+            isInGapZone = true;
+            currentGapTransform = other.transform;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(wallGapTag))
+        {
+            isInGapZone = false;
+            currentGapTransform = null;
+        }
+    }
+
     void OnDisable()
     {
         if (jumpAction != null)
@@ -447,7 +596,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         if (capsuleCollider != null)
         {
-            Gizmos.color = isCrouching ? Color.red : Color.cyan;
+            Gizmos.color = isSqueezing ? Color.yellow : (isCrouching ? Color.red : Color.cyan);
             float radius = capsuleCollider.radius * 0.85f;
             Vector3 origin = transform.position + Vector3.up * (crouchHeight - radius);
             float checkDistance = defaultHeight - crouchHeight;
