@@ -5,49 +5,56 @@ public class WallUVScroller : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private Renderer surfaceRenderer;
 
-    [Tooltip("ความเร็วในการเลื่อนลาย")]
+    [Header("Scroll")]
     [SerializeField] private float scrollSpeed = 1.0f;
 
-    [Tooltip("ปรับทิศทาง UV อิสระ (X และ Y)\n- กำแพงส่วนใหญ่: (1, 0) หรือ (-1, 0)\n- พื้นส่วนใหญ่: (0, 1) หรือ (0, -1)")]
-    [SerializeField] private Vector2 scrollDirection = new Vector2(1, 0);
+    [SerializeField]
+    private Vector3 scrollDirection = new Vector3(0, 0, 1);
 
     private Material surfaceMaterial;
-    private int texturePropID;
+
+    private static readonly int ScrollOffsetID =
+        Shader.PropertyToID("_ScrollOffset");
+
+    private Vector3 currentOffset;
 
     void Awake()
     {
-        if (surfaceRenderer == null) surfaceRenderer = GetComponent<Renderer>();
+        if (surfaceRenderer == null)
+            surfaceRenderer = GetComponent<Renderer>();
 
         if (surfaceRenderer != null)
         {
             surfaceMaterial = surfaceRenderer.material;
 
-            // ตรวจสอบชื่อช่อง Texture ว่าเป็น URP (_BaseMap) หรือ Built-in (_MainTex)
-            if (surfaceMaterial.HasProperty("_BaseMap"))
+            if (!surfaceMaterial.HasProperty(ScrollOffsetID))
             {
-                texturePropID = Shader.PropertyToID("_BaseMap");
-            }
-            else
-            {
-                texturePropID = Shader.PropertyToID("_MainTex");
+                Debug.LogError(
+                    $"Material '{surfaceMaterial.name}' ไม่มี _ScrollOffset"
+                );
             }
         }
     }
 
-    /// <summary>
-    /// ฟังก์ชันสั่งให้ UV เลื่อนภาพ
-    /// </summary>
+    // ✨ เรียกใช้ใน Update() ของผู้เล่น
     public void Scroll(float inputAmount)
     {
-        if (surfaceMaterial == null) return;
+        if (surfaceMaterial == null)
+            return;
 
-        // อ่านค่า Offset ปัจจุบัน (รองรับทั้ง URP และ Built-in)
-        Vector2 currentOffset = surfaceMaterial.GetTextureOffset(texturePropID);
+        // คำนวณการเคลื่อนที่ตามเวลา
+        currentOffset +=
+            scrollDirection *
+            (inputAmount * scrollSpeed * Time.deltaTime);
 
-        // คำนวณ Offset ใหม่ตาม Vector2 scrollDirection ที่กำหนดใน Inspector
-        currentOffset += scrollDirection * (inputAmount * scrollSpeed * Time.deltaTime);
+        // ✨ วนลูปค่าให้อยู่ในระนาบ 0 ถึง 1 เสมอ ป้องกัน float เพี้ยนเมื่อสะสมตัวเลขมากไป
+        currentOffset.x = Mathf.Repeat(currentOffset.x, 1f);
+        currentOffset.y = Mathf.Repeat(currentOffset.y, 1f);
+        currentOffset.z = Mathf.Repeat(currentOffset.z, 1f);
 
-        // บันทึกค่า Offset กลับไปที่ Material
-        surfaceMaterial.SetTextureOffset(texturePropID, currentOffset);
+        surfaceMaterial.SetVector(
+            ScrollOffsetID,
+            currentOffset
+        );
     }
 }
