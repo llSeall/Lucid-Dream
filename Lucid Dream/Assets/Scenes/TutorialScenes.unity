@@ -8007,6 +8007,14 @@ MonoBehaviour:
   runSpeed: 8
   crouchSpeed: 1
   acceleration: 30
+  squeezeSpeed: 1.2
+  squeezedRadius: 0.18
+  squeezedCameraTiltZ: 12
+  squeezedCameraOffset: {x: 0.2, y: -0.1, z: -0.2}
+  squeezedFOV: 50
+  squeezeSmoothing: 8
+  squeezeCamRotateSpeed: 6
+  wallGapTag: WallGap
   maxStamina: 100
   staminaDrainRate: 25
   staminaRegenRate: 15
@@ -8171,9 +8179,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e15897730b435d64abf53661d03379f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SceneFaderLoader
-  sceneToLoad: TestAI
+  sceneToLoad: Room00
   fadeCanvasGroup: {fileID: 884443743}
-  fadeDuration: 1.5
+  holdDuration: 1.5
+  fadeOutSpeed: 2
   interactKey: 102
 --- !u!1 &1850906343
 GameObject:
