@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 638bc8208e4581b48b9bf78fb795ff64
+guid: ace8ddde20b065c43b7f35c9bd1a149c
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,265 +97,221 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Close eyes_0
+      name: 3_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 943
-        width: 584
-        height: 314
+        x: 620
+        y: 613
+        width: 681
+        height: 51
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4b41d63fe16f01e48b9d2f5310e0e380
-      internalID: -445120573
+      spriteID: ae4c7f928a7c89743b8237dfaaffed4a
+      internalID: -1235239529
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_1
+      name: 3_1
       rect:
         serializedVersion: 2
-        x: 584
-        y: 943
-        width: 584
-        height: 314
+        x: 605
+        y: 539
+        width: 709
+        height: 61
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4c44e674fa27b9d40a6e44a58d597731
-      internalID: 1808110059
+      spriteID: 3e2303269b0638245a5276fa4ce520b2
+      internalID: 381514595
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_2
+      name: 3_2
       rect:
         serializedVersion: 2
-        x: 1168
-        y: 943
-        width: 584
-        height: 314
+        x: 1360
+        y: 272
+        width: 132
+        height: 88
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c715ec34b98345545b4cd2ffa7131212
-      internalID: 2125679420
+      spriteID: cd225a9ff60a9ab4ea33fc8af6c7dccd
+      internalID: -1820726694
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_3
+      name: 3_3
       rect:
         serializedVersion: 2
-        x: 0
-        y: 629
-        width: 584
-        height: 314
+        x: 181
+        y: 344
+        width: 473
+        height: 29
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9b2ec2c518d5a664cbe3347bfa3bcc1c
-      internalID: 1228737831
+      spriteID: afa78a30944050a4ba9f494359f57e45
+      internalID: 860781329
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_4
+      name: 3_4
       rect:
         serializedVersion: 2
-        x: 584
-        y: 629
-        width: 584
-        height: 314
+        x: 176
+        y: 299
+        width: 483
+        height: 34
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 534020d688039b3449311edc17ef450f
-      internalID: -1529033652
+      spriteID: 304bd8c6200a886478521b5e45af26ee
+      internalID: -1408400774
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_5
+      name: 3_5
       rect:
         serializedVersion: 2
-        x: 1168
-        y: 629
-        width: 584
-        height: 314
+        x: 254
+        y: 816
+        width: 63
+        height: 61
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5ab0139a660abb74896fb474a599f7e6
-      internalID: -413380035
+      spriteID: fea6d13b369897e4785b5a055c0c1040
+      internalID: 2015566302
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_6
+      name: 3_6
       rect:
         serializedVersion: 2
-        x: 0
-        y: 315
-        width: 584
-        height: 314
+        x: 385
+        y: 820
+        width: 63
+        height: 61
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1ede7d58644d88249982abf1eaf2b2a0
-      internalID: -1648009328
+      spriteID: 47109b1f7d480b5479ea430150db2afb
+      internalID: -269356411
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_7
+      name: 3_7
       rect:
         serializedVersion: 2
-        x: 584
-        y: 315
-        width: 584
-        height: 314
+        x: 512
+        y: 820
+        width: 63
+        height: 61
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8a9f62497b46a894191cb05d55b4cbb8
-      internalID: -2087319313
+      spriteID: c56542f93404e1d45ac713e965de8bc9
+      internalID: 1965415960
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_8
+      name: 3_8
       rect:
         serializedVersion: 2
-        x: 1168
-        y: 315
-        width: 584
-        height: 314
+        x: 870
+        y: 691
+        width: 154
+        height: 31
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 909296bfeee25694b858f3086ed52cd4
-      internalID: -562225246
+      spriteID: 2c6d47430955cdc41846d7995bd1202e
+      internalID: -1385887406
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Close eyes_9
+      name: 3_9
       rect:
         serializedVersion: 2
-        x: 0
-        y: 1
-        width: 584
-        height: 314
+        x: 1361
+        y: 817
+        width: 115
+        height: 53
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b7b43e5c19f3f724db27f86a65ca8428
-      internalID: 1257611065
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Close eyes_10
-      rect:
-        serializedVersion: 2
-        x: 584
-        y: 1
-        width: 584
-        height: 314
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 926c63d9d0413b347b4c79872beff0fb
-      internalID: -106412559
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Close eyes_11
-      rect:
-        serializedVersion: 2
-        x: 1168
-        y: 1
-        width: 584
-        height: 314
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 34d773706cb6b024b878dd0298e3b2fe
-      internalID: 1462607079
+      spriteID: c200c703fef8d7c4b9675d436bdc66d6
+      internalID: -621336822
       vertices: []
       indices: 
       edges: []
@@ -364,7 +320,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: feb016d01857c4c43957e63b781810e1
+    spriteID: 7a9dcfe0ccfb9fc46bbfb65e7074257f
     internalID: 0
     vertices: []
     indices: 
@@ -372,22 +328,18 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":3.0,"y":4.0},"gridSpriteSize":{"x":584.0,"y":314.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      Close eyes_0: -445120573
-      Close eyes_1: 1808110059
-      Close eyes_10: -106412559
-      Close eyes_11: 1462607079
-      Close eyes_2: 2125679420
-      Close eyes_3: 1228737831
-      Close eyes_4: -1529033652
-      Close eyes_5: -413380035
-      Close eyes_6: -1648009328
-      Close eyes_7: -2087319313
-      Close eyes_8: -562225246
-      Close eyes_9: 1257611065
+      3_0: -1235239529
+      3_1: 381514595
+      3_2: -1820726694
+      3_3: 860781329
+      3_4: -1408400774
+      3_5: 2015566302
+      3_6: -269356411
+      3_7: 1965415960
+      3_8: -1385887406
+      3_9: -621336822
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

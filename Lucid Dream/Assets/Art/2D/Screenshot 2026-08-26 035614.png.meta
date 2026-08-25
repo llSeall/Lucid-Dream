@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 86e5b29a78915f54b927ee888d52ec60
+guid: d53f507319a8a5c4b99c0b844b691ac6
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -43,7 +43,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,7 +100,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 903f1a1d3fd418b41982d06274bad232
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -108,25 +108,8 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":3.0,"y":5.0},"gridSpriteSize":{"x":564.0,"y":193.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
-    nameFileIdTable:
-      Run_0: 1298341745
-      Run_1: -209522137
-      Run_10: 1351782719
-      Run_11: 449865167
-      Run_12: 660458201
-      Run_13: 175793931
-      Run_14: -1765352449
-      Run_2: -624527358
-      Run_3: 240924837
-      Run_4: -1699606705
-      Run_5: -1006628656
-      Run_6: -279403068
-      Run_7: 1380036187
-      Run_8: -1086954767
-      Run_9: 565554135
+      entries: []
+    nameFileIdTable: {}
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
