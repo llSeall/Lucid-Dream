@@ -277,6 +277,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4242137326146069606}
     m_Modifications:
+    - target: {fileID: 7981103773816048574, guid: 32872fcd1c093594eb14880d0e6943f3, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: de42af067ce23264c9da01c313190842, type: 2}
     - target: {fileID: 8485467692549696107, guid: 32872fcd1c093594eb14880d0e6943f3, type: 3}
       propertyPath: m_Name
       value: FrameDoor_3D

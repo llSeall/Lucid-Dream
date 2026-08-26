@@ -2584,7 +2584,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   currentState: 0
   daytimeSceneName: DaytimeScene
-  nighttimeSceneName: NighttimeScene
+  nighttimeSceneName: TutorialScenes
 --- !u!114 &1221881097
 MonoBehaviour:
   m_ObjectHideFlags: 0

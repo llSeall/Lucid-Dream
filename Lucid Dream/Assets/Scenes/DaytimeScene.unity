@@ -1719,6 +1719,159 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2920878596635711204, guid: d043b1a53577df44a953c4b7146b4a23, type: 3}
   m_PrefabInstance: {fileID: 167619789}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &177161432
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 177161440}
+  - component: {fileID: 177161439}
+  - component: {fileID: 177161438}
+  - component: {fileID: 177161437}
+  - component: {fileID: 177161436}
+  - component: {fileID: 177161435}
+  - component: {fileID: 177161434}
+  - component: {fileID: 177161433}
+  m_Layer: 0
+  m_Name: -----System-----
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &177161433
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eeb76855291c13141bde4803ec2d218f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCManager
+--- !u!114 &177161434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 525dd5e32eba1cf469835abe4778f9d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryTester
+--- !u!114 &177161435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f90489f68ebec84494a5cddae31b317, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryManager
+  itemDatabase:
+  - {fileID: 11400000, guid: 5194604d92690e3419c09bc6a8996a1f, type: 2}
+  ownedItemIDs: []
+--- !u!114 &177161436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a4c936c7f8ade145b516d8127fa3ddb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+  maxSanity: 100
+  currentSanity: 0
+--- !u!114 &177161437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21f53dfca1ad8f443adf00df84741718, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  currentState: 0
+  daytimeSceneName: DaytimeScene
+  nighttimeSceneName: TutorialScenes
+--- !u!114 &177161438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b21eb3ad6b513245b278c25d58c1e76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SaveManager
+  currentSlot: 1
+  saveFileNamePrefix: YandereDream_Slot_
+  gameData:
+    currentDay: 1
+    currentState: 0
+    currentAP: 3
+    currentSanity: 100
+    mapSeed: 
+    collectedItems:
+    - 
+    npcSaveStates:
+    - npcID: 
+      relationshipPoints: 0
+      lastTalkedDay: 0
+      dailyChatCount: 0
+      dailyNormalChatCount: 0
+      hasIntroduced: 0
+      playedStoryKeys: []
+    claimedNPCRewards: []
+--- !u!114 &177161439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7aba7b621e134448be7ccd07ad04202, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TimeManager
+  currentDay: 1
+  currentState: 0
+  maxAP: 3
+  currentAP: 3
+--- !u!4 &177161440
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177161432}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &179698813
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26999,3 +27152,4 @@ SceneRoots:
   - {fileID: 996444729}
   - {fileID: 2135982744}
   - {fileID: 6670064663386677213}
+  - {fileID: 177161440}
