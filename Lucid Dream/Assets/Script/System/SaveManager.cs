@@ -83,7 +83,7 @@ public class SaveManager : MonoBehaviour
 
         // ยิงข้อมูลเซฟแจกจ่ายให้ทุก Manager ทันทีเมื่อโหลดฉากใหม่เสร็จสมบูรณ์
         NotifyAllManagersToSync();
-        Debug.Log("<color=cyan><b>📡 [SaveManager] ฉากโหลดเสร็จสิ้น ทำการซิงค์เดต้าเซฟเข้าสู่ระบบหลักเรียบร้อย!</b></color>");
+        Debug.Log("<color=cyan><b> [SaveManager] ฉากโหลดเสร็จสิ้น ทำการซิงค์เดต้าเซฟเข้าสู่ระบบหลักเรียบร้อย!</b></color>");
     }
 
     public void SaveGame()
@@ -106,11 +106,11 @@ public class SaveManager : MonoBehaviour
             string json = JsonUtility.ToJson(gameData, true);
             File.WriteAllText(GetSaveFilePath(currentSlot), json);
 
-            Debug.Log($"<color=green><b>💾 [Slot {currentSlot}] บันทึกสำเร็จ! วันที่ {gameData.currentDay} | สถานะ: {gameData.currentState} | AP คงเหลือ: {gameData.currentAP}</b></color>");
+            Debug.Log($"<color=green><b> [Slot {currentSlot}] บันทึกสำเร็จ! วันที่ {gameData.currentDay} | สถานะ: {gameData.currentState} | AP คงเหลือ: {gameData.currentAP}</b></color>");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"❌ บันทึกเซฟล้มเหลว: {e.Message}");
+            Debug.LogError($" บันทึกเซฟล้มเหลว: {e.Message}");
         }
     }
     public void LoadGame(int slot, bool isContinue = true)
@@ -137,7 +137,7 @@ public class SaveManager : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"❌ โหลดเซฟล้มเหลว: {e.Message}");
+            Debug.LogError($" โหลดเซฟล้มเหลว: {e.Message}");
             ResetData();
         }
     }

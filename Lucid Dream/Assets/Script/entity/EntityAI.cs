@@ -6,6 +6,18 @@ public enum EntityState { Chase, Investigate, Despawn }
 [RequireComponent(typeof(NavMeshAgent))]
 public class EntityAI : MonoBehaviour
 {
+    [Header("2.5D Sprite & Animation Settings ✨")]
+    [Tooltip("ใส่ Sprite Renderer ของตัวผี")]
+    public SpriteRenderer ghostSprite;
+    [Tooltip("ใส่ Animator ที่อยู่ในออบเจกต์รูปผี")]
+    public Animator ghostAnimator;
+    [Tooltip("ชื่อ Parameter ประเภท Float ใน Animator (เช่น Speed)")]
+    public string speedParamName = "Speed";
+    [Tooltip("ชื่อ Parameter ประเภท Bool ใน Animator (เช่น IsMoving)")]
+    public string isMovingParamName = "IsMoving";
+    [Tooltip("ติ๊กถูกถ้ารูปต้นฉบับของคุณหันหน้าไปทางซ้าย")]
+    public bool defaultFacingLeft = false;
+
     [Header("Target & Hiding Settings")]
     public Transform playerTransform;
     public LayerMask obstacleMask;
@@ -17,9 +29,7 @@ public class EntityAI : MonoBehaviour
     public float sightDistance = 12f;
 
     [Header("Investigate Delay & Wander Settings")]
-    [Tooltip("ระยะเวลาดีเลย์เดินสุ่มค้นหาต่อ หลังจากเดินถึงจุดคลาดสายตาแล้ว (วินาที)")]
     public float investigateDuration = 5f;
-    [Tooltip("รัศมีพื้นที่สุ่มเดินวนรอบๆ จุดคลาดสายตา")]
     public float wanderRadius = 4f;
 
     [Header("Current State")]
@@ -33,6 +43,12 @@ public class EntityAI : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+
+        // ถ้าลืมลาก Animator ใส่ระบบจะดึงจากออบเจกต์ลูกให้อัตโนมัติ
+        if (ghostAnimator == null && ghostSprite != null)
+        {
+            ghostAnimator = ghostSprite.GetComponent<Animator>();
+        }
     }
 
     void Update()
@@ -50,6 +66,40 @@ public class EntityAI : MonoBehaviour
             case EntityState.Despawn:
                 HandleDespawn();
                 break;
+        }
+
+        UpdateSpriteFacingAndAnimation();
+    }
+
+    void UpdateSpriteFacingAndAnimation()
+    {
+        float currentSpeed = agent.velocity.magnitude;
+
+        // --- พลิกสไปรต์ซ้าย-ขวา ---
+        if (ghostSprite != null)
+        {
+            if (agent.velocity.x > 0.1f)
+            {
+                ghostSprite.flipX = defaultFacingLeft ? true : false;
+            }
+            else if (agent.velocity.x < -0.1f)
+            {
+                ghostSprite.flipX = defaultFacingLeft ? false : true;
+            }
+        }
+
+        // --- ส่งค่าเข้า Animator เพื่อสั่งเล่นแอนิเมชัน ---
+        if (ghostAnimator != null)
+        {
+            if (!string.IsNullOrEmpty(speedParamName))
+            {
+                ghostAnimator.SetFloat(speedParamName, currentSpeed);
+            }
+
+            if (!string.IsNullOrEmpty(isMovingParamName))
+            {
+                ghostAnimator.SetBool(isMovingParamName, currentSpeed > 0.1f);
+            }
         }
     }
 

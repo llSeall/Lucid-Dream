@@ -4,11 +4,11 @@ using TMPro;
 
 public class APUIManager : MonoBehaviour
 {
-    [Header("📺 Time & AP UI Elements")]
+    [Header(" Time & AP UI Elements")]
     [SerializeField] private TextMeshProUGUI apText;    // แสดง AP เช่น "AP: 3 / 3"
     [SerializeField] private TextMeshProUGUI dayText;   // แสดงวัน เช่น "Day 1"
 
-    [Header("🧠 Sanity UI Elements")]
+    [Header(" Sanity UI Elements")]
     [SerializeField] private TextMeshProUGUI sanityText; // ข้อความแสดงค่าสติ เช่น "สติ: 100 / 100"
     [SerializeField] private Slider sanitySlider;        // (ตัวเลือกเสริม) หลอดค่าสติ
     [SerializeField] private Image sanityFillImage;      // (ตัวเลือกเสริม) สีของหลอดสติ
@@ -76,7 +76,7 @@ public class APUIManager : MonoBehaviour
         // อัปเดตตัวหนังสือ
         if (sanityText != null)
         {
-            sanityText.text = $"🧠 สติ: {Mathf.RoundToInt(currentSanity)} / {Mathf.RoundToInt(maxSanity)}";
+            sanityText.text = $" {Mathf.RoundToInt(currentSanity)} / {Mathf.RoundToInt(maxSanity)}";
         }
 
         // อัปเดตหลอด Slider (ถ้ามี)
@@ -85,14 +85,14 @@ public class APUIManager : MonoBehaviour
             sanitySlider.maxValue = maxSanity;
             sanitySlider.value = currentSanity;
 
-            // เปลี่ยนสีหลอดตามวิกฤตสุขภาพจิต
-            if (sanityFillImage != null)
-            {
-                float ratio = currentSanity / maxSanity;
-                if (ratio <= 0.3f) sanityFillImage.color = Color.red;       // วิกฤต (ต่ำกว่า 30%)
-                else if (ratio <= 0.6f) sanityFillImage.color = Color.yellow; // เริ่มปานกลาง
-                else sanityFillImage.color = Color.cyan;                   // ปกติ/สติเต็ม
-            }
+            //// เปลี่ยนสีหลอดตามวิกฤตสุขภาพจิต
+            //if (sanityFillImage != null)
+            //{
+            //    float ratio = currentSanity / maxSanity;
+            //    if (ratio <= 0.3f) sanityFillImage.color = Color.red;       // วิกฤต (ต่ำกว่า 30%)
+            //    else if (ratio <= 0.6f) sanityFillImage.color = Color.yellow; // เริ่มปานกลาง
+            //    else sanityFillImage.color = Color.cyan;                   // ปกติ/สติเต็ม
+            //}
         }
     }
 }

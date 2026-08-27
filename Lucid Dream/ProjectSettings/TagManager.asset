@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Interaction
   - WallGap
+  - Climbable
   layers:
   - Default
   - TransparentFX

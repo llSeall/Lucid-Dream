@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,22 +17,39 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float crouchSpeed = 2f;
     [SerializeField] float acceleration = 30f;
 
+    [Header("Fall Stun Settings ✨")]
+    [Tooltip("ระยะความสูงการตกขั้นต่ำที่ทำให้ตัวละครติดดีเลย์/ชะงัก (เมตร)")]
+    [SerializeField] float minFallStunDistance = 5f;
+    [Tooltip("ระยะเวลาชะงัก/ดีเลย์เดินไม่ได้เมื่อตกถึงพื้น (วินาที)")]
+    [SerializeField] float fallStunDuration = 1.2f;
+    [Tooltip("องศากล้องก้มลงเมื่อกระแทกพื้น")]
+    [SerializeField] float landingImpactPitch = 15f;
+    [Tooltip("ความเร็วในการคืนสภาพกล้องหลังจากกระแทก")]
+    [SerializeField] float landingRecoverSpeed = 5f;
+
+    [Header("Wall Grab / Shimmy Settings ✨")]
+    [Tooltip("เปิดใช้งานระบบเกาะกำแพง")]
+    [SerializeField] bool enableWallGrab = true;
+    [Tooltip("ระยะความยาว Raycast ตรวจจับกำแพงด้านหน้า")]
+    [SerializeField] float wallCheckDistance = 0.8f;
+    [Tooltip("ความเร็วในการขยับซ้าย-ขวาบนกำแพง")]
+    [SerializeField] float wallShimmySpeed = 2.5f;
+    [Tooltip("Layer ของกำแพงที่สามารถเกาะได้")]
+    [SerializeField] LayerMask wallLayer = ~0;
+    [Tooltip("Tag ของกำแพงที่เกาะได้")]
+    [SerializeField] string climbableWallTag = "Climbable";
+    [Tooltip("องศาที่กล้องจะหัน (Yaw) ไปตามทิศทางที่เลื่อนตัว")]
+    [SerializeField] float shimmyCameraPanAmount = 10f;
+    [SerializeField] float shimmyCameraSmoothing = 6f;
+
     [Header("Wall Squeeze Settings ✨")]
-    [Tooltip("ความเร็วขณะแทรกตัวในซอก")]
     [SerializeField] float squeezeSpeed = 1.2f;
-    [Tooltip("ขนาดรัศมี CapsuleCollider ขณะแทรกตัว")]
     [SerializeField] float squeezedRadius = 0.18f;
-    [Tooltip("ระยะมุมเอียงของกล้องแนวตั้ง (Z-Tilt)")]
     [SerializeField] float squeezedCameraTiltZ = 12f;
-    [Tooltip("ตำแหน่งกล้องขยับขณะแทรกตัว")]
     [SerializeField] Vector3 squeezedCameraOffset = new Vector3(0.2f, -0.1f, -0.2f);
-    [Tooltip("ค่า FOV กล้องเมื่อแทรกตัว")]
     [SerializeField] float squeezedFOV = 50f;
-    [Tooltip("ความเร็วในการปรับขนาดและการหมุนกล้องในซอก")]
     [SerializeField] float squeezeSmoothing = 8f;
-    [Tooltip("ความเร็วในการหมุนกลับตัวกล้อง (เมื่อกด S)")]
     [SerializeField] float squeezeCamRotateSpeed = 6f;
-    [Tooltip("ชื่อ Tag ของ Trigger บริเวณช่องแคบ")]
     [SerializeField] string wallGapTag = "WallGap";
 
     [Header("Stamina Settings ✨")]
@@ -95,6 +113,19 @@ public class PlayerController3D_InputAction : MonoBehaviour
     bool grounded;
     float yaw = 0f;
     float pitch = 0f;
+
+    // Fall Stun Variables ✨
+    private float highestYPoint;
+    private bool isStunned = false;
+    private float stunTimer = 0f;
+    private bool wasGroundedLastFrame = true;
+    private float currentLandingImpact = 0f;
+
+    // Wall Grab Variables ✨
+    private bool isWallGrabbing = false;
+    private bool isTouchWall = false;
+    private RaycastHit wallHitInfo;
+    private float currentShimmyPanY = 0f;
 
     // Stamina variables
     private float currentStamina;
@@ -182,16 +213,12 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (inputActionAsset == null)
         {
-            Debug.LogError("InputActionAsset not assigned! Please assign your Input Actions in the Inspector.");
+            Debug.LogError("InputActionAsset not assigned!");
             return;
         }
 
         playerActionMap = inputActionAsset.FindActionMap("Player");
-        if (playerActionMap == null)
-        {
-            Debug.LogError("'Player' action map not found in InputActionAsset!");
-            return;
-        }
+        if (playerActionMap == null) return;
 
         moveAction = playerActionMap.FindAction("Move");
         lookAction = playerActionMap.FindAction("Look");
@@ -211,6 +238,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
     void OnJumpPressed(InputAction.CallbackContext context)
     {
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
+        if (isStunned) return;
+
+        if (isWallGrabbing)
+        {
+            DetachFromWall();
+            DoJump();
+            return;
+        }
 
         if (!isCrouching && !isSqueezing)
         {
@@ -240,16 +275,26 @@ public class PlayerController3D_InputAction : MonoBehaviour
             return;
         }
 
-        HandleSqueezeInput();
+        grounded = CheckGroundedNoLayer();
 
-        if (moveAction != null)
+        HandleFallStunLogic();
+        HandleWallGrabLogic();
+
+        if (moveAction != null && !isStunned)
         {
             Vector2 moveInput = moveAction.ReadValue<Vector2>();
             targetInput = new Vector3(moveInput.x, 0f, moveInput.y);
         }
+        else if (isStunned)
+        {
+            targetInput = Vector3.zero;
+        }
 
         if (lookAction != null) lookInput = lookAction.ReadValue<Vector2>();
 
+        HandleSqueezeInput();
+
+        // หมุนมุมกล้องและตัวละคร
         if (isSqueezing)
         {
             bool sKeyPressed = targetInput.z < -0.5f;
@@ -264,6 +309,12 @@ public class PlayerController3D_InputAction : MonoBehaviour
             yaw = Mathf.LerpAngle(yaw, squeezeTargetYaw, Time.deltaTime * squeezeCamRotateSpeed);
             pitch = Mathf.Lerp(pitch, 0f, Time.deltaTime * squeezeCamRotateSpeed);
         }
+        else if (isWallGrabbing)
+        {
+            // ล็อกหน้าหันเข้าหากำแพง
+            pitch -= lookInput.y * (mouseSensitivity * 0.01f);
+            pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
+        }
         else
         {
             Vector2 mouse = lookInput * (mouseSensitivity * 0.01f);
@@ -274,12 +325,17 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         transform.eulerAngles = new Vector3(0f, yaw, 0f);
 
+        // จัดการโยกกล้องตอนเกาะกำแพง (Shimmy Pan) และการตกกระแทก (Landing Impact)
+        currentLandingImpact = Mathf.Lerp(currentLandingImpact, 0f, Time.deltaTime * landingRecoverSpeed);
+
+        float targetShimmyPan = isWallGrabbing ? (targetInput.x * shimmyCameraPanAmount) : 0f;
+        currentShimmyPanY = Mathf.Lerp(currentShimmyPanY, targetShimmyPan, Time.deltaTime * shimmyCameraSmoothing);
+
         if (playerCamera != null)
         {
-            playerCamera.localEulerAngles = new Vector3(pitch, 0f, currentCameraTiltZ);
+            playerCamera.localEulerAngles = new Vector3(pitch + currentLandingImpact, currentShimmyPanY, currentCameraTiltZ);
         }
 
-        grounded = CheckGroundedNoLayer();
         if (grounded)
         {
             lastGroundTime = Time.time;
@@ -287,11 +343,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
 
         bool crouchKeyPressed = (crouchAction != null) && crouchAction.IsPressed();
-        if (crouchKeyPressed && !isSqueezing)
+        if (crouchKeyPressed && !isSqueezing && !isWallGrabbing)
         {
             isCrouching = true;
         }
-        else if (!isSqueezing)
+        else if (!isSqueezing && !isWallGrabbing)
         {
             isCrouching = HasCeilingAbove();
         }
@@ -303,7 +359,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         HandleCrouchingAndSqueezing();
         HandleStamina();
 
-        if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing)
+        if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing && !isStunned)
         {
             if (Time.time - lastGroundTime <= coyoteTime || jumpsLeft > 0)
             {
@@ -315,6 +371,109 @@ public class PlayerController3D_InputAction : MonoBehaviour
         UpdateHeadBob();
     }
 
+    #region ✨ Fall Stun System Logic
+    private void HandleFallStunLogic()
+    {
+        if (isStunned)
+        {
+            stunTimer -= Time.deltaTime;
+            if (stunTimer <= 0f)
+            {
+                isStunned = false;
+            }
+        }
+
+        if (!grounded && !isWallGrabbing)
+        {
+            if (wasGroundedLastFrame)
+            {
+                highestYPoint = transform.position.y;
+            }
+            else
+            {
+                highestYPoint = Mathf.Max(highestYPoint, transform.position.y);
+            }
+        }
+        else if (!wasGroundedLastFrame && grounded)
+        {
+            float fallDistance = highestYPoint - transform.position.y;
+            if (fallDistance >= minFallStunDistance)
+            {
+                TriggerFallStun();
+            }
+        }
+
+        wasGroundedLastFrame = grounded;
+    }
+
+    private void TriggerFallStun()
+    {
+        isStunned = true;
+        stunTimer = fallStunDuration;
+        rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+
+        // เพิ่มเอฟเฟกต์กล้องพับลงตอนกระแทก
+        currentLandingImpact = landingImpactPitch;
+
+        if (isWallGrabbing) DetachFromWall();
+    }
+    #endregion
+
+    #region ✨ Wall Grab System Logic
+    private void HandleWallGrabLogic()
+    {
+        if (!enableWallGrab || isSqueezing || isStunned)
+        {
+            if (isWallGrabbing) DetachFromWall();
+            return;
+        }
+
+        bool eKeyPressed = false;
+        if (Keyboard.current != null)
+        {
+            eKeyPressed = Keyboard.current.eKey.wasPressedThisFrame;
+        }
+
+        // ยิง Raycast ตรวจหาคอลไลเดอร์กำแพงด้านหน้า
+        Vector3 rayOrigin = transform.position + Vector3.up * 1.0f;
+        isTouchWall = Physics.Raycast(rayOrigin, transform.forward, out wallHitInfo, wallCheckDistance, wallLayer, QueryTriggerInteraction.Ignore);
+
+        bool isValidWall = isTouchWall;
+        if (isTouchWall && !string.IsNullOrEmpty(climbableWallTag))
+        {
+            isValidWall = wallHitInfo.collider.CompareTag(climbableWallTag);
+        }
+
+        if (!isWallGrabbing)
+        {
+            // กด E เพื่อเริ่มเกาะกำแพง
+            if (isValidWall && eKeyPressed)
+            {
+                isWallGrabbing = true;
+                rb.useGravity = false;
+                jumpsLeft = maxJumps;
+
+                // หันหน้าตัวละครเข้าหากำแพงอัตโนมัติ
+                yaw = Quaternion.LookRotation(-wallHitInfo.normal).eulerAngles.y;
+            }
+        }
+        else
+        {
+            // ถ้ากด E อีกรอบ หรือ เลื่อนไปจนสุดขอบกำแพง (Raycast ไม่ชนแล้ว) ให้หลุดจากการเกาะ
+            if (eKeyPressed || !isValidWall)
+            {
+                DetachFromWall();
+            }
+        }
+    }
+
+    private void DetachFromWall()
+    {
+        isWallGrabbing = false;
+        rb.useGravity = true;
+    }
+    #endregion
+
     void HandleSqueezeInput()
     {
         bool eKeyPressed = false;
@@ -323,8 +482,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             eKeyPressed = Keyboard.current.eKey.wasPressedThisFrame;
         }
 
-        // ✨ กด E ได้เฉพาะ "ก่อนเข้าซอก" เท่านั้น (ขณะอยู่ในซอกจะกด E ซ้ำเพื่อยกเลิกไม่ได้ กันคอลไลเดอร์ขยายติดกำแพง)
-        if (isInGapZone && eKeyPressed && !isSqueezing)
+        if (isInGapZone && eKeyPressed && !isSqueezing && !isStunned && !isWallGrabbing)
         {
             isSqueezing = true;
 
@@ -345,7 +503,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             sKeyPressedLastFrame = false;
         }
 
-        // ✨ เมื่อเดินพ้นพื้นที่ Trigger ช่องแคบ ยกเลิกสถานะแทรกตัวคืนค่าขนาดตัวละครอัตโนมัติ
         if (!isInGapZone && isSqueezing)
         {
             isSqueezing = false;
@@ -390,7 +547,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         bool wantsToSprint = (sprintAction != null) && sprintAction.IsPressed();
         bool isMoving = targetInput.sqrMagnitude > 0.01f;
 
-        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && currentStamina > 0f)
+        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && !isWallGrabbing && !isStunned && currentStamina > 0f)
         {
             isSprinting = true;
             currentStamina -= staminaDrainRate * Time.deltaTime;
@@ -431,6 +588,24 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
             rb.angularVelocity = Vector3.zero;
+            return;
+        }
+
+        if (isStunned)
+        {
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            return;
+        }
+
+        // ✨ การเคลื่อนที่ขณะเกาะกำแพง (สไลด์ซ้าย-ขวา)
+        if (isWallGrabbing)
+        {
+            float shimmyInput = targetInput.x; // ใช้ปุ่ม A / D
+
+            // ขยับตัวละครไปด้านข้างซ้าย-ขวา โดยยึดทิศทาง Local ของตัวละครที่หันเข้าหากำแพงแล้ว
+            Vector3 shimmyVelocity = transform.right * shimmyInput * wallShimmySpeed;
+
+            rb.linearVelocity = shimmyVelocity;
             return;
         }
 
@@ -527,7 +702,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        if (enableHeadBob && !isSqueezing)
+        if (enableHeadBob && !isSqueezing && !isWallGrabbing && !isStunned)
         {
             Vector3 horizontalVel = rb.linearVelocity;
             horizontalVel.y = 0f;
@@ -593,6 +768,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
             Gizmos.color = Color.green;
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
+
+        Gizmos.color = isTouchWall ? Color.cyan : Color.red;
+        Vector3 rayOrigin = transform.position + Vector3.up * 1.0f;
+        Gizmos.DrawRay(rayOrigin, transform.forward * wallCheckDistance);
 
         if (capsuleCollider != null)
         {

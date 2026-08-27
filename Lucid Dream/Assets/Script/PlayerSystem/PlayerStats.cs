@@ -56,7 +56,7 @@ public class PlayerStats : MonoBehaviour
         }
 
         OnSanityChanged?.Invoke(currentSanity, maxSanity);
-        Debug.Log($"<color=lime>❤️ [PlayerStats] ซิงค์ค่าสติสำเร็จ: {currentSanity}/{maxSanity}</color>");
+        Debug.Log($"<color=lime> [PlayerStats] ซิงค์ค่าสติสำเร็จ: {currentSanity}/{maxSanity}</color>");
     }
 
     private void OnSanityCheck()
