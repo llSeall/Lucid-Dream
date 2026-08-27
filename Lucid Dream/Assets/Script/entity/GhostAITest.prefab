@@ -156,6 +156,7 @@ MonoBehaviour:
   speedParamName: Speed
   isMovingParamName: IsMoving
   defaultFacingLeft: 0
+  maxChaseDuration: 60
   playerTransform: {fileID: 0}
   obstacleMask:
     serializedVersion: 2
@@ -164,7 +165,7 @@ MonoBehaviour:
   chaseSpeed: 4
   investSpeed: 3
   sightDistance: 20
-  investigateDuration: 30
+  investigateDuration: 10
   wanderRadius: 15
   currentState: 0
 --- !u!1 &7757032474057491306

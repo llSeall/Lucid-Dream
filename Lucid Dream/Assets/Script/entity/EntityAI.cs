@@ -1,22 +1,26 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 
 public enum EntityState { Chase, Investigate, Despawn }
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EntityAI : MonoBehaviour
 {
-    [Header("2.5D Sprite & Animation Settings ✨")]
-    [Tooltip("ใส่ Sprite Renderer ของตัวผี")]
+    [Header("2.5D Sprite & Animation Settings")]
     public SpriteRenderer ghostSprite;
-    [Tooltip("ใส่ Animator ที่อยู่ในออบเจกต์รูปผี")]
     public Animator ghostAnimator;
-    [Tooltip("ชื่อ Parameter ประเภท Float ใน Animator (เช่น Speed)")]
     public string speedParamName = "Speed";
-    [Tooltip("ชื่อ Parameter ประเภท Bool ใน Animator (เช่น IsMoving)")]
     public string isMovingParamName = "IsMoving";
-    [Tooltip("ติ๊กถูกถ้ารูปต้นฉบับของคุณหันหน้าไปทางซ้าย")]
     public bool defaultFacingLeft = false;
+
+    [Header("Catch & Game Over Settings")]
+    public float catchDistance = 1.5f;
+    public GameObject gameOverUI;
+    public KeyCode restartKey = KeyCode.R;
+
+    [Header("Chase Timeout Settings")]
+    public float maxChaseDuration = 15f;
 
     [Header("Target & Hiding Settings")]
     public Transform playerTransform;
@@ -38,22 +42,56 @@ public class EntityAI : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3 lastKnownPosition;
     private float searchTimer;
+    private float chaseTimer;
     private bool hasReachedLastKnownPos = false;
+    private EntityState previousState;
+    private bool isGameOver = false;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        chaseTimer = maxChaseDuration;
 
-        // ถ้าลืมลาก Animator ใส่ระบบจะดึงจากออบเจกต์ลูกให้อัตโนมัติ
+        if (playerTransform == null)
+        {
+            GameObject p = GameObject.FindWithTag("Player");
+            if (p != null) playerTransform = p.transform;
+        }
+
+        if (gameOverUI == null)
+        {
+            gameOverUI = GameObject.FindWithTag("GameOverUI");
+        }
+
         if (ghostAnimator == null && ghostSprite != null)
         {
             ghostAnimator = ghostSprite.GetComponent<Animator>();
+        }
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.SetActive(false);
         }
     }
 
     void Update()
     {
+        if (isGameOver)
+        {
+            if (Input.GetKeyDown(restartKey))
+            {
+                RestartLevel();
+            }
+            return;
+        }
+
         bool canSee = CanSeePlayer();
+
+        if (currentState == EntityState.Chase && previousState != EntityState.Chase)
+        {
+            chaseTimer = maxChaseDuration;
+        }
+        previousState = currentState;
 
         switch (currentState)
         {
@@ -75,7 +113,6 @@ public class EntityAI : MonoBehaviour
     {
         float currentSpeed = agent.velocity.magnitude;
 
-        // --- พลิกสไปรต์ซ้าย-ขวา ---
         if (ghostSprite != null)
         {
             if (agent.velocity.x > 0.1f)
@@ -88,7 +125,6 @@ public class EntityAI : MonoBehaviour
             }
         }
 
-        // --- ส่งค่าเข้า Animator เพื่อสั่งเล่นแอนิเมชัน ---
         if (ghostAnimator != null)
         {
             if (!string.IsNullOrEmpty(speedParamName))
@@ -105,7 +141,7 @@ public class EntityAI : MonoBehaviour
 
     bool CanSeePlayer()
     {
-        if (isPlayerHiding) return false;
+        if (isPlayerHiding || playerTransform == null) return false;
 
         Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
         float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
@@ -124,10 +160,27 @@ public class EntityAI : MonoBehaviour
     {
         agent.speed = chaseSpeed;
 
+        if (playerTransform != null)
+        {
+            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            if (distanceToPlayer <= catchDistance)
+            {
+                TriggerGameOver();
+                return;
+            }
+        }
+
         if (canSee)
         {
             agent.SetDestination(playerTransform.position);
             lastKnownPosition = playerTransform.position;
+
+            chaseTimer -= Time.deltaTime;
+            if (chaseTimer <= 0f)
+            {
+                currentState = EntityState.Despawn;
+                return;
+            }
         }
         else
         {
@@ -136,6 +189,30 @@ public class EntityAI : MonoBehaviour
             searchTimer = investigateDuration;
             agent.SetDestination(lastKnownPosition);
         }
+    }
+
+    void TriggerGameOver()
+    {
+        isGameOver = true;
+        agent.isStopped = true;
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.SetActive(true);
+        }
+
+        // แสดงและปลดล็อกเมาส์ให้สามารถกดปุ่มบน UI ได้
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        Time.timeScale = 0f;
+        Debug.Log("[Game Over] ผู้เล่นถูกผีจับได้แล้ว!");
+    }
+
+    public void RestartLevel()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     void HandleInvestigate(bool canSee)
@@ -186,7 +263,7 @@ public class EntityAI : MonoBehaviour
 
     void HandleDespawn()
     {
-        Debug.Log("Entity lost the player and despawned.");
+        Debug.Log("Entity chase timeout or lost player and despawned.");
         Destroy(gameObject);
     }
 }
