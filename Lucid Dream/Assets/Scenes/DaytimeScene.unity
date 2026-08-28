@@ -687,7 +687,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &87715488
 SpriteRenderer:
   serializedVersion: 2
@@ -4548,7 +4548,7 @@ RectTransform:
   m_Father: {fileID: 2068410651}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6053,7 +6053,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &543070197
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6407,7 +6407,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &601351052
 RectTransform:
   m_ObjectHideFlags: 0
@@ -22296,6 +22296,22 @@ MonoBehaviour:
   squeezeSmoothing: 8
   squeezeCamRotateSpeed: 6
   wallGapTag: WallGap
+  gapAlignmentSpeed: 8
+  footstepAudioSource: {fileID: 0}
+  defaultFootstepClips: []
+  crouchFootstepClips: []
+  squeezeEnterClip: {fileID: 0}
+  squeezeMoveClips: []
+  wallGrabEnterClip: {fileID: 0}
+  wallShimmyClips: []
+  baseStepInterval: 0.5
+  volumeWalk: 0.6
+  volumeRun: 1
+  volumeCrouch: 0.3
+  volumeSqueezeEnter: 0.8
+  volumeSqueezeMove: 0.4
+  volumeWallGrabEnter: 0.8
+  volumeWallShimmy: 0.5
   maxStamina: 100
   staminaDrainRate: 25
   staminaRegenRate: 15
@@ -22491,9 +22507,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 038ffb09e12106142b33c7240a05f18b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EyeCloseToggleManager
+  playerCamera: {fileID: 0}
   eyeOverlayCanvasGroup: {fileID: 1281417968}
   holdDuration: 1
   fadeSpeed: 3
+  toggleOnlyOncePerObject: 1
   viewDistance: 15
   viewAngle: 60
   targetObjects: []

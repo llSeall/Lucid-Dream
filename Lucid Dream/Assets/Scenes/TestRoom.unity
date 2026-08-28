@@ -1149,6 +1149,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Door
       objectReference: {fileID: 0}
+    - target: {fileID: 2476656891510508592, guid: 753f17d0cf8c85d42a7fc6b93be70e30, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6075796717517059610, guid: 753f17d0cf8c85d42a7fc6b93be70e30, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -6314,7 +6318,7 @@ Transform:
   m_GameObject: {fileID: 1757286869}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -17.17, y: 6.94, z: -40.98}
+  m_LocalPosition: {x: -17.17, y: 2.15, z: -40.98}
   m_LocalScale: {x: 1, y: 1, z: 11.910658}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6918,21 +6922,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a31c2d381c81e7e4f8ab4c2b00b5cee8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GhostAI
-  initialSpawnDelay: 1
-  spawnCountdown: 0
-  detectionRadius: 6.5
-  fieldOfViewAngle: 94
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 128
-  playerTransform: {fileID: 2144493367}
-  playerCamera: {fileID: 606136248}
-  despawnDistance: 20
-  minSpawnDistance: 10
-  maxSpawnDistance: 50
-  currentState: 0
-  isGhostActive: 0
-  searchDuration: 3
 --- !u!195 &1937894974
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -7907,7 +7896,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   climbableWallTag: Climbable
-  shimmyCameraPanAmount: 10
+  shimmyCameraPanAmount: 65
   shimmyCameraSmoothing: 6
   squeezeSpeed: 1.2
   squeezedRadius: 0.18
@@ -7917,6 +7906,22 @@ MonoBehaviour:
   squeezeSmoothing: 8
   squeezeCamRotateSpeed: 6
   wallGapTag: WallGap
+  gapAlignmentSpeed: 8
+  footstepAudioSource: {fileID: 0}
+  defaultFootstepClips: []
+  crouchFootstepClips: []
+  squeezeEnterClip: {fileID: 0}
+  squeezeMoveClips: []
+  wallGrabEnterClip: {fileID: 0}
+  wallShimmyClips: []
+  baseStepInterval: 0.5
+  volumeWalk: 0.6
+  volumeRun: 1
+  volumeCrouch: 0.3
+  volumeSqueezeEnter: 0.8
+  volumeSqueezeMove: 0.4
+  volumeWallGrabEnter: 0.8
+  volumeWallShimmy: 0.5
   maxStamina: 100
   staminaDrainRate: 25
   staminaRegenRate: 15
@@ -8081,9 +8086,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 038ffb09e12106142b33c7240a05f18b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EyeCloseToggleManager
+  playerCamera: {fileID: 0}
   eyeOverlayCanvasGroup: {fileID: 848905152}
   holdDuration: 1
   fadeSpeed: 3
+  toggleOnlyOncePerObject: 1
   viewDistance: 15
   viewAngle: 60
   targetObjects:
@@ -8100,6 +8107,10 @@ PrefabInstance:
     - target: {fileID: 2135582286214576892, guid: 8372ec2509015174f9fd91276f901649, type: 3}
       propertyPath: m_Name
       value: DoorHing
+      objectReference: {fileID: 0}
+    - target: {fileID: 2135582286214576892, guid: 8372ec2509015174f9fd91276f901649, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4242137326146069606, guid: 8372ec2509015174f9fd91276f901649, type: 3}
       propertyPath: m_LocalPosition.x

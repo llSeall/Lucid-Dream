@@ -36,6 +36,17 @@ public class EntityAI : MonoBehaviour
     public float investigateDuration = 5f;
     public float wanderRadius = 4f;
 
+    [Header("Ghost Footstep Sounds ✨")]
+    public AudioSource ghostAudioSource;
+    [Tooltip("ไฟล์เสียงเดินของผี (ใส่หลายๆ ไฟล์เพื่อสุ่มได้)")]
+    public AudioClip[] footstepClips;
+    [Tooltip("ระยะห่างจังหวะก้าวขาปกติ (วินาที)")]
+    public float baseStepInterval = 0.5f;
+    [Tooltip("ความดังตอนเดินสำรวจ")]
+    public float volumeInvestigate = 0.5f;
+    [Tooltip("ความดังตอนวิ่งไล่ล่าผู้เล่น")]
+    public float volumeChase = 0.85f;
+
     [Header("Current State")]
     public EntityState currentState = EntityState.Chase;
 
@@ -46,11 +57,17 @@ public class EntityAI : MonoBehaviour
     private bool hasReachedLastKnownPos = false;
     private EntityState previousState;
     private bool isGameOver = false;
+    private float stepTimer = 0f;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         chaseTimer = maxChaseDuration;
+
+        if (ghostAudioSource == null)
+        {
+            ghostAudioSource = GetComponent<AudioSource>();
+        }
 
         if (playerTransform == null)
         {
@@ -107,7 +124,48 @@ public class EntityAI : MonoBehaviour
         }
 
         UpdateSpriteFacingAndAnimation();
+        HandleFootsteps();
     }
+
+    #region ✨ Ghost Footstep Audio Logic
+    void HandleFootsteps()
+    {
+        if (isGameOver || agent == null) return;
+
+        float currentSpeed = agent.velocity.magnitude;
+
+        // ถ้าผีหยุดนิ่ง ให้รีเซ็ตเวลา
+        if (currentSpeed < 0.1f)
+        {
+            stepTimer = 0f;
+            return;
+        }
+
+        // กำหนดความดังและจังหวะก้าวตามสถานะ AI
+        float volume = (currentState == EntityState.Chase) ? volumeChase : volumeInvestigate;
+        float currentInterval = (currentState == EntityState.Chase) ? (baseStepInterval * 0.65f) : baseStepInterval;
+
+        stepTimer += Time.deltaTime * (currentSpeed / investSpeed);
+
+        if (stepTimer >= currentInterval)
+        {
+            PlayFootstepSound(volume);
+            stepTimer = 0f;
+        }
+    }
+
+    void PlayFootstepSound(float volume)
+    {
+        if (ghostAudioSource == null || footstepClips == null || footstepClips.Length == 0) return;
+
+        AudioClip clip = footstepClips[Random.Range(0, footstepClips.Length)];
+        if (clip != null)
+        {
+            ghostAudioSource.pitch = Random.Range(0.85f, 1.15f);
+            ghostAudioSource.PlayOneShot(clip, volume);
+        }
+    }
+    #endregion
 
     void UpdateSpriteFacingAndAnimation()
     {

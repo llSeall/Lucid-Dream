@@ -51,6 +51,39 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float squeezeSmoothing = 8f;
     [SerializeField] float squeezeCamRotateSpeed = 6f;
     [SerializeField] string wallGapTag = "WallGap";
+    [Tooltip("ความเร็วในการดัดตัวละครให้อยู่กึ่งกลางซอกกำแพง เพื่อไม่ให้ติดคอลไลเดอร์")]
+    [SerializeField] float gapAlignmentSpeed = 8f;
+
+    [Header("Footstep & Movement Sounds ✨")]
+    [SerializeField] AudioSource footstepAudioSource;
+
+    [Header("Clips - Ground Movement")]
+    [Tooltip("เสียงเดินปกติ")]
+    [SerializeField] AudioClip[] defaultFootstepClips;
+    [Tooltip("เสียงเดินย่อ (Crouch)")]
+    [SerializeField] AudioClip[] crouchFootstepClips;
+
+    [Header("Clips - Wall Squeeze")]
+    [Tooltip("เสียงจังหวะแทรกตัวเข้าซอกกำแพง (เกิดขึ้นครั้งเดียวตอนกดแทรก)")]
+    [SerializeField] AudioClip squeezeEnterClip;
+    [Tooltip("เสียงขยับตัวเดินในซอกกำแพง (เล่นตามจังหวะเดิน)")]
+    [SerializeField] AudioClip[] squeezeMoveClips;
+
+    [Header("Clips - Wall Grab & Shimmy")]
+    [Tooltip("เสียงตอนเอามือแปะ/เกาะกำแพง (เกิดขึ้นครั้งเดียวตอนกดเกาะ)")]
+    [SerializeField] AudioClip wallGrabEnterClip;
+    [Tooltip("เสียงขยับตัวซ้าย-ขวาขณะเกาะกำแพง")]
+    [SerializeField] AudioClip[] wallShimmyClips;
+
+    [Header("Audio Tuning")]
+    [SerializeField] float baseStepInterval = 0.5f;
+    [SerializeField] float volumeWalk = 0.6f;
+    [SerializeField] float volumeRun = 1.0f;
+    [SerializeField] float volumeCrouch = 0.3f;
+    [SerializeField] float volumeSqueezeEnter = 0.8f;
+    [SerializeField] float volumeSqueezeMove = 0.4f;
+    [SerializeField] float volumeWallGrabEnter = 0.8f;
+    [SerializeField] float volumeWallShimmy = 0.5f;
 
     [Header("Stamina Settings ✨")]
     [SerializeField] float maxStamina = 100f;
@@ -151,6 +184,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private bool isFacingReverseInGap = false;
     private bool sKeyPressedLastFrame = false;
 
+    // Footstep Sound variables ✨
+    private float stepTimer = 0f;
+
     // Head bob variables
     float bobTimer = 0f;
     Vector3 originalCameraPosition;
@@ -161,6 +197,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
+
+        if (footstepAudioSource == null)
+        {
+            footstepAudioSource = GetComponent<AudioSource>();
+        }
 
         if (rb != null)
         {
@@ -294,7 +335,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         HandleSqueezeInput();
 
-        // หมุนมุมกล้องและตัวละคร
         if (isSqueezing)
         {
             bool sKeyPressed = targetInput.z < -0.5f;
@@ -311,7 +351,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (isWallGrabbing)
         {
-            // ล็อกหน้าหันเข้าหากำแพง
             pitch -= lookInput.y * (mouseSensitivity * 0.01f);
             pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
         }
@@ -325,7 +364,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         transform.eulerAngles = new Vector3(0f, yaw, 0f);
 
-        // จัดการโยกกล้องตอนเกาะกำแพง (Shimmy Pan) และการตกกระแทก (Landing Impact)
         currentLandingImpact = Mathf.Lerp(currentLandingImpact, 0f, Time.deltaTime * landingRecoverSpeed);
 
         float targetShimmyPan = isWallGrabbing ? (targetInput.x * shimmyCameraPanAmount) : 0f;
@@ -358,6 +396,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         HandleCrouchingAndSqueezing();
         HandleStamina();
+        HandleFootsteps();
 
         if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing && !isStunned)
         {
@@ -370,6 +409,88 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         UpdateHeadBob();
     }
+
+    #region ✨ Movement & Footstep Audio System
+    private void HandleFootsteps()
+    {
+        if (!grounded && !isSqueezing && !isWallGrabbing) return;
+
+        float currentSpeed = 0f;
+
+        if (isWallGrabbing)
+        {
+            currentSpeed = Mathf.Abs(targetInput.x) * wallShimmySpeed;
+        }
+        else
+        {
+            Vector3 horizontalVel = rb.linearVelocity;
+            horizontalVel.y = 0f;
+            currentSpeed = horizontalVel.magnitude;
+        }
+
+        if (currentSpeed < 0.1f)
+        {
+            stepTimer = 0f;
+            return;
+        }
+
+        float currentInterval = baseStepInterval;
+        float volume = volumeWalk;
+        AudioClip[] targetClips = defaultFootstepClips;
+
+        if (isWallGrabbing)
+        {
+            currentInterval = baseStepInterval * 1.1f;
+            volume = volumeWallShimmy;
+            targetClips = (wallShimmyClips != null && wallShimmyClips.Length > 0) ? wallShimmyClips : defaultFootstepClips;
+        }
+        else if (isSqueezing)
+        {
+            currentInterval = baseStepInterval * 1.4f;
+            volume = volumeSqueezeMove;
+            targetClips = (squeezeMoveClips != null && squeezeMoveClips.Length > 0) ? squeezeMoveClips : defaultFootstepClips;
+        }
+        else if (isCrouching)
+        {
+            currentInterval = baseStepInterval * 1.6f;
+            volume = volumeCrouch;
+            targetClips = (crouchFootstepClips != null && crouchFootstepClips.Length > 0) ? crouchFootstepClips : defaultFootstepClips;
+        }
+        else if (isSprinting)
+        {
+            currentInterval = baseStepInterval * 0.65f;
+            volume = volumeRun;
+        }
+
+        float speedMultiplier = isWallGrabbing ? (currentSpeed / wallShimmySpeed) : (currentSpeed / walkSpeed);
+        stepTimer += Time.deltaTime * speedMultiplier;
+
+        if (stepTimer >= currentInterval)
+        {
+            PlayRandomAudioClip(targetClips, volume);
+            stepTimer = 0f;
+        }
+    }
+
+    private void PlayRandomAudioClip(AudioClip[] clips, float volume)
+    {
+        if (footstepAudioSource == null || clips == null || clips.Length == 0) return;
+
+        AudioClip clip = clips[Random.Range(0, clips.Length)];
+        if (clip == null) return;
+
+        footstepAudioSource.pitch = Random.Range(0.92f, 1.08f);
+        footstepAudioSource.PlayOneShot(clip, volume);
+    }
+
+    private void PlaySingleSoundEffect(AudioClip clip, float volume)
+    {
+        if (footstepAudioSource == null || clip == null) return;
+
+        footstepAudioSource.pitch = Random.Range(0.95f, 1.05f);
+        footstepAudioSource.PlayOneShot(clip, volume);
+    }
+    #endregion
 
     #region ✨ Fall Stun System Logic
     private void HandleFallStunLogic()
@@ -412,7 +533,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         stunTimer = fallStunDuration;
         rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
 
-        // เพิ่มเอฟเฟกต์กล้องพับลงตอนกระแทก
         currentLandingImpact = landingImpactPitch;
 
         if (isWallGrabbing) DetachFromWall();
@@ -434,7 +554,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             eKeyPressed = Keyboard.current.eKey.wasPressedThisFrame;
         }
 
-        // ยิง Raycast ตรวจหาคอลไลเดอร์กำแพงด้านหน้า
         Vector3 rayOrigin = transform.position + Vector3.up * 1.0f;
         isTouchWall = Physics.Raycast(rayOrigin, transform.forward, out wallHitInfo, wallCheckDistance, wallLayer, QueryTriggerInteraction.Ignore);
 
@@ -446,20 +565,20 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         if (!isWallGrabbing)
         {
-            // กด E เพื่อเริ่มเกาะกำแพง
             if (isValidWall && eKeyPressed)
             {
                 isWallGrabbing = true;
                 rb.useGravity = false;
                 jumpsLeft = maxJumps;
 
-                // หันหน้าตัวละครเข้าหากำแพงอัตโนมัติ
                 yaw = Quaternion.LookRotation(-wallHitInfo.normal).eulerAngles.y;
+
+                // ✨ เล่นเสียงกดเริ่มเกาะกำแพง
+                PlaySingleSoundEffect(wallGrabEnterClip, volumeWallGrabEnter);
             }
         }
         else
         {
-            // ถ้ากด E อีกรอบ หรือ เลื่อนไปจนสุดขอบกำแพง (Raycast ไม่ชนแล้ว) ให้หลุดจากการเกาะ
             if (eKeyPressed || !isValidWall)
             {
                 DetachFromWall();
@@ -501,6 +620,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
             squeezeTargetYaw = squeezeBaseYaw;
             isFacingReverseInGap = false;
             sKeyPressedLastFrame = false;
+
+            // ✨ เล่นเสียงจังหวะกดเริ่มแทรกตัวเข้าซอกกำแพง
+            PlaySingleSoundEffect(squeezeEnterClip, volumeSqueezeEnter);
         }
 
         if (!isInGapZone && isSqueezing)
@@ -597,14 +719,10 @@ public class PlayerController3D_InputAction : MonoBehaviour
             return;
         }
 
-        // ✨ การเคลื่อนที่ขณะเกาะกำแพง (สไลด์ซ้าย-ขวา)
         if (isWallGrabbing)
         {
-            float shimmyInput = targetInput.x; // ใช้ปุ่ม A / D
-
-            // ขยับตัวละครไปด้านข้างซ้าย-ขวา โดยยึดทิศทาง Local ของตัวละครที่หันเข้าหากำแพงแล้ว
+            float shimmyInput = targetInput.x;
             Vector3 shimmyVelocity = transform.right * shimmyInput * wallShimmySpeed;
-
             rb.linearVelocity = shimmyVelocity;
             return;
         }
@@ -613,6 +731,21 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         if (isSqueezing)
         {
+            if (currentGapTransform != null)
+            {
+                Vector3 gapForward = currentGapTransform.forward;
+                Vector3 gapCenter = currentGapTransform.position;
+                Vector3 playerPos = rb.position;
+
+                Vector3 diff = playerPos - gapCenter;
+                Vector3 projectedOffset = Vector3.Project(diff, gapForward);
+                Vector3 targetAlignedPos = gapCenter + projectedOffset;
+                targetAlignedPos.y = playerPos.y;
+
+                Vector3 newAlignedPos = Vector3.Lerp(playerPos, targetAlignedPos, gapAlignmentSpeed * Time.fixedDeltaTime);
+                rb.MovePosition(newAlignedPos);
+            }
+
             Vector3 forwardDir = Quaternion.Euler(0, squeezeTargetYaw, 0) * Vector3.forward;
             float moveForwardAmount = Mathf.Max(0f, targetInput.z);
             float speed = squeezeSpeed;

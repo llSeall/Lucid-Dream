@@ -7,54 +7,125 @@ public class LockedHingeDoor : MonoBehaviour
     [Header("Door Settings")]
     public string requiredKeyID = "MainKey";
     public bool isLocked = true;
-    public float pushForce = 8f;
 
     [Header("UI Settings ✨")]
-    [Tooltip("UI รูปแม่กุญแจล็อก (แสดงตอนที่ผู้เล่นยังไม่มีกุญแจ)")]
     public GameObject lockedIconUI;
-    [Tooltip("UI รูปปุ่ม E (แสดงตอนมีกุญแจพร้อมปลดล็อก)")]
     public GameObject interactIconUI;
+
+    [Header("Audio Source ✨")]
+    public AudioSource doorAudioSource;
+
+    [Header("One-Shot Sounds ✨")]
+    [Tooltip("เสียงพยายามเปิดประตูขณะล็อกอยู่ (เสียงขยับลูกบิด/ประตูติด)")]
+    public AudioClip lockedSoundClip;
+    [Tooltip("เสียงตอนกดปลดล็อกประตูสำเร็จ (เสียงไขกุญแจ)")]
+    public AudioClip unlockSoundClip;
+
+    [Header("Dynamic Real-time Creak Sound ✨")]
+    [Tooltip("ไฟล์เสียงเอี๊ยดประตูแบบ Loop (วนลูป)")]
+    public AudioClip creakLoopClip;
+    [Tooltip("ระดับความดังสูงสุด")]
+    [Range(0f, 1f)] public float maxVolume = 0.8f;
+    [Tooltip("ความเร็วในการ Fade In ของเสียง")]
+    public float fadeInSpeed = 5.0f;
+    [Tooltip("ความเร็วในการ Fade Out เมื่อหยุดชน/หยุดเดิน")]
+    public float fadeOutSpeed = 4.0f;
+    [Tooltip("ความเร็วการหมุนขั้นต่ำของประตูที่จะเริ่มเล่นเสียง")]
+    public float minAngularSpeed = 0.08f;
+    [Tooltip("ต้องให้ผู้เล่นตัวชนประตูอยู่ด้วยเท่านั้นถึงจะมีเสียงหรือไม่")]
+    public bool requirePlayerContact = true;
 
     private Rigidbody rb;
     private HingeJoint hinge;
     private bool isPlayerNearby = false;
-    private bool isOpen = false;
+    private bool isPlayerTouching = false; // ตรวจจับว่าผู้เล่นกำลังเอาตัวชนประตูอยู่ไหม
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         hinge = GetComponent<HingeJoint>();
 
-        rb.isKinematic = isLocked;
+        if (doorAudioSource == null)
+        {
+            doorAudioSource = GetComponent<AudioSource>();
+        }
 
+        rb.isKinematic = isLocked;
         HideAllUI();
     }
 
     void Update()
     {
-        if (!isPlayerNearby) return;
-
-        UpdateUI();
-
-        if (Input.GetKeyDown(KeyCode.E))
+        if (isPlayerNearby)
         {
-            if (isLocked)
+            UpdateUI();
+
+            if (Input.GetKeyDown(KeyCode.E) && isLocked)
             {
                 if (PlayerKeyHolder.Instance != null && PlayerKeyHolder.Instance.HasKey(requiredKeyID))
                 {
                     UnlockDoor();
                 }
+                else
+                {
+                    PlayOneShotSound(lockedSoundClip);
+                }
             }
-            else
+        }
+
+        // ประมวลผลเสียงประตูแบบเรียลไทม์ทุกเฟรม ✨
+        HandleRealtimeDoorSound();
+    }
+
+    #region Real-time Sound Logic ✨
+    void HandleRealtimeDoorSound()
+    {
+        if (isLocked || doorAudioSource == null || creakLoopClip == null) return;
+
+        // เช็กความเร็วการหมุนของประตูจากฟิสิกส์ Rigidbody
+        float doorRotationSpeed = rb.angularVelocity.magnitude;
+        bool isDoorMoving = doorRotationSpeed > minAngularSpeed;
+
+        // เงื่อนไขในการเล่นเสียง: ประตูกำลังหมุนจริง + (ถ้าเปิดตัวเลือกไว้) ผู้เล่นต้องชนประตูอยู่
+        bool shouldPlaySound = isDoorMoving && (!requirePlayerContact || isPlayerTouching);
+
+        if (shouldPlaySound)
+        {
+            // ถ้ายังไม่ได้เริ่มเล่นเสียง ให้เริ่มเล่นไฟล์แบบ Loop
+            if (!doorAudioSource.isPlaying || doorAudioSource.clip != creakLoopClip)
             {
-                ToggleDoor();
+                doorAudioSource.clip = creakLoopClip;
+                doorAudioSource.loop = true;
+                doorAudioSource.volume = 0f; // เริ่มที่ 0 เพื่อความนุ่มนวล
+                doorAudioSource.Play();
+            }
+
+            // ปรับ Pitch เล็กน้อยตามความเร็วหมุนของประตู (หมุนเร็วเสียงจะแหลมขึ้นเล็กน้อย)
+            float targetPitch = Mathf.Clamp(0.85f + (doorRotationSpeed * 0.15f), 0.85f, 1.25f);
+            doorAudioSource.pitch = Mathf.Lerp(doorAudioSource.pitch, targetPitch, Time.deltaTime * 3f);
+
+            // ค่อยๆ Fade In ความดังขึ้นไปจนถึง maxVolume
+            doorAudioSource.volume = Mathf.MoveTowards(doorAudioSource.volume, maxVolume, Time.deltaTime * fadeInSpeed);
+        }
+        else
+        {
+            // หากผู้เล่นถอยออก หรือหยุดดันจนประตูหยุดหมุน -> Fade Out เสียงดับไป
+            if (doorAudioSource.isPlaying && doorAudioSource.clip == creakLoopClip)
+            {
+                doorAudioSource.volume = Mathf.MoveTowards(doorAudioSource.volume, 0f, Time.deltaTime * fadeOutSpeed);
+
+                // เมื่อความดังเหลือ 0 ให้หยุดเล่น
+                if (doorAudioSource.volume <= 0.001f)
+                {
+                    doorAudioSource.Stop();
+                }
             }
         }
     }
+    #endregion
 
     void UpdateUI()
     {
-        // หากประตูปลดล็อกแล้ว ให้ปิด UI ทั้งหมดทันที ไม่ต้องโชว์ปุ่ม E อีก ✨
         if (!isLocked)
         {
             HideAllUI();
@@ -65,13 +136,11 @@ public class LockedHingeDoor : MonoBehaviour
 
         if (hasKey)
         {
-            // มีกุญแจแล้ว -> ซ่อนรูปแม่กุญแจ แสดงรูปปุ่ม E เพื่อกดปลดล็อก
             if (lockedIconUI != null) lockedIconUI.SetActive(false);
             if (interactIconUI != null) interactIconUI.SetActive(true);
         }
         else
         {
-            // ยังไม่มีกุญแจ -> แสดงรูปแม่กุญแจ ซ่อนรูปปุ่ม E
             if (lockedIconUI != null) lockedIconUI.SetActive(true);
             if (interactIconUI != null) interactIconUI.SetActive(false);
         }
@@ -81,21 +150,53 @@ public class LockedHingeDoor : MonoBehaviour
     {
         isLocked = false;
         rb.isKinematic = false;
-        HideAllUI(); // ซ่อน UI ทันทีเมื่อปลดล็อกสำเร็จ ✨
-        ToggleDoor();
+        HideAllUI();
+        PlayOneShotSound(unlockSoundClip);
     }
 
-    void ToggleDoor()
+    void PlayOneShotSound(AudioClip clip)
     {
-        isOpen = !isOpen;
-        Vector3 pushDirection = isOpen ? transform.forward : -transform.forward;
-        rb.AddForce(pushDirection * pushForce, ForceMode.Impulse);
+        if (doorAudioSource != null && clip != null)
+        {
+            doorAudioSource.pitch = Random.Range(0.95f, 1.05f);
+            doorAudioSource.PlayOneShot(clip, maxVolume);
+        }
     }
 
     void HideAllUI()
     {
         if (lockedIconUI != null) lockedIconUI.SetActive(false);
         if (interactIconUI != null) interactIconUI.SetActive(false);
+    }
+
+    // ✨ ตรวจจับการเข้าชนและการผละออกจากประตูของผู้เล่น
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            isPlayerTouching = true;
+
+            if (isLocked)
+            {
+                PlayOneShotSound(lockedSoundClip);
+            }
+        }
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            isPlayerTouching = true;
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            isPlayerTouching = false; // เมื่อเดินถอยออกจากประตู
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -112,6 +213,7 @@ public class LockedHingeDoor : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerNearby = false;
+            isPlayerTouching = false;
             HideAllUI();
         }
     }

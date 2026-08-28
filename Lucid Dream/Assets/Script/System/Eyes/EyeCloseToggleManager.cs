@@ -5,25 +5,30 @@ using UnityEngine.InputSystem;
 
 public class EyeCloseToggleManager : MonoBehaviour
 {
+    [Header("References")]
+    [Tooltip("ลาก Camera หลักของตัวละครมาใส่ เพื่อให้อิงมุมก้ม-เงยตามสายตาผู้เล่นจริง")]
+    [SerializeField] private Transform playerCamera;
+
     [Header("UI Settings")]
-    [Tooltip("CanvasGroup ของภาพสีดำเต็มจอสำหรับทำ Effect หลับตา")]
     [SerializeField] private CanvasGroup eyeOverlayCanvasGroup;
 
     [Header("Eye Close Settings")]
-    [Tooltip("ระยะเวลาที่ต้องกด F ค้างเพื่อสลับสถานะของสิ่งของ (วินาที)")]
     [SerializeField] private float holdDuration = 3.0f;
-    [Tooltip("ความเร็วในการลืมตา/หลับตา")]
     [SerializeField] private float fadeSpeed = 3.0f;
 
-    [Header("Vision Settings (Triangle FOV) ✨")]
-    [Tooltip("ระยะยาวของสามเหลี่ยมการมองเห็นด้านหน้า (หน่วยเป็นเมตร)")]
+    [Header("Toggle Behavior Settings ✨")]
+    [Tooltip("ติ๊กถูก = สิ่งของแต่ละชิ้นจะถูกสลับสถานะได้แค่ 1 ครั้งเท่านั้น (หลับตาซ้ำกี่ครั้งก็ได้ แต่ชิ้นที่เปลี่ยนไปแล้วจะไม่เปลี่ยนกลับ)")]
+    [SerializeField] private bool toggleOnlyOncePerObject = true;
+
+    [Header("Vision Settings (3D FOV Cone) 👁️")]
+    [Tooltip("ระยะยาวของกรวยสายตาด้านหน้า (เมตร)")]
     [SerializeField] private float viewDistance = 15.0f;
-    [Tooltip("องศาความกว้างของสามเหลี่ยมการมองเห็น (เช่น 60 ถึง 90 องศา)")]
+    [Tooltip("องศาความกว้างกรวยสายตา (เช่น 60 ถึง 90 องศา)")]
     [Range(0f, 180f)]
     [SerializeField] private float viewAngle = 60.0f;
 
     [Header("Target Objects to Toggle")]
-    [Tooltip("ใส่สิ่งของหรือวัตถุใน Scene ที่ต้องการให้สลับเปิด/ปิดเมื่อลืมตา")]
+    [Tooltip("ใส่สิ่งของใน Scene ที่ต้องการให้สลับเปิด/ปิดเมื่อหลับตา-ลืมตา")]
     [SerializeField] private List<GameObject> targetObjects = new List<GameObject>();
 
     // Private State Variables
@@ -32,11 +37,19 @@ public class EyeCloseToggleManager : MonoBehaviour
     private bool hasCompletedHold = false;
     private float targetAlpha = 0f;
 
+    // ✨ ชุดข้อมูลเก็บบันทึกวัตถุที่เคยถูกสลับไปแล้วแบบรายชิ้น
+    private HashSet<GameObject> toggledObjectsHistory = new HashSet<GameObject>();
+
     void Start()
     {
         if (eyeOverlayCanvasGroup != null)
         {
             eyeOverlayCanvasGroup.alpha = 0f;
+        }
+
+        if (playerCamera == null && Camera.main != null)
+        {
+            playerCamera = Camera.main.transform;
         }
     }
 
@@ -48,6 +61,7 @@ public class EyeCloseToggleManager : MonoBehaviour
 
     private void HandleInput()
     {
+        // สามารถกด F หลับตาได้เรื่อยๆ ไม่มีตัวกั้นจำกัดจำนวนครั้งการกด
         bool fKeyPressed = false;
 
 #if ENABLE_INPUT_SYSTEM
@@ -103,58 +117,64 @@ public class EyeCloseToggleManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// สลับสถานะเฉพาะวัตถุที่อยู่ในขอบเขตสามเหลี่ยมการมองเห็นเท่านั้น
-    /// </summary>
     private void ToggleTargetObjects()
     {
         foreach (GameObject obj in targetObjects)
         {
-            if (obj != null && IsInViewTriangle(obj.transform))
+            if (obj == null) continue;
+
+            // ✨ หากเปิดระบบสลับรายชิ้นครั้งเดียว แล้ววัตถุชิ้นนี้เคยโดนสลับไปแล้ว ให้ข้ามทันที
+            if (toggleOnlyOncePerObject && toggledObjectsHistory.Contains(obj))
+            {
+                continue;
+            }
+
+            if (IsInCameraViewCone(obj.transform))
             {
                 bool currentStatus = obj.activeSelf;
                 obj.SetActive(!currentStatus);
+
+                // บันทึกไว้ว่าวัตถุชิ้นนี้เคยถูกสลับแล้ว
+                toggledObjectsHistory.Add(obj);
             }
         }
     }
 
-    /// <summary>
-    /// ฟังก์ชันคำนวณว่าเป้าหมายอยู่ในสามเหลี่ยมสายตาหรือไม่
-    /// </summary>
-    private bool IsInViewTriangle(Transform target)
+    private bool IsInCameraViewCone(Transform targetTransform)
     {
-        Vector3 dirToTarget = target.position - transform.position;
+        Transform eyeOrigin = (playerCamera != null) ? playerCamera : transform;
+
+        Vector3 dirToTarget = targetTransform.position - eyeOrigin.position;
         float distance = dirToTarget.magnitude;
 
-        // 1. เช็กว่าเกินระยะความยาวของสามเหลี่ยมหรือไม่
         if (distance > viewDistance) return false;
 
-        // 2. คำนวณองศาระหว่างทิศทางหันหน้าผู้เล่น กับตำแหน่งวัตถุ
-        float angle = Vector3.Angle(transform.forward, dirToTarget.normalized);
-
-        // 3. วัตถุต้องอยู่ในขอบเขตครึ่งหนึ่งของ View Angle
+        float angle = Vector3.Angle(eyeOrigin.forward, dirToTarget.normalized);
         return angle <= (viewAngle / 2f);
     }
 
-    // วาดเส้นขอบเขตสามเหลี่ยมสายตาสีเหลืองในหน้า Scene View
     private void OnDrawGizmosSelected()
     {
+        Transform eyeOrigin = (playerCamera != null) ? playerCamera : transform;
+
         Gizmos.color = Color.yellow;
+        Vector3 forward = eyeOrigin.forward;
+        Vector3 right = eyeOrigin.right;
+        Vector3 up = eyeOrigin.up;
 
-        // คำนวณทิศทางเส้นขอบซ้ายและขวา
-        Vector3 leftDir = Quaternion.Euler(0, -viewAngle / 2f, 0) * transform.forward;
-        Vector3 rightDir = Quaternion.Euler(0, viewAngle / 2f, 0) * transform.forward;
+        float halfAngle = viewAngle / 2f;
 
-        Vector3 leftEndpoint = transform.position + leftDir * viewDistance;
-        Vector3 rightEndpoint = transform.position + rightDir * viewDistance;
+        Vector3 leftDir = Quaternion.AngleAxis(-halfAngle, up) * forward;
+        Vector3 rightDir = Quaternion.AngleAxis(halfAngle, up) * forward;
+        Vector3 topDir = Quaternion.AngleAxis(-halfAngle, right) * forward;
+        Vector3 bottomDir = Quaternion.AngleAxis(halfAngle, right) * forward;
 
-        // วาดเส้นสามเหลี่ยม
-        Gizmos.DrawRay(transform.position, leftDir * viewDistance);
-        Gizmos.DrawRay(transform.position, rightDir * viewDistance);
-        Gizmos.DrawLine(leftEndpoint, rightEndpoint);
+        Gizmos.DrawRay(eyeOrigin.position, leftDir * viewDistance);
+        Gizmos.DrawRay(eyeOrigin.position, rightDir * viewDistance);
+        Gizmos.DrawRay(eyeOrigin.position, topDir * viewDistance);
+        Gizmos.DrawRay(eyeOrigin.position, bottomDir * viewDistance);
 
-        // เส้นประศูนย์กลางสายตา
-        Gizmos.color = new Color(1f, 1f, 0f, 0.3f);
-        Gizmos.DrawRay(transform.position, transform.forward * viewDistance);
+        Gizmos.color = new Color(1f, 1f, 0f, 0.4f);
+        Gizmos.DrawRay(eyeOrigin.position, forward * viewDistance);
     }
 }
