@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 4030970757064025503}
   m_Layer: 0
   m_Name: GhostAITest
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -169,7 +169,7 @@ MonoBehaviour:
   chaseSpeed: 4
   investSpeed: 3
   sightDistance: 20
-  investigateDuration: 10
+  investigateDuration: 1
   wanderRadius: 15
   ghostAudioSource: {fileID: 3725028311290194951}
   footstepClips:

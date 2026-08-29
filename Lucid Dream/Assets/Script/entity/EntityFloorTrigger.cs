@@ -8,7 +8,11 @@ public class EntityFloorTrigger : MonoBehaviour
     [Tooltip("ระยะเวลาหน่วงก่อนผีจะเกิดหลังเหยียบ (วินาที)")]
     public float delayBeforeSpawn = 2.0f;
     [Tooltip("ให้ทำงานครั้งเดียวแล้วหายไป หรือเหยียบซ้ำได้")]
-    public bool oneTimeUse = true;
+    public bool oneTimeUse = false; // ปรับ default เป็น false เพื่อให้เหยียบซ้ำได้
+
+    [Header("Entity Detection Settings ✨")]
+    [Tooltip("Tag ของ Prefab ผีในฉาก (ใช้ตรวจสอบว่ายังมีผีอยู่ในฉากหรือไม่)")]
+    public string entityTag = "Enemy";
 
     [Header("References")]
     public EntitySpawner entitySpawner;
@@ -27,23 +31,33 @@ public class EntityFloorTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!other.CompareTag(playerTag)) return;
+
+        // 1. ถ้าเป็นโหมดใช้ครั้งเดียวแล้วเคยทำงานไปแล้ว ให้ข้าม
         if (hasTriggered && oneTimeUse) return;
 
-        if (other.CompareTag(playerTag))
-        {
-            hasTriggered = true;
-            StartCoroutine(SpawnDelayRoutine());
-        }
+        // 2. ถ้าเคยเหยียบไปแล้วในรอบนี้ หรือยังมีผีตัวเก่าอยู่ในฉาก จะไม่สปอว์นซ้ำ
+        if (hasTriggered || IsEntityAlive()) return;
+
+        hasTriggered = true;
+        StartCoroutine(SpawnDelayRoutine());
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag(playerTag)) return;
+
+        // เมื่อผู้เล่นเดินออกจากพื้นที่ ให้รีเซ็ตสถานะ เพื่อเปิดโอกาสให้ "เข้ามาเหยียบใหม่อีกรอบ" ได้
+        hasTriggered = false;
     }
 
     private IEnumerator SpawnDelayRoutine()
     {
-        // หน่วงเวลาตามที่ตั้งค่า
         yield return new WaitForSeconds(delayBeforeSpawn);
 
-        if (entitySpawner != null)
+        // ตรวจสอบอีกครั้งก่อนสปอว์น เผื่อผีถูกสร้างขึ้นมาจากช่องทางอื่นก่อนหน้านี้
+        if (!IsEntityAlive() && entitySpawner != null)
         {
-            // สั่งสปอว์นผี (สคริปต์ EntityAI เดิมจะเริ่มในสถานะ Chase และล็อคเป้า playerTransform ทันที)
             entitySpawner.SpawnEntity();
         }
 
@@ -51,15 +65,25 @@ public class EntityFloorTrigger : MonoBehaviour
         {
             gameObject.SetActive(false);
         }
-        else
+    }
+
+    /// <summary>
+    /// ฟังก์ชันตรวจสอบว่ายังมีผีอยู่ในฉากหรือไม่
+    /// </summary>
+    private bool IsEntityAlive()
+    {
+        // ค้นหา GameObject ในฉากที่มี Tag ตรงกับที่ตั้งไว้ (เช่น "Enemy")
+        if (!string.IsNullOrEmpty(entityTag))
         {
-            hasTriggered = false; // รีเซ็ตให้เหยียบซ้ำได้
+            return GameObject.FindWithTag(entityTag) != null;
         }
+
+        return false;
     }
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f); // สีส้มโปร่งแสงใน Scene View
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
         Collider col = GetComponent<Collider>();
         if (col is BoxCollider box)
         {

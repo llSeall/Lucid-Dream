@@ -7,6 +7,7 @@ TagManager:
   - Interaction
   - WallGap
   - Climbable
+  - Enemy
   layers:
   - Default
   - TransparentFX
