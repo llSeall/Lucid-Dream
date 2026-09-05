@@ -18,9 +18,8 @@ public class NPCSaveData
 [System.Serializable]
 public class GameData
 {
-    // 🛠️ ปรับเป็น 0 เพื่อให้คืนแรก (บทฝึกสอน) ยังไม่นับวัน
-    public int currentDay = 0;
-    public GameState currentState = GameState.Nighttime;
+    public int currentDay = 1;
+    public GameState currentState = GameState.Daytime;
     public int currentAP = 0;
 
     public float currentSanity = 100f;
@@ -71,26 +70,23 @@ public class SaveManager : MonoBehaviour
         ResetData();
     }
 
-    private void Update()
-    {
-        HandleCheatKeys();
-    }
-
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // หากอยู่ในหน้า Main Menu จะยังไม่กระจายข้อมูลเซฟ
         if (scene.name == "MainMenuScene") return;
 
-        // ยิงข้อมูลเซฟแจกจ่ายให้ทุก Manager ทันทีเมื่อโหลดฉากใหม่เสร็จสมบูรณ์
         NotifyAllManagersToSync();
-        Debug.Log("<color=cyan><b> [SaveManager] ฉากโหลดเสร็จสิ้น ทำการซิงค์เดต้าเซฟเข้าสู่ระบบหลักเรียบร้อย!</b></color>");
+        Debug.Log("<color=cyan><b>[SaveManager] ซิงค์ข้อมูลเซฟเข้าสู่ระบบเรียบร้อย!</b></color>");
+        // ✨ เล่นอนิเมชั่นตื่นนอนเมื่อเข้าสู่ฉากเกม (ถ้ามี PlayerWakeUpEffect ในฉาก)
+        if (PlayerWakeUpEffect.Instance != null)
+        {
+            PlayerWakeUpEffect.Instance.PlayWakeUpAnimation();
+        }
     }
 
     public void SaveGame()
     {
         try
         {
-            // ✨ [แก้ไข] ดึงค่า AP ล่าสุดจาก TimeManager มาเก็บไว้ใน GameData
             if (TimeManager.Instance != null)
             {
                 gameData.currentDay = TimeManager.Instance.currentDay;
@@ -106,14 +102,19 @@ public class SaveManager : MonoBehaviour
             string json = JsonUtility.ToJson(gameData, true);
             File.WriteAllText(GetSaveFilePath(currentSlot), json);
 
-            Debug.Log($"<color=green><b> [Slot {currentSlot}] บันทึกสำเร็จ! วันที่ {gameData.currentDay} | สถานะ: {gameData.currentState} | AP คงเหลือ: {gameData.currentAP}</b></color>");
+            Debug.Log($"<color=green><b>[Slot {currentSlot}] บันทึกสำเร็จ! วันที่ {gameData.currentDay} | สถานะ: {gameData.currentState}</b></color>");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($" บันทึกเซฟล้มเหลว: {e.Message}");
+            Debug.LogError($"บันทึกเซฟล้มเหลว: {e.Message}");
         }
     }
-    public void LoadGame(int slot, bool isContinue = true)
+
+    /// <summary>
+    /// โหลดเกม
+    /// @param isFromMainMenu ถ้า true จะบังคับเกิดตอนเช้า (Daytime) ของวันล่าสุด
+    /// </summary>
+    public void LoadGame(int slot, bool isFromMainMenu = false)
     {
         currentSlot = slot;
         string path = GetSaveFilePath(slot);
@@ -121,9 +122,8 @@ public class SaveManager : MonoBehaviour
         if (!File.Exists(path))
         {
             ResetData();
-            // 🛠️ เพิ่มบรรทัดนี้: หากเป็นเกมใหม่ (ไม่มีไฟล์เซฟ) ให้โหลดเข้าสู่ NighttimeScene ทันที
             if (GameManager.Instance != null)
-                GameManager.Instance.LoadSceneForState(gameData.currentState);
+                GameManager.Instance.LoadSceneForState(GameState.Daytime);
             return;
         }
 
@@ -132,12 +132,18 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             gameData = JsonUtility.FromJson<GameData>(json);
 
+            // ✨ เงื่อนไขสำคัญ: ถ้าโหลดจาก Main Menu ให้บังคับเข้าช่วงเช้า (Daytime) ของวันนั้นเสมอ
+            if (isFromMainMenu)
+            {
+                gameData.currentState = GameState.Daytime;
+            }
+
             if (GameManager.Instance != null)
                 GameManager.Instance.LoadSceneForState(gameData.currentState);
         }
         catch (System.Exception e)
         {
-            Debug.LogError($" โหลดเซฟล้มเหลว: {e.Message}");
+            Debug.LogError($"โหลดเซฟล้มเหลว: {e.Message}");
             ResetData();
         }
     }
@@ -161,19 +167,5 @@ public class SaveManager : MonoBehaviour
         if (TimeManager.Instance != null) TimeManager.Instance.SyncWithSaveManager();
         if (NPCManager.Instance != null) NPCManager.Instance.SyncFromSaveManager();
         if (LevelGenerator.Instance != null) LevelGenerator.Instance.GenerateMapFromSave(gameData.mapSeed);
-    }
-
-    private void HandleCheatKeys()
-    {
-#if ENABLE_INPUT_SYSTEM        
-        if (UnityEngine.InputSystem.Keyboard.current == null) return;
-        if (UnityEngine.InputSystem.Keyboard.current.pKey.wasPressedThisFrame) SaveGame();
-        if (UnityEngine.InputSystem.Keyboard.current.lKey.wasPressedThisFrame) LoadGame(currentSlot, true);
-        if (UnityEngine.InputSystem.Keyboard.current.deleteKey.wasPressedThisFrame) ClearSave(currentSlot);
-#else
-        if (Input.GetKeyDown(KeyCode.P)) SaveGame();
-        if (Input.GetKeyDown(KeyCode.L)) LoadGame(currentSlot, true);
-        if (Input.GetKeyDown(KeyCode.Delete)) ClearSave(currentSlot);
-#endif
     }
 }

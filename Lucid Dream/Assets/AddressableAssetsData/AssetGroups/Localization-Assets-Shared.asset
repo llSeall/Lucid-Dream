@@ -20,6 +20,16 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c93e93ef0b530e4bbc1cf40c22229e8
+    m_Address: Assets/PCDataLocalization/Chat/ChatPC Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d28c641dc6814a248837ea2f59cd22f0
+    m_Address: Assets/PCDataLocalization/Note/NoteDay Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f1705969640a9ae4c9889a3e3ee7dc47
     m_Address: Assets/Script/Localization/Test Shared Data.asset
     m_ReadOnly: 1

@@ -15,6 +15,18 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Thai (th)
   m_GUID: 10e167d58908be645b8d6ca851194c7a
   m_SerializeEntries:
+  - m_GUID: 090fad834c6befc41819d42010846428
+    m_Address: NoteDay_th
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-th
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 917237e52b50c1f4cb1af7c5c514cb8f
+    m_Address: ChatPC_th
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-th
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a2201edb254970c4c9089c19f31a6c91
     m_Address: ItemLocalizationTable_th
     m_ReadOnly: 1

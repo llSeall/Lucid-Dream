@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.IO;
-using TMPro; // 👈 1. เพิ่มตัวนี้เข้ามาเพื่อเรียกใช้ TextMeshPro
+using TMPro;
 
 public class MainMenuManager : MonoBehaviour
 {
@@ -13,16 +12,16 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private GameObject slotSelectionPanel;
     [SerializeField] private GameObject confirmationPanel;
 
-    [Header("📝 Slot Text Elements (TextMeshPro)")]
-    [SerializeField] private TextMeshProUGUI slot1Text; // 👈 2. เปลี่ยนจาก Text เป็น TextMeshProUGUI
+    [Header("📝 Slot Text Elements")]
+    [SerializeField] private TextMeshProUGUI slot1Text;
     [SerializeField] private TextMeshProUGUI slot2Text;
     [SerializeField] private TextMeshProUGUI slot3Text;
 
-    [Header("⚠️ Confirmation Popup Elements (TextMeshPro)")]
-    [SerializeField] private TextMeshProUGUI confirmationMessageText; // 👈 3. เปลี่ยนตรงนี้ด้วย   
+    [Header("⚠️ Confirmation Popup Elements")]
+    [SerializeField] private TextMeshProUGUI confirmationMessageText;
 
     [Header("⚙️ Scene Configuration")]
-    [SerializeField] private string gameplaySceneName = "DaytimeScene";
+    [SerializeField] private string daytimeSceneName = "DaytimeScene";
 
     private MenuMode currentMode;
     private int selectedSlotID;
@@ -63,7 +62,6 @@ public class MainMenuManager : MonoBehaviour
         UpdateSlotDisplay(3, slot3Text);
     }
 
-    // สั่งเปลี่ยนข้อความผ่าน .text ได้เหมือนเดิมเป๊ะ ไม่ต้องแก้โค้ดข้างล่างเลยครับ
     private void UpdateSlotDisplay(int slotID, TextMeshProUGUI textComponent)
     {
         if (textComponent == null) return;
@@ -76,8 +74,7 @@ public class MainMenuManager : MonoBehaviour
             {
                 string json = File.ReadAllText(path);
                 GameData tempData = JsonUtility.FromJson<GameData>(json);
-                string phaseName = (tempData.currentState == GameState.Daytime) ? "กลางวัน" : "กลางคืน";
-                textComponent.text = $"สล็อต {slotID}\n[วันที่ {tempData.currentDay} - {phaseName}]";
+                textComponent.text = $"สล็อต {slotID}\n[วันที่ {tempData.currentDay}]";
             }
             catch
             {
@@ -100,7 +97,7 @@ public class MainMenuManager : MonoBehaviour
         {
             if (saveExists)
             {
-                confirmationMessageText.text = $" มีข้อมูลเก่าอยู่ในสล็อต {slotID}\nคุณต้องการจะเซฟทับจริงๆ ใช่หรือไม่?\n(ข้อมูลเดิมจะหายไปทั้งหมด)";
+                confirmationMessageText.text = $"มีข้อมูลเก่าอยู่ในสล็อต {slotID}\nคุณต้องการจะเซฟทับจริงๆ ใช่หรือไม่?";
                 confirmationPanel.SetActive(true);
             }
             else
@@ -112,12 +109,8 @@ public class MainMenuManager : MonoBehaviour
         {
             if (saveExists)
             {
-                confirmationMessageText.text = $" คุณต้องการจะโหลดเซฟจาก สล็อต {slotID} ใช่หรือไม่?";
+                confirmationMessageText.text = $"คุณต้องการจะโหลดเซฟจาก สล็อต {slotID} ใช่หรือไม่?";
                 confirmationPanel.SetActive(true);
-            }
-            else
-            {
-                Debug.LogWarning($"[Menu] สล็อต {slotID} ไม่มีข้อมูลให้โหลด!");
             }
         }
     }
@@ -134,9 +127,6 @@ public class MainMenuManager : MonoBehaviour
         confirmationPanel.SetActive(false);
     }
 
-    /// <summary>
-    /// ✨ ฟังก์ชันใหม่: สำหรับกดปุ่มย้อนกลับจากหน้าเลือกสล็อตเพื่อกลับไปหน้าเมนูหลัก
-    /// </summary>
     public void OnClickBackToMainMenu()
     {
         ShowMainMenu();
@@ -147,13 +137,14 @@ public class MainMenuManager : MonoBehaviour
         if (SaveManager.Instance == null) return;
         SaveManager.Instance.currentSlot = slotID;
         SaveManager.Instance.ClearSave(slotID);
-        SceneManager.LoadScene(gameplaySceneName);
+        SceneManager.LoadScene(daytimeSceneName);
     }
 
     private void ExecuteLoadGame(int slotID)
     {
         if (SaveManager.Instance == null) return;
-        SaveManager.Instance.LoadGame(slotID, true);
+        // ✨ ส่ง isFromMainMenu = true เพื่อเริ่มเกมตอนเช้าของวันล่าสุดเสมอ
+        SaveManager.Instance.LoadGame(slotID, isFromMainMenu: true);
     }
 
     public void OnClickQuitGame()
