@@ -3,16 +3,18 @@ using UnityEngine.SceneManagement;
 
 public class GameOverManager : MonoBehaviour
 {
-    /// <summary>
-    /// กดปุ่มเล่นใหม่หลังตายตอนกลางคืน -> โหลด Checkpoint กลางคืนของคืนเดิม
-    /// </summary>
     public void RestartGame()
     {
         Time.timeScale = 1f;
 
+        // ✨ เพิ่มค่าความเครียดทุกครั้งที่กด Restart
+        if (StressManager.Instance != null)
+        {
+            StressManager.Instance.IncreaseStressOnGameOver();
+        }
+
         if (SaveManager.Instance != null)
         {
-            // ✨ โหลดเซฟโดยไม่ผ่าน Main Menu (isFromMainMenu = false) เพื่อให้เริ่มตอนกลางคืนของคืนนั้น
             SaveManager.Instance.LoadGame(SaveManager.Instance.currentSlot, isFromMainMenu: false);
         }
         else

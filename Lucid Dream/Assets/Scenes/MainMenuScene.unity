@@ -2510,6 +2510,7 @@ GameObject:
   - component: {fileID: 1221881094}
   - component: {fileID: 1221881093}
   - component: {fileID: 1221881092}
+  - component: {fileID: 1221881100}
   m_Layer: 0
   m_Name: -----System-----
   m_TagString: Untagged
@@ -2647,6 +2648,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1221881100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221881091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd74da67677bd594296c12beb5619c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StressManager
+  maxStress: 100
+  stressPerGameOver: 25
+  currentStress: 0
+  mediumStressThreshold: 34
+  highStressThreshold: 67
 --- !u!1 &1231512272
 GameObject:
   m_ObjectHideFlags: 0
@@ -4100,7 +4118,7 @@ MonoBehaviour:
   slot2Text: {fileID: 1414733475}
   slot3Text: {fileID: 1343925556}
   confirmationMessageText: {fileID: 267559072}
-  gameplaySceneName: TutorialScenes
+  daytimeSceneName: DaytimeScene
 --- !u!1 &1545573121
 GameObject:
   m_ObjectHideFlags: 0
