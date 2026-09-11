@@ -35750,6 +35750,10 @@ PrefabInstance:
       propertyPath: m_VolumeLayerMask.m_Bits
       value: 512
       objectReference: {fileID: 0}
+    - target: {fileID: 1084014364854226176, guid: dac8c35310f36924388264dd416d5c45, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2370224047580390765, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_Name
       value: Player
@@ -35762,6 +35766,10 @@ PrefabInstance:
       propertyPath: staminaCanvasGroup
       value: 
       objectReference: {fileID: 1745785990}
+    - target: {fileID: 4900828194951895049, guid: dac8c35310f36924388264dd416d5c45, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.68
@@ -35800,6 +35808,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7176014595595337916, guid: dac8c35310f36924388264dd416d5c45, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7176014595595337916, guid: dac8c35310f36924388264dd416d5c45, type: 3}

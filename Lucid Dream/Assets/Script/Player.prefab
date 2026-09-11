@@ -377,6 +377,7 @@ GameObject:
   - component: {fileID: 7176014595595337916}
   - component: {fileID: 1084014364854226176}
   - component: {fileID: 8968904058566600339}
+  - component: {fileID: 4900828194951895049}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -532,12 +533,14 @@ MonoBehaviour:
   walkRightArmSprite: {fileID: 21300000, guid: db589335732f2824da0a01d8cd904818, type: 3}
   sprintLeftArmSprite: {fileID: 21300000, guid: 178cad898abb3ca42b1306b3b92cde3b, type: 3}
   sprintRightArmSprite: {fileID: 21300000, guid: 0579f87ef9bcba24a913f7559a1a2b5a, type: 3}
+  wallGrabLeftArmSprite: {fileID: 0}
+  wallGrabRightArmSprite: {fileID: 0}
+  idleLoweredOffset: {x: 0, y: -0.2, z: -0.05}
+  wallGrabArmOffset: {x: 0, y: 0.1, z: 0.1}
   armLerpSpeed: 10
-  runArmSpeed: 12
   runArmSwingAmount: 0.08
   runArmRotationAmount: 10
   runArmRaisedOffset: {x: 0, y: 0.05, z: 0.05}
-  crouchArmSpeed: 4
   crouchArmSwingAmount: 0.02
   crouchArmRaisedOffset: {x: 0, y: 0.12, z: 0.08}
   walkSpeed: 4
@@ -557,6 +560,7 @@ MonoBehaviour:
   climbableWallTag: Climbable
   shimmyCameraPanAmount: 50
   shimmyCameraSmoothing: 6
+  wallGrabCamJerk: -4
   squeezeSpeed: 1.2
   squeezedRadius: 0.18
   squeezedCameraTiltZ: 12
@@ -626,6 +630,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Script_Outline
   interactionDistance: 2
+  interactableLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &8188827822009602205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -696,6 +703,29 @@ MonoBehaviour:
   lyingRotationOffset: {x: -50, y: 0, z: 40}
   audioSource: {fileID: 0}
   wakeUpSound: {fileID: 0}
+--- !u!114 &4900828194951895049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2370224047580390765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 628dbdd630353fe45a55a8a7c5a73b0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EyeToggleWorldManager
+  playerCamera: {fileID: 4329501868272541037}
+  eyeOverlayCanvasGroup: {fileID: 0}
+  fadeCloseDuration: 0.25
+  eyeClosedPause: 0.1
+  fadeOpenDuration: 0.35
+  blackAndWhiteVolume: {fileID: 0}
+  objectPairs: []
+  closedEyeOnlyObjects: []
+  normalOnlyObjects:
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1 &3481294799354020697
 GameObject:
   m_ObjectHideFlags: 0
