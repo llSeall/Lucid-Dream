@@ -11,7 +11,10 @@ public class EyeCloseStretchingHallway : MonoBehaviour
     [SerializeField] private Transform originalPoint;         // จุดตั้งต้นปกติของประตู
     [SerializeField] private Transform stretchedPoint;        // จุดสูงสุดที่ประตูยืดออกไป
     [SerializeField] private Transform treadmillLimitPoint;   // จุดลิมิตกั้นไม่ให้ผู้เล่นเดินเลย (จุดเดินอยู่กับที่)
-    [SerializeField] private CanvasGroup eyeOverlayCanvasGroup; // CanvasGroup สีดำของระบบหลับตา
+
+    [Header("Eye Manager Link ✨")]
+    [Tooltip("ลาก EyeToggleWorldManager ใน Scene มาใส่ตรงนี้ (หากไม่ใส่ สคริปต์จะหาอัตโนมัติ)")]
+    [SerializeField] private EyeToggleWorldManager eyeWorldManager;
 
     [Header("Wall UV Scrollers ✨")]
     [Tooltip("ลากกำแพงสองข้างทางที่มีสคริปต์ WallUVScroller มาใส่ในนี้")]
@@ -37,7 +40,12 @@ public class EyeCloseStretchingHallway : MonoBehaviour
         if (playerTransform == null && playerCamera != null)
             playerTransform = playerCamera.root;
 
-        // ซ่อน Gizmos ตัวช่วยตั้งค่า
+        // ✨ หากไม่ได้ตั้งค่า EyeToggleWorldManager ไว้ ให้ค้นหาเองใน Scene
+        if (eyeWorldManager == null)
+        {
+            eyeWorldManager = FindObjectOfType<EyeToggleWorldManager>();
+        }
+
         GetComponent<BoxCollider>().isTrigger = true;
     }
 
@@ -61,31 +69,30 @@ public class EyeCloseStretchingHallway : MonoBehaviour
 
     private void HandleHallwayMovement()
     {
-        // 1. สถานะยืดออกไปครั้งแรก
+        // 1. สถานะยืดประตูออกไปครั้งแรก
         if (isStretching)
         {
             hallwayEnd.position = Vector3.MoveTowards(hallwayEnd.position, stretchedPoint.position, stretchSpeed * Time.deltaTime);
 
-            // เมื่อยืดไปถึงจุดสูงสุดแล้ว หยุดยืด
             if (Vector3.Distance(hallwayEnd.position, stretchedPoint.position) < 0.01f)
             {
                 isStretching = false;
             }
         }
 
-        // 2. เช็กว่าผู้เล่นกำลังหลับตา และหันหน้าไปทางประตูหรือไม่
-        bool isClosingEyes = eyeOverlayCanvasGroup != null && eyeOverlayCanvasGroup.alpha > 0.3f;
+        // 2. ✨ เช็กสถานะการหลับตาจาก EyeToggleWorldManager และเช็กทิศทางการมองของผู้เล่น
+        bool isClosingEyes = eyeWorldManager != null && eyeWorldManager.IsEyesClosed;
 
         Vector3 dirToDoor = (hallwayEnd.position - playerCamera.position).normalized;
         float angle = Vector3.Angle(playerCamera.forward, dirToDoor);
         bool isLookingAtDoor = angle < 75f; // มองไปทางประตูในมุมไม่เกิน 75 องศา
 
-        // 3. ถ้าหลับตา + หันมองประตู -> ดึงประตูย่นกลับมาที่เดิม
+        // 3. ถ้าอยู่ในสถานะหลับตา (Pencil Sketch Pass) + หันมองประตู -> ดึงประตูย่นกลับเข้ามาหาตัวผู้เล่น
         if (isClosingEyes && isLookingAtDoor)
         {
             hallwayEnd.position = Vector3.MoveTowards(hallwayEnd.position, originalPoint.position, retractSpeed * Time.deltaTime);
 
-            // เมื่อย่นกลับมาถึงจุดเดิมแล้ว = ปลดล็อกคำสาปสำเร็จ
+            // เมื่อประตูย่นกลับมาถึงจุดเดิมแล้ว = ปลดล็อกคำสาปสำเร็จ
             if (Vector3.Distance(hallwayEnd.position, originalPoint.position) < 0.05f)
             {
                 BreakCurse();
@@ -95,7 +102,6 @@ public class EyeCloseStretchingHallway : MonoBehaviour
 
     private void HandleTreadmill()
     {
-        // ล็อกไม่ให้ผู้เล่นเดินทะลุจุด treadmillLimitPoint ไปข้างหน้า
         if (treadmillLimitPoint == null || playerTransform == null) return;
 
         Vector3 hallwayForward = (stretchedPoint.position - originalPoint.position).normalized;
@@ -104,14 +110,11 @@ public class EyeCloseStretchingHallway : MonoBehaviour
         Vector3 playerOffset = playerTransform.position - treadmillLimitPoint.position;
         playerOffset.y = 0f;
 
-        // เช็กว่าผู้เล่นก้าวเลยจุดลิมิตไปทางประตูหรือไม่
         float dot = Vector3.Dot(playerOffset, hallwayForward);
         if (dot > 0f)
         {
-            // ดึงตัวผู้เล่นกลับมาให้อยู่ที่จุดลิมิตเสมอ (เดินอยู่กับที่)
             playerTransform.position -= hallwayForward * dot;
 
-            // ✨ สั่งให้กำแพงเลื่อน UV เมื่อผู้เล่นติดจุด Treadmill และพยายามกดเดินหน้า
             float moveInput = Input.GetAxis("Vertical");
             if (moveInput > 0.1f)
             {
@@ -130,7 +133,7 @@ public class EyeCloseStretchingHallway : MonoBehaviour
     {
         isCurseBroken = true;
         isCurseActive = false;
-        hallwayEnd.position = originalPoint.position; // คืนค่าตำแหน่งประตูเป๊ะๆ
+        hallwayEnd.position = originalPoint.position;
         Debug.Log("ปลดล็อกคำสาปสำเร็จ! ทางเดินกลับเป็นปกติแล้ว");
     }
 

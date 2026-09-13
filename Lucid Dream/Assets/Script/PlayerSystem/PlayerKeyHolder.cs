@@ -22,6 +22,18 @@ public class PlayerKeyHolder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ✨ ฟังก์ชันลบกุญแจเฉพาะดอกออกจากกระเป๋าผู้เล่น
+    /// </summary>
+    public void RemoveKey(string keyID)
+    {
+        if (collectedKeys.Contains(keyID))
+        {
+            collectedKeys.Remove(keyID);
+            Debug.Log($"[Key System] 🗝️ ริบกุญแจคืน: '{keyID}' ออกจากตัวผู้เล่นเรียบร้อยแล้ว");
+        }
+    }
+
     public bool HasKey(string keyID)
     {
         return collectedKeys.Contains(keyID);

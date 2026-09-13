@@ -1,13 +1,23 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider))]
 public class MoveObjectOnTrigger : MonoBehaviour
 {
-    [Header("References")]
-    [Tooltip("วัตถุหรือสิ่งของที่ต้องการให้เลื่อน")]
-    [SerializeField] private Transform objectToMove;
-    [Tooltip("จุดปลายทางที่ต้องการให้สิ่งของเลื่อนไปหยุด")]
-    [SerializeField] private Transform targetPosition;
+    [System.Serializable]
+    public struct MovePair
+    {
+        [Tooltip("ตั้งชื่อให้ไม่งงใน Inspector (เช่น ประตูซ้าย, ตู้หนังสือ)")]
+        public string pairName;
+        [Tooltip("วัตถุหรือสิ่งของที่ต้องการให้เลื่อน")]
+        public Transform objectToMove;
+        [Tooltip("จุดปลายทางที่ต้องการให้สิ่งของเลื่อนไปหยุด")]
+        public Transform targetPosition;
+    }
+
+    [Header("References ✨")]
+    [Tooltip("ใส่รายการคู่วัตถุและจุดเป้าหมายที่ต้องการให้เลื่อนพร้อมกัน")]
+    [SerializeField] private List<MovePair> movePairs = new List<MovePair>();
 
     [Header("Settings")]
     [Tooltip("ความเร็วในการเลื่อนสิ่งของ")]
@@ -26,20 +36,32 @@ public class MoveObjectOnTrigger : MonoBehaviour
 
     void Update()
     {
-        if (isMoving && objectToMove != null && targetPosition != null)
+        if (!isMoving) return;
+
+        bool allReached = true;
+
+        foreach (var pair in movePairs)
         {
-            // เลื่อนวัตถุเข้าหาจุดเป้าหมายด้วยความเร็วคงที่
-            objectToMove.position = Vector3.MoveTowards(
-                objectToMove.position,
-                targetPosition.position,
+            if (pair.objectToMove == null || pair.targetPosition == null) continue;
+
+            // เลื่อนวัตถุแต่ละชิ้นเข้าหาจุดเป้าหมาย
+            pair.objectToMove.position = Vector3.MoveTowards(
+                pair.objectToMove.position,
+                pair.targetPosition.position,
                 moveSpeed * Time.deltaTime
             );
 
-            // เมื่อเลื่อนไปถึงจุดเป้าหมายแล้ว ให้หยุด
-            if (Vector3.Distance(objectToMove.position, targetPosition.position) < 0.001f)
+            // เช็กว่ายังมีวัตถุชิ้นไหนยังไปไม่ถึงจุดเป้าหมายหรือไม่
+            if (Vector3.Distance(pair.objectToMove.position, pair.targetPosition.position) >= 0.001f)
             {
-                isMoving = false;
+                allReached = false;
             }
+        }
+
+        // เมื่อวัตถุทุกชิ้นเลื่อนไปถึงจุดเป้าหมายแล้ว ให้หยุด
+        if (allReached)
+        {
+            isMoving = false;
         }
     }
 
@@ -57,12 +79,15 @@ public class MoveObjectOnTrigger : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        // วาดเส้นช่วยเล็งจุดเริ่มต้นและจุดปลายทางในหน้าต่าง Scene View
-        if (objectToMove != null && targetPosition != null)
+        // วาดเส้นช่วยเล็งจุดเริ่มต้นและจุดปลายทางทุกคู่ในหน้าต่าง Scene View
+        Gizmos.color = Color.yellow;
+        foreach (var pair in movePairs)
         {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(objectToMove.position, targetPosition.position);
-            Gizmos.DrawWireSphere(targetPosition.position, 0.3f);
+            if (pair.objectToMove != null && pair.targetPosition != null)
+            {
+                Gizmos.DrawLine(pair.objectToMove.position, pair.targetPosition.position);
+                Gizmos.DrawWireSphere(pair.targetPosition.position, 0.3f);
+            }
         }
     }
 }
