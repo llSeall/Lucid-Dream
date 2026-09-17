@@ -639,8 +639,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AudioFadeIn
   audioSource: {fileID: 264816802}
   fadeDuration: 3
-  targetVolume: 1
-  startDelay: 0.5
+  targetVolume: 0.3
+  startDelay: 3
 --- !u!82 &264816802
 AudioSource:
   m_ObjectHideFlags: 0
@@ -917,6 +917,152 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &310208158
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 310208162}
+  - component: {fileID: 310208161}
+  - component: {fileID: 310208160}
+  - component: {fileID: 310208159}
+  - component: {fileID: 310208163}
+  m_Layer: 0
+  m_Name: Cube (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &310208159
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310208158}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10.267101, y: 1, z: 3.070342}
+  m_Center: {x: 4.633605, y: 0, z: 0.45358837}
+--- !u!23 &310208160
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310208158}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: cb5fe92129140bf4d8b316d13ec5fa1f, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &310208161
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310208158}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &310208162
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310208158}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.29043648, z: -0, w: 0.9568943}
+  m_LocalPosition: {x: 90.33905, y: 5, z: 82.3839}
+  m_LocalScale: {x: 0.62877, y: 6.2636805, z: 3.6139815}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -33.768, z: 0}
+--- !u!114 &310208163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310208158}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e576140a08a4eb94c9f1e7c98fd4128c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EyeCloseSceneLoader
+  autoTriggerOnStep: 0
+  requireKeyPressInsideZone: 1
+  sceneToLoad: Room00
+  eyeCloseImage: {fileID: 866667193}
+  eyeCloseSprites:
+  - {fileID: -305456050, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -1444473548, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: 1645167511, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -1243340873, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -1737229218, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -719014867, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: 690201284, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: 1212496808, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -902062839, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -1803770941, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: 1381492398, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  - {fileID: -1924752537, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
+  blackScreenCanvasGroup: {fileID: 884443743}
+  holdDuration: 1.5
+  fadeOutSpeed: 2
+  interactKey: 323
 --- !u!1 &398445660
 GameObject:
   m_ObjectHideFlags: 0
@@ -8144,50 +8290,44 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8968904058566600339, guid: dac8c35310f36924388264dd416d5c45, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2370224047580390765, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1636253097}
+      addedObject: {fileID: 1636253098}
   m_SourcePrefab: {fileID: 100100000, guid: dac8c35310f36924388264dd416d5c45, type: 3}
 --- !u!1 &1636253096 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2370224047580390765, guid: dac8c35310f36924388264dd416d5c45, type: 3}
   m_PrefabInstance: {fileID: 1636253095}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1636253097
-MonoBehaviour:
+--- !u!65 &1636253098
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1636253096}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e576140a08a4eb94c9f1e7c98fd4128c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EyeCloseSceneLoader
-  sceneToLoad: Room00
-  eyeCloseImage: {fileID: 866667193}
-  eyeCloseSprites:
-  - {fileID: -305456050, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -1444473548, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: 1645167511, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -1243340873, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -1737229218, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -719014867, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: 690201284, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: 1212496808, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -902062839, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -1803770941, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: 1381492398, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  - {fileID: -1924752537, guid: 7dbca6942bb71d747a32dd7396fa593c, type: 3}
-  blackScreenCanvasGroup: {fileID: 884443743}
-  holdDuration: 1.5
-  fadeOutSpeed: 2
-  interactKey: 323
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1768806622
 GameObject:
   m_ObjectHideFlags: 0
@@ -9899,6 +10039,7 @@ SceneRoots:
   - {fileID: 398445663}
   - {fileID: 1346111237}
   - {fileID: 466227558}
+  - {fileID: 310208162}
   - {fileID: 1136036327}
   - {fileID: 857010760}
   - {fileID: 586583210}
