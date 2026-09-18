@@ -173,13 +173,14 @@ MonoBehaviour:
   wanderRadius: 15
   ghostAudioSource: {fileID: 3725028311290194951}
   footstepClips:
-  - {fileID: 8300000, guid: 08d5767067b59944391843f7c413740b, type: 3}
-  - {fileID: 8300000, guid: e56805e14bfb92240a6332b919e31142, type: 3}
-  - {fileID: 8300000, guid: 76defdc52ae2fdc4dbc23312a7c8b7d3, type: 3}
-  - {fileID: 8300000, guid: 27af9edb81a1cb54a878f3cc94e4652e, type: 3}
+  - {fileID: 8300000, guid: 7c3ff8594ffcf314bb278d050724b2db, type: 3}
+  - {fileID: 8300000, guid: d8bd98e8ea5ebfe4aa36068c1d360e5c, type: 3}
+  - {fileID: 8300000, guid: d7921d130ec82564baefce441624e7ed, type: 3}
+  - {fileID: 8300000, guid: 909413bebb3072b419d98a81a07b1ab6, type: 3}
   baseStepInterval: 0.5
   volumeInvestigate: 0.5
   volumeChase: 0.85
+  staticEffectMaxDistance: 15
   currentState: 0
 --- !u!1 &7757032474057491306
 GameObject:

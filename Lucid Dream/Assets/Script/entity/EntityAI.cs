@@ -36,16 +36,20 @@ public class EntityAI : MonoBehaviour
     public float investigateDuration = 5f;
     public float wanderRadius = 4f;
 
-    [Header("Ghost Footstep Sounds ✨")]
+    [Header("Ghost Footstep Sounds ✨ (ปรับความดังเพิ่มขึ้น)")]
     public AudioSource ghostAudioSource;
     [Tooltip("ไฟล์เสียงเดินของผี (ใส่หลายๆ ไฟล์เพื่อสุ่มได้)")]
     public AudioClip[] footstepClips;
     [Tooltip("ระยะห่างจังหวะก้าวขาปกติ (วินาที)")]
     public float baseStepInterval = 0.5f;
-    [Tooltip("ความดังตอนเดินสำรวจ")]
-    public float volumeInvestigate = 0.5f;
-    [Tooltip("ความดังตอนวิ่งไล่ล่าผู้เล่น")]
-    public float volumeChase = 0.85f;
+    [Tooltip("ความดังตอนเดินสำรวจ (ปรับเพิ่มเป็น 0.8)")]
+    [Range(0f, 2f)] public float volumeInvestigate = 0.8f;
+    [Tooltip("ความดังตอนวิ่งไล่ล่าผู้เล่น (ปรับเพิ่มเป็น 1.5 - ชัดเจนสะใจ)")]
+    [Range(0f, 2f)] public float volumeChase = 1.5f;
+
+    [Header("👻 Proximity Glitch/Static Effect Settings")]
+    [Tooltip("ระยะห่างสูงสุดที่จอจะเริ่มกระพริบซ่าๆ")]
+    public float staticEffectMaxDistance = 15f;
 
     [Header("Current State")]
     public EntityState currentState = EntityState.Chase;
@@ -67,6 +71,14 @@ public class EntityAI : MonoBehaviour
         if (ghostAudioSource == null)
         {
             ghostAudioSource = GetComponent<AudioSource>();
+        }
+
+        // ปรับ AudioSource ให้รองรับเสียงแบบ 3D Spatial Sound จะได้ยินทิศทางก้าวเท้า
+        if (ghostAudioSource != null)
+        {
+            ghostAudioSource.spatialBlend = 1.0f; // เสียง 3D ตามระยะห่าง
+            ghostAudioSource.minDistance = 2f;
+            ghostAudioSource.maxDistance = 20f;
         }
 
         if (playerTransform == null)
@@ -125,7 +137,24 @@ public class EntityAI : MonoBehaviour
 
         UpdateSpriteFacingAndAnimation();
         HandleFootsteps();
+        UpdateProximityStatic();
     }
+
+    #region 👻 Proximity Static Update
+    void UpdateProximityStatic()
+    {
+        if (playerTransform == null || GhostStaticEffectUI.Instance == null) return;
+
+        float distance = Vector3.Distance(transform.position, playerTransform.position);
+
+        if (distance <= staticEffectMaxDistance)
+        {
+            // คำนวณความเข้มข้น (0 = สถิติน้อยสุดที่ระยะขอบ, 1 = เข้มข้นมากที่สุดเมื่ออยู่ติดเพลเยอร์)
+            float intensity = 1f - Mathf.Clamp01(distance / staticEffectMaxDistance);
+            GhostStaticEffectUI.Instance.ReportGhostDistance(intensity);
+        }
+    }
+    #endregion
 
     #region ✨ Ghost Footstep Audio Logic
     void HandleFootsteps()
@@ -134,14 +163,12 @@ public class EntityAI : MonoBehaviour
 
         float currentSpeed = agent.velocity.magnitude;
 
-        // ถ้าผีหยุดนิ่ง ให้รีเซ็ตเวลา
         if (currentSpeed < 0.1f)
         {
             stepTimer = 0f;
             return;
         }
 
-        // กำหนดความดังและจังหวะก้าวตามสถานะ AI
         float volume = (currentState == EntityState.Chase) ? volumeChase : volumeInvestigate;
         float currentInterval = (currentState == EntityState.Chase) ? (baseStepInterval * 0.65f) : baseStepInterval;
 
@@ -259,7 +286,6 @@ public class EntityAI : MonoBehaviour
             gameOverUI.SetActive(true);
         }
 
-        // แสดงและปลดล็อกเมาส์ให้สามารถกดปุ่มบน UI ได้
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
@@ -321,6 +347,10 @@ public class EntityAI : MonoBehaviour
 
     void HandleDespawn()
     {
+        if (GhostStaticEffectUI.Instance != null)
+        {
+            GhostStaticEffectUI.Instance.ReportGhostDistance(0f);
+        }
         Debug.Log("Entity chase timeout or lost player and despawned.");
         Destroy(gameObject);
     }

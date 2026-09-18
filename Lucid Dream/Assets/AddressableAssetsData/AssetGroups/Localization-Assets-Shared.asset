@@ -20,6 +20,11 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 29a0cceb030d74a4caddd48a33000810
+    m_Address: Assets/GhostText/GhostText Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3c93e93ef0b530e4bbc1cf40c22229e8
     m_Address: Assets/PCDataLocalization/Chat/ChatPC Shared Data.asset
     m_ReadOnly: 1

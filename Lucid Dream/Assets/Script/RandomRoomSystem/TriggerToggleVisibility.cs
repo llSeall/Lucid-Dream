@@ -41,7 +41,10 @@ public class TriggerToggleVisibility : MonoBehaviour
         }
     }
 
-    private void ExecuteToggle()
+    /// <summary>
+    /// ฟังก์ชันสั่งเปิด/ปิดการมองเห็นวัตถุ (เปิด public ให้สคริปต์อื่นเรียกใช้ได้)
+    /// </summary>
+    public void ExecuteToggle()
     {
         if (targetObjects == null || targetObjects.Count == 0)
         {
@@ -55,7 +58,6 @@ public class TriggerToggleVisibility : MonoBehaviour
 
             if (hideMeshOnly)
             {
-                // ซ่อน/แสดง เฉพาะภาพ (Renderer)
                 Renderer rend = obj.GetComponent<Renderer>();
                 if (rend != null)
                 {
@@ -75,7 +77,6 @@ public class TriggerToggleVisibility : MonoBehaviour
             }
             else
             {
-                // เปิด/ปิดการทำงานทั้ง GameObject (เหมือนการกดปิดตาใน Hierarchy)
                 switch (actionType)
                 {
                     case ToggleType.Toggle:

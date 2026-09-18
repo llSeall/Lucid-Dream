@@ -24601,7 +24601,7 @@ PrefabInstance:
       objectReference: {fileID: 1419013872}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.488
+      value: 14.2
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.y
@@ -24609,7 +24609,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -186.3
+      value: -132.6
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalRotation.w
@@ -31718,6 +31718,56 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 676142024}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &676874869
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 676874870}
+  - component: {fileID: 676874871}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &676874870
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676874869}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1760264671}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &676874871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676874869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f67b58f383f4f484397d7ce810efbf82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TriggerToggleVisibility
+  targetObjects:
+  - {fileID: 1874380827}
+  playerTag: Player
+  actionType: 2
+  triggerOnce: 1
+  hideMeshOnly: 0
 --- !u!1 &679014022
 GameObject:
   m_ObjectHideFlags: 0
@@ -50829,7 +50879,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntityTriggerItem
   interactKey: 101
   interactDistance: 2.01
-  playerTransform: {fileID: 486984609}
+  interactionUI: {fileID: 0}
+  outlineComponent: {fileID: 0}
+  toggleVisibility: {fileID: 0}
   spawnChance: 100
   entitySpawner: {fileID: 1048556233}
   onInteractEvent:
@@ -50847,6 +50899,7 @@ MonoBehaviour:
           m_StringArgument: MainKey
           m_BoolArgument: 0
         m_CallState: 2
+  deactivateDelay: 0.5
 --- !u!65 &1144143055
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -51740,6 +51793,14 @@ PrefabInstance:
       propertyPath: keyID
       value: Room01
       objectReference: {fileID: 0}
+    - target: {fileID: 6060389039772540315, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      propertyPath: promptUI
+      value: 
+      objectReference: {fileID: 628971603}
+    - target: {fileID: 6060389039772540315, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      propertyPath: outlineComponent
+      value: 
+      objectReference: {fileID: 2020257590}
     - target: {fileID: 8551713832170058631, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
       propertyPath: m_LocalScale.x
       value: 5.024675
@@ -81726,6 +81787,18 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6060389039772540315, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      propertyPath: outlineComponent
+      value: 
+      objectReference: {fileID: 1760264680}
+    - target: {fileID: 6060389039772540315, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      propertyPath: onInteractEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6060389039772540315, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      propertyPath: onInteractEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
       propertyPath: outlineWidth
       value: 10
@@ -81790,9 +81863,13 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6060389039772540315, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8551713832170058631, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 676874870}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 9071967943431694653, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
       insertIndex: -1
@@ -81800,9 +81877,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 9071967943431694653, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1760264673}
-    - targetCorrespondingSourceObject: {fileID: 9071967943431694653, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1760264679}
   m_SourcePrefab: {fileID: 100100000, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
 --- !u!4 &1760264671 stripped
 Transform:
@@ -81828,7 +81902,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntityTriggerItem
   interactKey: 101
   interactDistance: 2.01
-  playerTransform: {fileID: 486984609}
+  interactionUI: {fileID: 1121542634}
+  outlineComponent: {fileID: 1760264680}
+  toggleVisibility: {fileID: 676874871}
   spawnChance: 100
   entitySpawner: {fileID: 2090602694}
   onInteractEvent:
@@ -81846,6 +81922,19 @@ MonoBehaviour:
           m_StringArgument: MainKey
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 676874871}
+        m_TargetAssemblyTypeName: TriggerToggleVisibility, Assembly-CSharp
+        m_MethodName: ExecuteToggle
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: MainKey
+          m_BoolArgument: 0
+        m_CallState: 2
+  deactivateDelay: 0.5
 --- !u!65 &1760264674
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -81865,26 +81954,19 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.47947344, y: 0.5617361, z: 0.5478458}
-  m_Center: {x: 0.015547134, y: -0.07780054, z: -0.12660101}
---- !u!114 &1760264679
+  m_Size: {x: 0.47947344, y: 0.537365, z: 0.47663927}
+  m_Center: {x: 0.014218355, y: -0.08189423, z: -0.08997768}
+--- !u!114 &1760264680 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+  m_PrefabInstance: {fileID: 1760264670}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1760264672}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f67b58f383f4f484397d7ce810efbf82, type: 3}
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TriggerToggleVisibility
-  targetObjects:
-  - {fileID: 1874380827}
-  playerTag: Player
-  actionType: 2
-  triggerOnce: 1
-  hideMeshOnly: 0
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
 --- !u!1001 &1761464288
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -93751,6 +93833,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HintDisableTrigger
   targetHintTimer: {fileID: 1744875728}
+--- !u!114 &2020257590 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+  m_PrefabInstance: {fileID: 1168079375}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020257577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
 --- !u!1 &2021894811
 GameObject:
   m_ObjectHideFlags: 0
@@ -99398,6 +99491,10 @@ PrefabInstance:
     - target: {fileID: 5775347102984370371, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6355181414713585602, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

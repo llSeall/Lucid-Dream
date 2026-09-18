@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -5,85 +6,125 @@ public class EntityTriggerItem : MonoBehaviour
 {
     [Header("Interaction Settings")]
     public KeyCode interactKey = KeyCode.E;
-    public float interactDistance = 2.5f; // ระยะห่างที่สามารถกด E ได้
-    public Transform playerTransform;
+    public float interactDistance = 2.5f;
+
+    [Header("UI & Outline Settings")]
+    public GameObject interactionUI;
+    public Outline outlineComponent;
+
+    [Header("Toggle Visibility Settings")]
+    public TriggerToggleVisibility toggleVisibility;
 
     [Header("Spawn Settings")]
     [Range(0f, 100f)]
-    [Tooltip("โอกาสที่จะเกิด Entity เมื่อเก็บของชิ้นนี้ (เช่น 100% สำหรับของชิ้นสำคัญ หรือ 60% ตามดีไซน์)")]
     public float spawnChance = 100f;
     public EntitySpawner entitySpawner;
 
     [Header("External Integration Events")]
-    [Tooltip("ลากฟังก์ชันจากสคริปต์อื่นมาใส่ตรงนี้ได้ เช่น เพิ่มของเข้า Inventory หรือเล่นเสียงเก็บของ")]
     public UnityEvent onInteractEvent;
+
+    [Header("Deactivate Delay")]
+    public float deactivateDelay = 0.5f;
 
     private bool isInteractable = true;
 
     void Start()
     {
-        // ค้นหา EntitySpawner อัตโนมัติหากไม่ได้ลากใส่ Inspector
         if (entitySpawner == null)
         {
             entitySpawner = FindObjectOfType<EntitySpawner>();
         }
 
-        // ดึง Transform ผู้เล่นจาก EntitySpawner หากไม่ได้ระบุไว้
-        if (playerTransform == null && entitySpawner != null)
+        if (outlineComponent == null)
         {
-            playerTransform = entitySpawner.player;
+            outlineComponent = GetComponent<Outline>();
         }
+
+        SetHighlight(false);
     }
 
-    void Update()
+    public void SetHighlight(bool active)
     {
-        if (!isInteractable || playerTransform == null) return;
+        if (!isInteractable) return;
 
-        // เช็กระยะห่างระหว่างผู้เล่นกับไอเท็ม
-        float distance = Vector3.Distance(transform.position, playerTransform.position);
-
-        if (distance <= interactDistance)
+        if (interactionUI != null)
         {
-            // เมื่อผู้เล่นอยู่ในระยะแล้วกด E
-            if (Input.GetKeyDown(interactKey))
-            {
-                Interact();
-            }
+            interactionUI.SetActive(active);
+        }
+
+        if (outlineComponent != null)
+        {
+            outlineComponent.enabled = active;
         }
     }
 
-    /// <summary>
-    /// ฟังก์ชันนี้เปิด public ไว้ เผื่อคุณมีสคริปต์ Raycast Interaction กลาง จะได้เรียก Interact() โดยตรงได้เลย
-    /// </summary>
     public void Interact()
     {
         if (!isInteractable) return;
         isInteractable = false;
 
-        Debug.Log($"[Event Item] Interacted with item: {gameObject.name}");
+        Debug.Log($"[Interact Start] ผู้เล่นกดเก็บไอเท็ม: {gameObject.name}");
 
-        // 1. เรียกสั่งงาน Event ของสคริปต์ระบบอื่น (ถ้ามี)
+        SetHighlight(false);
+        HideMeshAndCollider();
+
+        // 1. ทดสอบการทำงาน TriggerToggleVisibility
+        if (toggleVisibility != null)
+        {
+            Debug.Log("[ToggleVisibility] สั่งทำงาน ExecuteToggle()");
+            toggleVisibility.ExecuteToggle();
+        }
+        else
+        {
+            Debug.LogWarning("[ToggleVisibility] ช่อง toggleVisibility ใน Inspector เป็น null (ยังไม่ได้ลากใส่)");
+        }
+
+        // 2. ทดสอบการสั่ง Event ภายนอก
         onInteractEvent?.Invoke();
 
-        // 2. คำนวณโอกาสสปอว์น Entity
+        // 3. ทดสอบการเกิดของผี (EntitySpawner)
         float randomRoll = Random.Range(0f, 100f);
         if (randomRoll <= spawnChance)
         {
             if (entitySpawner != null)
             {
+                Debug.Log("[EntitySpawner] กำลังสั่ง SpawnEntity()");
                 entitySpawner.SpawnEntity();
             }
             else
             {
-                Debug.LogWarning("[Event Item] EntitySpawner is missing in Scene!");
+                Debug.LogError("[EntitySpawner] ไม่พบ EntitySpawner ใน Scene!");
             }
         }
+        else
+        {
+            Debug.Log($"[EntitySpawner] สุ่มไม่ติดผี (Roll: {randomRoll} / Chance: {spawnChance})");
+        }
 
-        // 3. ซ่อนไอเท็มชิ้นนี้ออกจากฉาก (หรือใช้ Destroy(gameObject) ก็ได้)
+        StartCoroutine(DisableObjectRoutine());
+    }
+
+    private void HideMeshAndCollider()
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (Renderer r in renderers)
+        {
+            r.enabled = false;
+        }
+
+        Collider[] colliders = GetComponentsInChildren<Collider>();
+        foreach (Collider c in colliders)
+        {
+            c.enabled = false;
+        }
+    }
+
+    private IEnumerator DisableObjectRoutine()
+    {
+        yield return new WaitForSeconds(deactivateDelay);
         gameObject.SetActive(false);
     }
 
-    // วาดวงกลมรัศมีระยะกดในหน้า Scene View
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
