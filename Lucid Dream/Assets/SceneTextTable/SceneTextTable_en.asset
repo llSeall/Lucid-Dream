@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: SceneTextTable_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 21da6373e06dea048a350eb903131615, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 8779264000
+    m_Localized: Find me
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9178819653632
+    m_Localized: It should have been
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9300559327232
+    m_Localized: You
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9351822110720
+    m_Localized: not them...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11182623223808
+    m_Localized: Close You Eyes
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

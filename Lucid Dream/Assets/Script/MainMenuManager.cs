@@ -11,6 +11,7 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject slotSelectionPanel;
     [SerializeField] private GameObject confirmationPanel;
+    [SerializeField] private GameObject settingsPanel;
 
     [Header("📝 Slot Text Elements")]
     [SerializeField] private TextMeshProUGUI slot1Text;
@@ -33,24 +34,25 @@ public class MainMenuManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
-        mainMenuPanel.SetActive(true);
-        slotSelectionPanel.SetActive(false);
-        confirmationPanel.SetActive(false);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+        if (slotSelectionPanel != null) slotSelectionPanel.SetActive(false);
+        if (confirmationPanel != null) confirmationPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
     public void OnClickNewGameMode()
     {
         currentMode = MenuMode.NewGame;
-        mainMenuPanel.SetActive(false);
-        slotSelectionPanel.SetActive(true);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        if (slotSelectionPanel != null) slotSelectionPanel.SetActive(true);
         RefreshSlotUI();
     }
 
     public void OnClickContinueMode()
     {
         currentMode = MenuMode.Continue;
-        mainMenuPanel.SetActive(false);
-        slotSelectionPanel.SetActive(true);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        if (slotSelectionPanel != null) slotSelectionPanel.SetActive(true);
         RefreshSlotUI();
     }
 
@@ -98,7 +100,7 @@ public class MainMenuManager : MonoBehaviour
             if (saveExists)
             {
                 confirmationMessageText.text = $"มีข้อมูลเก่าอยู่ในสล็อต {slotID}\nคุณต้องการจะเซฟทับจริงๆ ใช่หรือไม่?";
-                confirmationPanel.SetActive(true);
+                if (confirmationPanel != null) confirmationPanel.SetActive(true);
             }
             else
             {
@@ -110,26 +112,44 @@ public class MainMenuManager : MonoBehaviour
             if (saveExists)
             {
                 confirmationMessageText.text = $"คุณต้องการจะโหลดเซฟจาก สล็อต {slotID} ใช่หรือไม่?";
-                confirmationPanel.SetActive(true);
+                if (confirmationPanel != null) confirmationPanel.SetActive(true);
             }
         }
     }
 
     public void OnConfirmYes()
     {
-        confirmationPanel.SetActive(false);
+        if (confirmationPanel != null) confirmationPanel.SetActive(false);
         if (currentMode == MenuMode.NewGame) ExecuteStartNewGame(selectedSlotID);
         else if (currentMode == MenuMode.Continue) ExecuteLoadGame(selectedSlotID);
     }
 
     public void OnConfirmNo()
     {
-        confirmationPanel.SetActive(false);
+        if (confirmationPanel != null) confirmationPanel.SetActive(false);
     }
 
     public void OnClickBackToMainMenu()
     {
         ShowMainMenu();
+    }
+
+    /// <summary>
+    /// ผูกกับปุ่ม "Settings" บนหน้า Main Menu
+    /// </summary>
+    public void OnClickSettings()
+    {
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// ผูกกับปุ่ม "Back" ในหน้า Settings ของ Main Menu
+    /// </summary>
+    public void OnClickBackFromSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
     }
 
     private void ExecuteStartNewGame(int slotID)
@@ -143,7 +163,6 @@ public class MainMenuManager : MonoBehaviour
     private void ExecuteLoadGame(int slotID)
     {
         if (SaveManager.Instance == null) return;
-        // ✨ ส่ง isFromMainMenu = true เพื่อเริ่มเกมตอนเช้าของวันล่าสุดเสมอ
         SaveManager.Instance.LoadGame(slotID, isFromMainMenu: true);
     }
 

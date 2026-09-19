@@ -270,7 +270,7 @@ AudioSource:
   m_GameObject: {fileID: 1626221628571614002}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: -6040525337477807889, guid: ba35ce9c53e22e441a12ee29e2db35a0, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -536,13 +536,12 @@ MonoBehaviour:
   wallGrabLeftArmSprite: {fileID: 0}
   wallGrabRightArmSprite: {fileID: 0}
   idleLoweredOffset: {x: 0, y: -0.2, z: -0.05}
+  raisedArmOffset: {x: 0, y: 0.1, z: 0.05}
   wallGrabArmOffset: {x: 0, y: 0.1, z: 0.1}
   armLerpSpeed: 10
   runArmSwingAmount: 0.08
   runArmRotationAmount: 10
-  runArmRaisedOffset: {x: 0, y: 0.05, z: 0.05}
   crouchArmSwingAmount: 0.02
-  crouchArmRaisedOffset: {x: 0, y: 0.12, z: 0.08}
   walkSpeed: 4
   runSpeed: 8
   crouchSpeed: 1
@@ -551,16 +550,17 @@ MonoBehaviour:
   fallStunDuration: 1.2
   landingImpactPitch: 15
   landingRecoverSpeed: 5
-  enableWallGrab: 1
-  wallCheckDistance: 0.8
-  wallShimmySpeed: 2.5
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  enableClimbVault: 1
   climbableWallTag: Climbable
-  shimmyCameraPanAmount: 50
-  shimmyCameraSmoothing: 6
-  wallGrabCamJerk: -4
+  climbUpHeight: 1.8
+  climbForwardDistance: 1
+  climbSpeed: 3.5
+  ledgeGrabMaxHeightOffset: 0.3
+  enableEdgeShimmy: 1
+  shimmyWallTag: WallShimmy
+  wallShimmySpeed: 2.5
+  shimmyPitchMin: -15
+  shimmyPitchMax: 35
   squeezeSpeed: 1.2
   squeezedRadius: 0.18
   squeezedCameraTiltZ: 12
@@ -616,7 +616,6 @@ MonoBehaviour:
   headBobSmoothing: 4
   enableCameraSway: 1
   swayAmount: 0.05
-  swaySmoothing: 3
 --- !u!114 &7368595051408906598
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -629,7 +628,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34b9615b7aa9db744a4f888c0da32af3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Script_Outline
-  interactionDistance: 2
+  maxRaycastDistance: 10
   interactableLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -716,11 +715,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EyeToggleWorldManager
   playerCamera: {fileID: 4329501868272541037}
+  rendererData: {fileID: 0}
+  featureName: Pencil Sketch Pass
   eyeOverlayCanvasGroup: {fileID: 0}
   fadeCloseDuration: 0.25
   eyeClosedPause: 0.1
   fadeOpenDuration: 0.35
-  blackAndWhiteVolume: {fileID: 0}
+  maxEyeStamina: 100
+  staminaDrainRate: 20
+  staminaRegenRate: 25
+  hideBarWhenFull: 1
+  uiFadeSpeed: 5
+  eyeStaminaFillRect: {fileID: 0}
+  eyeStaminaCanvasGroup: {fileID: 0}
+  bloodVesselsImage: {fileID: 0}
+  bloodVesselSprites:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  minBloodAlpha: 0.1
+  maxBloodAlpha: 1
   objectPairs: []
   closedEyeOnlyObjects: []
   normalOnlyObjects:

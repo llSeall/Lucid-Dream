@@ -8,6 +8,7 @@ TagManager:
   - WallGap
   - Climbable
   - Enemy
+  - WallShimmy
   layers:
   - Default
   - TransparentFX

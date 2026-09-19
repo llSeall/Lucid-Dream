@@ -8,6 +8,7 @@ public class Script_Outline : MonoBehaviour
 
     private KeyPickup currentKey;
     private EntityTriggerItem currentEntityItem;
+    private HintObject currentHint; // เพิ่มตัวแปรเก็บวัตถุคำใบ้ปัจจุบัน
     private Outline currentOutlineOnly;
 
     void Start()
@@ -28,9 +29,10 @@ public class Script_Outline : MonoBehaviour
         {
             KeyPickup key = hit.collider.GetComponentInParent<KeyPickup>();
             EntityTriggerItem entityItem = hit.collider.GetComponentInParent<EntityTriggerItem>();
+            HintObject hint = hit.collider.GetComponentInParent<HintObject>(); // ดึง Component HintObject
             Outline outline = hit.collider.GetComponentInParent<Outline>();
 
-            // 1. ตรวจสอบกุญแจ (ต้องเช็กว่าสคริปต์เปิดใช้งานอยู่ด้วย .enabled)
+            // 1. ตรวจสอบกุญแจ
             if (key != null && key.enabled)
             {
                 if (hit.distance <= key.interactDistance)
@@ -52,7 +54,22 @@ public class Script_Outline : MonoBehaviour
                 }
             }
 
-            // 2. ตรวจสอบไอเท็มกิจกรรม (ต้องเช็กว่าสคริปต์เปิดใช้งานอยู่ด้วย .enabled)
+            // 2. ตรวจสอบวัตถุคำใบ้ (HintObject)
+            if (hint != null && hint.enabled)
+            {
+                if (hit.distance <= hint.interactDistance)
+                {
+                    if (currentHint != hint)
+                    {
+                        Clear();
+                        currentHint = hint;
+                        currentHint.SetHighlight(true);
+                    }
+                    return;
+                }
+            }
+
+            // 3. ตรวจสอบไอเท็มกิจกรรม (EntityTriggerItem)
             if (entityItem != null && entityItem.enabled)
             {
                 if (hit.distance <= entityItem.interactDistance)
@@ -74,8 +91,8 @@ public class Script_Outline : MonoBehaviour
                 }
             }
 
-            // 3. วัตถุทั่วไปที่มีเฉพาะ Outline
-            if (outline != null && (key == null || !key.enabled) && (entityItem == null || !entityItem.enabled))
+            // 4. วัตถุทั่วไปที่มีเฉพาะ Outline
+            if (outline != null && (key == null || !key.enabled) && (hint == null || !hint.enabled) && (entityItem == null || !entityItem.enabled))
             {
                 if (currentOutlineOnly != outline)
                 {
@@ -86,10 +103,12 @@ public class Script_Outline : MonoBehaviour
                 return;
             }
 
+            // ถ้ามองโดนสิ่งของอย่างอื่นที่ไม่ใช่กุญแจ/คำใบ้/ไอเท็ม ให้เคลียร์การแสดงผล
             Clear();
         }
         else
         {
+            // ถ้าไม่มองโดนอะไรเลย ให้เคลียร์การแสดงผลทั้งหมด
             Clear();
         }
     }
@@ -100,6 +119,13 @@ public class Script_Outline : MonoBehaviour
         {
             currentKey.SetHighlight(false);
             currentKey = null;
+        }
+
+        // ปิด UI/Outline ของวัตถุคำใบ้เดิมก่อนสลับหรือเมื่อเดินออกห่าง
+        if (currentHint != null)
+        {
+            currentHint.SetHighlight(false);
+            currentHint = null;
         }
 
         if (currentEntityItem != null)

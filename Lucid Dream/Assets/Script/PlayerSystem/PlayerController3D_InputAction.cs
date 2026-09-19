@@ -12,69 +12,60 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] InputActionAsset inputActionAsset;
 
     [Header("Arm Sprites & Procedural Animation ✨")]
-    [Tooltip("Transform ของแขนซ้าย (ควรเป็น Child ของ Camera)")]
     [SerializeField] Transform leftArmTransform;
-    [Tooltip("Transform ของแขนขวา (ควรเป็น Child ของ Camera)")]
     [SerializeField] Transform rightArmTransform;
-
-    [Header("Arm Sprites Settings ✨")]
     [SerializeField] SpriteRenderer leftArmSpriteRenderer;
     [SerializeField] SpriteRenderer rightArmSpriteRenderer;
 
-    [Header("Arm Sprites - Walk / Crouch (ปกติ / เดิน / ย่อ) ✨")]
+    [Header("Arm Sprites - Walk / Crouch / Sprint / Grab ✨")]
     [SerializeField] Sprite walkLeftArmSprite;
     [SerializeField] Sprite walkRightArmSprite;
-
-    [Header("Arm Sprites - Sprinting (วิ่ง) ✨")]
     [SerializeField] Sprite sprintLeftArmSprite;
     [SerializeField] Sprite sprintRightArmSprite;
-
-    [Header("Arm Sprites - Wall Grab (เกาะกำแพง) ✨")]
     [SerializeField] Sprite wallGrabLeftArmSprite;
     [SerializeField] Sprite wallGrabRightArmSprite;
 
     [Header("Arm Pose Settings ✨")]
-    [Tooltip("ระยะมือลดต่ำลงเมื่อยืนเฉยๆ (Relative offset)")]
-    [SerializeField] Vector3 idleLoweredOffset = new Vector3(0f, -0.2f, -0.05f);
-    [Tooltip("ตำแหน่งยื่นมือเกาะกำแพง")]
-    [SerializeField] Vector3 wallGrabArmOffset = new Vector3(0f, 0.1f, 0.1f);
-    [SerializeField] float armLerpSpeed = 10f;
+    [SerializeField] Vector3 idleLoweredOffset = new Vector3(0f, -0.6f, -0.1f);
+    [SerializeField] Vector3 raisedArmOffset = new Vector3(0f, 0.1f, 0.05f);
+    [SerializeField] Vector3 wallGrabArmOffset = new Vector3(0f, 0.15f, 0.1f);
+    [SerializeField] float armLerpSpeed = 12f;
 
-    [Header("Arm Swing Settings - Sprinting (วิ่ง) ✨")]
+    [Header("Arm Swing Settings ✨")]
     [SerializeField] float runArmSwingAmount = 0.08f;
     [SerializeField] float runArmRotationAmount = 15f;
-    [SerializeField] Vector3 runArmRaisedOffset = new Vector3(0f, 0.05f, 0.05f);
-
-    [Header("Arm Swing Settings - Crouching (ย่อตัว) ✨")]
-    [SerializeField] float crouchArmSwingAmount = 0.02f;
-    [SerializeField] Vector3 crouchArmRaisedOffset = new Vector3(0f, 0.12f, 0.08f);
+    [SerializeField] float crouchArmSwingAmount = 0.03f;
 
     [Header("Movement")]
     [SerializeField] float walkSpeed = 4f;
     [SerializeField] float runSpeed = 8f;
     [SerializeField] float crouchSpeed = 2f;
     [SerializeField] float acceleration = 30f;
-    // ✨ เปลี่ยนตัวแปรสะสมจังหวะก้าว ให้เป็นเฟสวงรอบการเดิน (2 ก้าวสมบูรณ์)
     private float walkCyclePhase = 0f;
-    private float nextStepPhase = Mathf.PI;
+
     [Header("Fall Stun Settings ✨")]
     [SerializeField] float minFallStunDistance = 5f;
     [SerializeField] float fallStunDuration = 1.2f;
     [SerializeField] float landingImpactPitch = 15f;
     [SerializeField] float landingRecoverSpeed = 5f;
 
-    [Header("Wall Grab / Shimmy Settings ✨")]
-    [SerializeField] bool enableWallGrab = true;
-    [SerializeField] float wallCheckDistance = 0.8f;
-    [SerializeField] float wallShimmySpeed = 2.5f;
-    [SerializeField] LayerMask wallLayer = ~0;
+    [Header("1. Vault & Climb System (Trigger Tag: Climbable) ✨")]
+    [SerializeField] bool enableClimbVault = true;
     [SerializeField] string climbableWallTag = "Climbable";
-    [SerializeField] float shimmyCameraPanAmount = 10f;
-    [SerializeField] float shimmyCameraSmoothing = 6f;
-    [Tooltip("ความแรงในการกระตุกกล้องตอบรับตอนเกาะกำแพงสำเร็จ")]
-    [SerializeField] float wallGrabCamJerk = -4f;
+    [SerializeField] float climbUpHeight = 1.8f;
+    [SerializeField] float climbForwardDistance = 1.0f;
+    [SerializeField] float climbSpeed = 3.5f;
+    [Tooltip("ระยะเผื่อความสูงจากขอบบนสุดของ Trigger (หากยืนบนขอบจะไม่ทำงาน)")]
+    [SerializeField] float ledgeGrabMaxHeightOffset = 0.3f;
 
-    [Header("Wall Squeeze Settings ✨")]
+    [Header("2. Edge Shimmy System (Trigger Tag: WallShimmy) ✨")]
+    [SerializeField] bool enableEdgeShimmy = true;
+    [SerializeField] string shimmyWallTag = "WallShimmy";
+    [SerializeField] float wallShimmySpeed = 2.2f;
+    [SerializeField] float shimmyPitchMin = -15f;
+    [SerializeField] float shimmyPitchMax = 35f;
+
+    [Header("3. Wall Squeeze Settings (Trigger Tag: WallGap) ✨")]
     [SerializeField] float squeezeSpeed = 1.2f;
     [SerializeField] float squeezedRadius = 0.18f;
     [SerializeField] float squeezedCameraTiltZ = 12f;
@@ -85,7 +76,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] string wallGapTag = "WallGap";
     [SerializeField] float gapAlignmentSpeed = 8f;
 
-    [Header("Footstep & Movement Sounds ✨")]
+    [Header("Audio Settings ✨")]
     [SerializeField] AudioSource footstepAudioSource;
     [SerializeField] AudioClip[] defaultFootstepClips;
     [SerializeField] AudioClip[] crouchFootstepClips;
@@ -114,14 +105,12 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] bool hideWhenFull = true;
     [SerializeField] float fadeSpeed = 5f;
 
-    [Header("Jump")]
+    [Header("Jump & Physics")]
     [SerializeField] float jumpForce = 7f;
     [SerializeField] int maxJumps = 1;
     [SerializeField] float coyoteTime = 0.12f;
     [SerializeField] float jumpBufferTime = 0.12f;
     [Range(0f, 1f)][SerializeField] float variableJumpMultiplier = 0.5f;
-
-    [Header("Ground Check (No Layer Needed)")]
     [SerializeField] float groundCheckRadius = 0.2f;
 
     [Header("Crouch Settings")]
@@ -144,7 +133,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [Header("Camera Sway")]
     [SerializeField] bool enableCameraSway = true;
     [SerializeField] float swayAmount = 0.05f;
-    [SerializeField] float swaySmoothing = 3f;
 
     // Input Action references
     private InputActionMap playerActionMap;
@@ -154,7 +142,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private InputAction sprintAction;
     private InputAction crouchAction;
 
-    // Movement variables
+    // Core States
     Rigidbody rb;
     CapsuleCollider capsuleCollider;
     Vector3 targetInput = Vector3.zero;
@@ -166,32 +154,39 @@ public class PlayerController3D_InputAction : MonoBehaviour
     float yaw = 0f;
     float pitch = 0f;
 
-    // Fall Stun Variables
+    // Fall Stun
     private float highestYPoint;
     private bool isStunned = false;
     private float stunTimer = 0f;
     private bool wasGroundedLastFrame = true;
     private float currentLandingImpact = 0f;
 
-    // Wall Grab Variables
-    private bool isWallGrabbing = false;
-    private bool isTouchWall = false;
-    private RaycastHit wallHitInfo;
-    private float currentShimmyPanY = 0f;
+    // Wall Vault (Trigger Mode)
+    private bool isClimbingVault = false;
+    private bool isGrabbingLedge = false;
+    private bool requireFreshWPress = false;
+    private Transform currentClimbTrigger;
+    private float grabTargetYaw = 0f;
+    private float climbCooldownTimer = 0f;
 
-    // Stamina variables
+    // Edge Shimmy (Trigger Mode)
+    private bool isEdgeShimmying = false;
+    private Transform currentShimmyTrigger;
+    private Vector3 shimmyWallNormal;
+
+    // Stamina
     private float currentStamina;
     private float staminaRegenTimer;
     private bool isSprinting;
 
-    // Crouch & Height variables
+    // Crouch
     private float defaultHeight;
     private float defaultCenterY;
     private float defaultRadius;
     private bool isCrouching;
     private Vector3 currentBaseCameraPos;
 
-    // Wall Squeeze variables
+    // Squeeze
     private bool isSqueezing = false;
     private bool isInGapZone = false;
     private float defaultFOV;
@@ -203,27 +198,66 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private bool isFacingReverseInGap = false;
     private bool sKeyPressedLastFrame = false;
 
-    // Footstep Sound & Arm Sync variables ✨
-    private float stepTimer = 0f;
-    private float currentStepInterval = 0.5f;
-
-    // Head bob variables
+    // Audio & Bob
+    private float nextStepPhase = Mathf.PI;
     float bobTimer = 0f;
     Vector3 originalCameraPosition;
     Vector3 currentCameraOffset = Vector3.zero;
     Vector3 targetCameraOffset = Vector3.zero;
 
-    // Procedural Arm Animation Variables
+    // Procedural Arms
     private Vector3 leftArmDefaultLocalPos;
     private Vector3 rightArmDefaultLocalPos;
     private Quaternion leftArmDefaultLocalRot;
     private Quaternion rightArmDefaultLocalRot;
-    private float armSyncTimer = 0f;
+
+    // ✨ สำหรับระบบ Settings (เก็บค่าเริ่มต้นแท้จริงจาก Inspector)
+    private float initialSensitivity;
+    private float initialFOV;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
+
+        // 1. ค้นหากล้องและบันทึกค่ามาตรฐานจาก Inspector ก่อนเสมอ
+        if (playerCamera == null && Camera.main != null) playerCamera = Camera.main.transform;
+
+        if (playerCamera != null)
+        {
+            originalCameraPosition = playerCamera.localPosition;
+            currentBaseCameraPos = originalCameraPosition;
+
+            camComponent = playerCamera.GetComponent<Camera>();
+            if (camComponent != null)
+            {
+                initialFOV = camComponent.fieldOfView; // บันทึกค่า FOV ตั้งต้นของกล้อง
+                defaultFOV = initialFOV;
+                camComponent.nearClipPlane = 0.01f;
+            }
+        }
+        else
+        {
+            initialFOV = 60f;
+            defaultFOV = 60f;
+        }
+
+        initialSensitivity = mouseSensitivity; // บันทึกค่า Sensitivity ตั้งต้นจาก Inspector
+
+        // 2. โหลดค่าความไวเมาส์และ FOV ที่เคยเซฟไว้ (ถ้ามี)
+        if (PlayerPrefs.HasKey("MouseSensitivity"))
+        {
+            mouseSensitivity = PlayerPrefs.GetFloat("MouseSensitivity");
+        }
+
+        if (PlayerPrefs.HasKey("CameraFOV"))
+        {
+            defaultFOV = PlayerPrefs.GetFloat("CameraFOV");
+            if (camComponent != null)
+            {
+                camComponent.fieldOfView = defaultFOV;
+            }
+        }
 
         if (footstepAudioSource == null) footstepAudioSource = GetComponent<AudioSource>();
 
@@ -231,8 +265,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         }
-
-        if (playerCamera == null && Camera.main != null) playerCamera = Camera.main.transform;
 
         if (groundCheck == null)
         {
@@ -249,19 +281,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             defaultHeight = capsuleCollider.height;
             defaultCenterY = capsuleCollider.center.y;
             defaultRadius = capsuleCollider.radius;
-        }
-
-        if (playerCamera != null)
-        {
-            originalCameraPosition = playerCamera.localPosition;
-            currentBaseCameraPos = originalCameraPosition;
-
-            camComponent = playerCamera.GetComponent<Camera>();
-            if (camComponent != null)
-            {
-                defaultFOV = camComponent.fieldOfView;
-                camComponent.nearClipPlane = 0.01f;
-            }
         }
 
         if (leftArmTransform != null)
@@ -313,12 +332,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) return;
         if (PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp) return;
-        if (isStunned) return;
+        if (isStunned || isClimbingVault) return;
 
-        // กดกระโดดผละออกจากกำแพง
-        if (isWallGrabbing)
+        if (isEdgeShimmying)
         {
-            DetachFromWall();
+            DetachEdgeShimmy();
             DoJump();
             return;
         }
@@ -341,9 +359,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void Update()
     {
-        // ✨ ถ้ากำลังใช้งานคอมอยู่ ให้หยุดการทำงานของการเดิน/หันกล้องทันที
+        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) return;
         if (ComputerInteraction.IsInteractingWithPC) return;
-        // ปิดการรับคำสั่งถ้ากำลังคุย หรือตื่นนอน
+
+        if (climbCooldownTimer > 0f)
+        {
+            climbCooldownTimer -= Time.deltaTime;
+        }
+
         if ((DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) ||
             (PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp))
         {
@@ -357,14 +380,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
         grounded = CheckGroundedNoLayer();
 
         HandleFallStunLogic();
-        HandleWallGrabLogic();
+        HandleWallClimbAndShimmyLogic();
 
-        if (moveAction != null && !isStunned)
+        if (moveAction != null && !isStunned && !isClimbingVault)
         {
             Vector2 moveInput = moveAction.ReadValue<Vector2>();
             targetInput = new Vector3(moveInput.x, 0f, moveInput.y);
         }
-        else if (isStunned)
+        else if (isStunned || isClimbingVault)
         {
             targetInput = Vector3.zero;
         }
@@ -386,14 +409,59 @@ public class PlayerController3D_InputAction : MonoBehaviour
             yaw = Mathf.LerpAngle(yaw, squeezeTargetYaw, Time.deltaTime * squeezeCamRotateSpeed);
             pitch = Mathf.Lerp(pitch, 0f, Time.deltaTime * squeezeCamRotateSpeed);
         }
-        else if (isWallGrabbing)
+        else if (isGrabbingLedge)
         {
-            pitch -= lookInput.y * (mouseSensitivity * 0.01f);
-            pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
+            if (currentClimbTrigger != null)
+            {
+                Collider col = currentClimbTrigger.GetComponent<Collider>();
+                Vector3 camPos = (playerCamera != null) ? playerCamera.position : transform.position;
+                Vector3 targetPoint = (col != null) ? col.ClosestPoint(camPos) : currentClimbTrigger.position;
+
+                Vector3 dirToTargetHorizontal = targetPoint - transform.position;
+                dirToTargetHorizontal.y = 0f;
+
+                if (dirToTargetHorizontal.sqrMagnitude > 0.04f)
+                {
+                    grabTargetYaw = Quaternion.LookRotation(dirToTargetHorizontal).eulerAngles.y;
+                }
+
+                Vector3 dirToTargetCam = targetPoint - camPos;
+                if (dirToTargetCam.sqrMagnitude > 0.04f)
+                {
+                    float targetPitch = Quaternion.LookRotation(dirToTargetCam).eulerAngles.x;
+                    if (targetPitch > 180f) targetPitch -= 360f;
+                    pitch = Mathf.Lerp(pitch, Mathf.Clamp(targetPitch, pitchMin, pitchMax), Time.deltaTime * 12f);
+                }
+            }
+
+            yaw = Mathf.LerpAngle(yaw, grabTargetYaw, Time.deltaTime * 12f);
         }
-        else
+        else if (isEdgeShimmying)
         {
-            Vector2 mouse = lookInput * (mouseSensitivity * 0.01f);
+            // ปรับตัวคูณจาก 0.01f เป็น 0.05f เพื่อให้รับค่า Sensitivity จาก Settings ได้แม่นยำขึ้น
+            Vector2 mouse = lookInput * (mouseSensitivity * 0.05f);
+            pitch -= mouse.y;
+            pitch = Mathf.Clamp(pitch, shimmyPitchMin, shimmyPitchMax);
+
+            float backToWallYaw = (currentShimmyTrigger != null) ? currentShimmyTrigger.eulerAngles.y : Quaternion.LookRotation(shimmyWallNormal).eulerAngles.y;
+
+            if (targetInput.x < -0.1f)
+            {
+                yaw = Mathf.LerpAngle(yaw, backToWallYaw - 80f, Time.deltaTime * 10f);
+            }
+            else if (targetInput.x > 0.1f)
+            {
+                yaw = Mathf.LerpAngle(yaw, backToWallYaw + 80f, Time.deltaTime * 10f);
+            }
+            else
+            {
+                yaw = Mathf.LerpAngle(yaw, backToWallYaw, Time.deltaTime * 10f);
+            }
+        }
+        else if (!isClimbingVault)
+        {
+            // ปรับตัวคูณการหมุนกล้องปกติเป็น 0.05f ให้พอดีกับสเกล Slider 0.1 - 10.0
+            Vector2 mouse = lookInput * (mouseSensitivity * 0.05f);
             yaw += mouse.x;
             pitch -= mouse.y;
             pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
@@ -403,12 +471,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         currentLandingImpact = Mathf.Lerp(currentLandingImpact, 0f, Time.deltaTime * landingRecoverSpeed);
 
-        float targetShimmyPan = isWallGrabbing ? (targetInput.x * shimmyCameraPanAmount) : 0f;
-        currentShimmyPanY = Mathf.Lerp(currentShimmyPanY, targetShimmyPan, Time.deltaTime * shimmyCameraSmoothing);
-
         if (playerCamera != null)
         {
-            playerCamera.localEulerAngles = new Vector3(pitch + currentLandingImpact, currentShimmyPanY, currentCameraTiltZ);
+            playerCamera.localEulerAngles = new Vector3(pitch + currentLandingImpact, 0f, currentCameraTiltZ);
         }
 
         if (grounded)
@@ -418,11 +483,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
 
         bool crouchKeyPressed = (crouchAction != null) && crouchAction.IsPressed();
-        if (crouchKeyPressed && !isSqueezing && !isWallGrabbing)
+        if (crouchKeyPressed && !isSqueezing && !isEdgeShimmying && !isClimbingVault)
         {
             isCrouching = true;
         }
-        else if (!isSqueezing && !isWallGrabbing)
+        else if (!isSqueezing && !isEdgeShimmying && !isClimbingVault)
         {
             isCrouching = HasCeilingAbove();
         }
@@ -435,7 +500,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         HandleStamina();
         HandleFootsteps();
 
-        if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing && !isStunned)
+        if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing && !isStunned && !isClimbingVault)
         {
             if (Time.time - lastGroundTime <= coyoteTime || jumpsLeft > 0)
             {
@@ -448,24 +513,22 @@ public class PlayerController3D_InputAction : MonoBehaviour
         UpdateProceduralArmAnimation();
     }
 
-    #region ✨ Procedural Arm Animation & Footstep Synchronization
+    #region Procedural Arm Animation & Visibility
     private void UpdateProceduralArmAnimation()
     {
-        // 1. ตรวจสอบการเปิด/ปิด สไปร์ทตามสถานะ (ตื่นนอน / ลอดกำแพง) ✨
         bool isWakingUp = PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp;
-        bool shouldHideArms = isWakingUp || isSqueezing;
+        bool shouldHideArms = isWakingUp || isSqueezing || isEdgeShimmying;
 
         if (leftArmSpriteRenderer != null) leftArmSpriteRenderer.enabled = !shouldHideArms;
         if (rightArmSpriteRenderer != null) rightArmSpriteRenderer.enabled = !shouldHideArms;
 
         if (shouldHideArms) return;
 
-        // สลับรูปภาพสไปร์ทแขนตามสถานะ ✨
         UpdateArmSprites();
 
         Vector3 horizontalVel = rb.linearVelocity;
         horizontalVel.y = 0f;
-        float currentSpeed = isWallGrabbing ? (Mathf.Abs(targetInput.x) * wallShimmySpeed) : horizontalVel.magnitude;
+        float currentSpeed = isEdgeShimmying ? (Mathf.Abs(targetInput.x) * wallShimmySpeed) : horizontalVel.magnitude;
         bool isMoving = currentSpeed > 0.1f && targetInput.sqrMagnitude > 0.01f;
 
         Vector3 targetLeftPos = leftArmDefaultLocalPos;
@@ -473,65 +536,42 @@ public class PlayerController3D_InputAction : MonoBehaviour
         Quaternion targetLeftRot = leftArmDefaultLocalRot;
         Quaternion targetRightRot = rightArmDefaultLocalRot;
 
-        if (isWallGrabbing)
+        if (isGrabbingLedge || isClimbingVault || isEdgeShimmying)
         {
-            // ✨ 1. ท่ามือเกาะกำแพง
             targetLeftPos += wallGrabArmOffset;
             targetRightPos += wallGrabArmOffset;
 
-            // ขยับเหวี่ยงแขนซ้ายขวาตามการสไลด์ A-D
-            float shimmySwing = Mathf.Sin(stepTimer * Mathf.PI / currentStepInterval) * 0.03f;
+            float shimmySwing = Mathf.Sin(walkCyclePhase) * 0.03f;
             targetLeftPos.y += shimmySwing;
             targetRightPos.y -= shimmySwing;
         }
-        else if (isMoving && grounded && !isStunned)
+        else if (isSprinting)
         {
-            // ✨ คำนวณคลื่นการแกว่งแขนเต็มรอบ (ก้าวซ้ายแขนซ้ายยก / ก้าวขวาแขนขวายก)
             float armSwing = Mathf.Sin(walkCyclePhase);
+            float leftSwingY = armSwing * runArmSwingAmount;
+            float leftSwingX = Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
+            float rightSwingY = -armSwing * runArmSwingAmount;
+            float rightSwingX = -Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
 
-            if (isSprinting)
-            {
-                float leftSwingY = armSwing * runArmSwingAmount;
-                float leftSwingX = Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
-                float rightSwingY = -armSwing * runArmSwingAmount;
-                float rightSwingX = -Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
+            targetLeftPos += raisedArmOffset + new Vector3(leftSwingX, leftSwingY, leftSwingY * 0.5f);
+            targetRightPos += raisedArmOffset + new Vector3(rightSwingX, rightSwingY, rightSwingY * 0.5f);
 
-                targetLeftPos += runArmRaisedOffset + new Vector3(leftSwingX, leftSwingY, leftSwingY * 0.5f);
-                targetRightPos += runArmRaisedOffset + new Vector3(rightSwingX, rightSwingY, rightSwingY * 0.5f);
-
-                float rotZ = armSwing * runArmRotationAmount;
-                targetLeftRot *= Quaternion.Euler(0, 0, rotZ);
-                targetRightRot *= Quaternion.Euler(0, 0, -rotZ);
-            }
-            else if (isCrouching)
-            {
-                float leftSwingY = armSwing * crouchArmSwingAmount;
-                float rightSwingY = -armSwing * crouchArmSwingAmount;
-
-                targetLeftPos += crouchArmRaisedOffset + new Vector3(0, leftSwingY, 0);
-                targetRightPos += crouchArmRaisedOffset + new Vector3(0, rightSwingY, 0);
-            }
-            else
-            {
-                // เดินปกติ - สลับแกว่งขึ้นลงตามจังหวะก้าวซ้ายขวา
-                float leftSwingY = armSwing * (runArmSwingAmount * 0.4f);
-                float rightSwingY = -armSwing * (runArmSwingAmount * 0.4f);
-
-                targetLeftPos += new Vector3(0, leftSwingY, 0);
-                targetRightPos += new Vector3(0, rightSwingY, 0);
-            }
+            float rotZ = armSwing * runArmRotationAmount;
+            targetLeftRot *= Quaternion.Euler(0, 0, rotZ);
+            targetRightRot *= Quaternion.Euler(0, 0, -rotZ);
+        }
+        else if (isCrouching)
+        {
+            float armSwing = isMoving ? Mathf.Sin(walkCyclePhase) * crouchArmSwingAmount : 0f;
+            targetLeftPos += raisedArmOffset + new Vector3(0, armSwing, 0);
+            targetRightPos += raisedArmOffset + new Vector3(0, -armSwing, 0);
         }
         else
         {
-            // ✨ 3. ยืนอยู่นิ่งๆ (Idle): ลดมือลงต่ำตามค่า idleLoweredOffset
-            stepTimer = 0f;
-            float breathing = Mathf.Sin(Time.time * 2f) * 0.005f; // เอฟเฟกต์หายใจแผ่วๆ
-
-            targetLeftPos += idleLoweredOffset + new Vector3(0, breathing, 0);
-            targetRightPos += idleLoweredOffset + new Vector3(0, breathing, 0);
+            targetLeftPos += idleLoweredOffset;
+            targetRightPos += idleLoweredOffset;
         }
 
-        // Lerp ย้ายตำแหน่งมือให้นุ่มนวล
         if (leftArmTransform != null)
         {
             leftArmTransform.localPosition = Vector3.Lerp(leftArmTransform.localPosition, targetLeftPos, Time.deltaTime * armLerpSpeed);
@@ -550,7 +590,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         Sprite targetLeft = walkLeftArmSprite;
         Sprite targetRight = walkRightArmSprite;
 
-        if (isWallGrabbing)
+        if (isGrabbingLedge || isClimbingVault || isEdgeShimmying)
         {
             if (wallGrabLeftArmSprite != null) targetLeft = wallGrabLeftArmSprite;
             if (wallGrabRightArmSprite != null) targetRight = wallGrabRightArmSprite;
@@ -573,14 +613,159 @@ public class PlayerController3D_InputAction : MonoBehaviour
     }
     #endregion
 
-    #region ✨ Movement & Footstep Audio System
+    #region Trigger-Based Climb & Shimmy Logic
+    private void HandleWallClimbAndShimmyLogic()
+    {
+        if (isClimbingVault || isSqueezing || isStunned) return;
+
+        if (isGrabbingLedge)
+        {
+            rb.linearVelocity = Vector3.zero;
+
+            if (grounded)
+            {
+                isGrabbingLedge = false;
+                rb.useGravity = true;
+                return;
+            }
+
+            if (targetInput.z <= 0.1f)
+            {
+                requireFreshWPress = false;
+            }
+
+            bool jumpPressed = (jumpAction != null && jumpAction.WasPressedThisFrame());
+            bool freshWPressed = (targetInput.z > 0.1f && !requireFreshWPress);
+
+            if (freshWPressed || jumpPressed)
+            {
+                StartCoroutine(Routine_VaultClimbUp());
+                return;
+            }
+            else if (targetInput.z < -0.1f)
+            {
+                isGrabbingLedge = false;
+                rb.useGravity = true;
+            }
+        }
+    }
+
+    private IEnumerator Routine_VaultClimbUp()
+    {
+        isClimbingVault = true;
+        isGrabbingLedge = false;
+        requireFreshWPress = false;
+        rb.useGravity = false;
+        rb.linearVelocity = Vector3.zero;
+
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = startPos + Vector3.up * climbUpHeight + transform.forward * climbForwardDistance;
+
+        PlaySingleSoundEffect(wallGrabEnterClip, volumeWallGrabEnter);
+
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * climbSpeed;
+            rb.MovePosition(Vector3.Lerp(startPos, targetPos, t));
+            yield return null;
+        }
+
+        rb.useGravity = true;
+        isClimbingVault = false;
+        jumpsLeft = maxJumps;
+        climbCooldownTimer = 0.4f;
+    }
+
+    private void DetachEdgeShimmy()
+    {
+        isEdgeShimmying = false;
+        rb.useGravity = true;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(wallGapTag))
+        {
+            isInGapZone = true;
+            currentGapTransform = other.transform;
+        }
+
+        if (enableEdgeShimmy && other.CompareTag(shimmyWallTag) && !isEdgeShimmying && !isClimbingVault)
+        {
+            isEdgeShimmying = true;
+            currentShimmyTrigger = other.transform;
+            shimmyWallNormal = other.transform.forward;
+            rb.useGravity = false;
+            jumpsLeft = maxJumps;
+
+            PlaySingleSoundEffect(wallGrabEnterClip, volumeWallGrabEnter);
+        }
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (enableClimbVault && other.CompareTag(climbableWallTag))
+        {
+            if (grounded || climbCooldownTimer > 0f)
+            {
+                if (isGrabbingLedge)
+                {
+                    isGrabbingLedge = false;
+                    rb.useGravity = true;
+                }
+                return;
+            }
+
+            if (!isGrabbingLedge && !isClimbingVault)
+            {
+                float topOfTriggerY = other.bounds.max.y;
+                float playerFeetY = (groundCheck != null) ? groundCheck.position.y : transform.position.y;
+
+                if (playerFeetY < topOfTriggerY - ledgeGrabMaxHeightOffset)
+                {
+                    isGrabbingLedge = true;
+                    currentClimbTrigger = other.transform;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.useGravity = false;
+
+                    if (targetInput.z > 0.1f)
+                    {
+                        requireFreshWPress = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(wallGapTag))
+        {
+            isInGapZone = false;
+            currentGapTransform = null;
+        }
+
+        if (other.CompareTag(shimmyWallTag) && isEdgeShimmying)
+        {
+            DetachEdgeShimmy();
+        }
+
+        if (other.CompareTag(climbableWallTag) && isGrabbingLedge)
+        {
+            isGrabbingLedge = false;
+            rb.useGravity = true;
+        }
+    }
+    #endregion
+
+    #region Movement, Audio & Core Mechanics
     private void HandleFootsteps()
     {
-        if (!grounded && !isSqueezing && !isWallGrabbing) return;
+        if (!grounded && !isSqueezing && !isEdgeShimmying) return;
 
         float currentSpeed = 0f;
-
-        if (isWallGrabbing)
+        if (isEdgeShimmying)
         {
             currentSpeed = Mathf.Abs(targetInput.x) * wallShimmySpeed;
         }
@@ -591,7 +776,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             currentSpeed = horizontalVel.magnitude;
         }
 
-        // ยืนนิ่ง ให้รีเซ็ตเฟสกลับจุดเริ่มต้น
         if (currentSpeed < 0.1f)
         {
             walkCyclePhase = 0f;
@@ -599,62 +783,56 @@ public class PlayerController3D_InputAction : MonoBehaviour
             return;
         }
 
-        currentStepInterval = baseStepInterval;
+        float stepInterval = baseStepInterval;
         float volume = volumeWalk;
         AudioClip[] targetClips = defaultFootstepClips;
 
-        if (isWallGrabbing)
+        if (isEdgeShimmying)
         {
-            currentStepInterval = baseStepInterval * 1.1f;
+            stepInterval = baseStepInterval * 1.1f;
             volume = volumeWallShimmy;
             targetClips = (wallShimmyClips != null && wallShimmyClips.Length > 0) ? wallShimmyClips : defaultFootstepClips;
         }
         else if (isSqueezing)
         {
-            currentStepInterval = baseStepInterval * 1.4f;
+            stepInterval = baseStepInterval * 1.4f;
             volume = volumeSqueezeMove;
             targetClips = (squeezeMoveClips != null && squeezeMoveClips.Length > 0) ? squeezeMoveClips : defaultFootstepClips;
         }
         else if (isCrouching)
         {
-            currentStepInterval = baseStepInterval * 1.6f;
+            stepInterval = baseStepInterval * 1.6f;
             volume = volumeCrouch;
             targetClips = (crouchFootstepClips != null && crouchFootstepClips.Length > 0) ? crouchFootstepClips : defaultFootstepClips;
         }
         else if (isSprinting)
         {
-            currentStepInterval = baseStepInterval * 0.78f;
+            stepInterval = baseStepInterval * 0.78f;
             volume = volumeRun;
         }
 
-        float speedMultiplier = isWallGrabbing ? (currentSpeed / wallShimmySpeed) : (currentSpeed / walkSpeed);
+        float speedMultiplier = isEdgeShimmying ? (currentSpeed / wallShimmySpeed) : (currentSpeed / walkSpeed);
+        walkCyclePhase += (Time.deltaTime * speedMultiplier / stepInterval) * Mathf.PI;
 
-        // ✨ สะสมเฟสการเดินรอบเต็ม (2 ก้าว = 2*PI)
-        walkCyclePhase += (Time.deltaTime * speedMultiplier / currentStepInterval) * Mathf.PI;
-
-        // ✨ เสียงก้าวจะดังทุกๆ ครึ่งรอบ (PI) หรือเมื่อเท้าข้างใดข้างหนึ่งลงแตะพื้น
         if (walkCyclePhase >= nextStepPhase)
         {
             PlayRandomAudioClip(targetClips, volume);
             nextStepPhase += Mathf.PI;
         }
 
-        // เมื่อครบรอบการเดิน 2 ก้าว (2*PI) ให้วนลูปกลับมา 0 อย่างนุ่มนวล
         if (walkCyclePhase >= Mathf.PI * 2f)
         {
             walkCyclePhase -= Mathf.PI * 2f;
             nextStepPhase -= Mathf.PI * 2f;
         }
     }
+
     private void PlayRandomAudioClip(AudioClip[] clips, float volume)
     {
         if (footstepAudioSource == null || clips == null || clips.Length == 0) return;
-
         AudioClip clip = clips[Random.Range(0, clips.Length)];
         if (clip == null) return;
 
-        // เปลี่ยนจาก (0.92f, 1.08f) เป็นช่วง (0.85f, 0.95f) 
-        // ช่วยให้เสียงยาวขึ้น มีน้ำหนัก และไม่ตัดจบไว
         footstepAudioSource.pitch = Random.Range(0.85f, 0.95f);
         footstepAudioSource.PlayOneShot(clip, volume);
     }
@@ -662,67 +840,13 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private void PlaySingleSoundEffect(AudioClip clip, float volume)
     {
         if (footstepAudioSource == null || clip == null) return;
-
         footstepAudioSource.pitch = Random.Range(0.95f, 1.05f);
         footstepAudioSource.PlayOneShot(clip, volume);
-    }
-    #endregion
-
-    #region ✨ Wall Grab & Squeeze Auto Triggers (ไม่ต้องกด E)
-    private void HandleWallGrabLogic()
-    {
-        if (!enableWallGrab || isSqueezing || isStunned)
-        {
-            if (isWallGrabbing) DetachFromWall();
-            return;
-        }
-
-        Vector3 rayOrigin = transform.position + Vector3.up * 1.0f;
-        isTouchWall = Physics.Raycast(rayOrigin, transform.forward, out wallHitInfo, wallCheckDistance, wallLayer, QueryTriggerInteraction.Ignore);
-
-        bool isValidWall = isTouchWall;
-        if (isTouchWall && !string.IsNullOrEmpty(climbableWallTag))
-        {
-            isValidWall = wallHitInfo.collider.CompareTag(climbableWallTag);
-        }
-
-        if (!isWallGrabbing)
-        {
-            // ✨ ออโต้: เมื่อผู้เล่นเดินดันหน้าเข้าชนกำแพงที่ปีนได้
-            if (isValidWall && targetInput.z > 0.1f)
-            {
-                isWallGrabbing = true;
-                rb.useGravity = false;
-                jumpsLeft = maxJumps;
-
-                yaw = Quaternion.LookRotation(-wallHitInfo.normal).eulerAngles.y;
-
-                // ขยับกล้องตอบรับการเกาะกำแพง
-                currentLandingImpact = wallGrabCamJerk;
-
-                PlaySingleSoundEffect(wallGrabEnterClip, volumeWallGrabEnter);
-            }
-        }
-        else
-        {
-            // เมื่อเดินหรือไต่หลุดระยะกำแพง ให้หลุดจากการเกาะอัตโนมัติ
-            if (!isValidWall)
-            {
-                DetachFromWall();
-            }
-        }
-    }
-
-    private void DetachFromWall()
-    {
-        isWallGrabbing = false;
-        rb.useGravity = true;
     }
 
     private void HandleSqueezeInput()
     {
-        // ✨ ออโต้: เมื่อเดินเข้าพื้นที่ช่องแคบ แล้วดันหน้าเดินเข้า
-        if (isInGapZone && !isSqueezing && !isStunned && !isWallGrabbing && targetInput.z > 0.1f)
+        if (isInGapZone && !isSqueezing && !isStunned && !isEdgeShimmying && targetInput.z > 0.1f)
         {
             isSqueezing = true;
 
@@ -730,7 +854,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             {
                 float gapYaw = currentGapTransform.eulerAngles.y;
                 float angleDiff = Mathf.DeltaAngle(transform.eulerAngles.y, gapYaw);
-
                 squeezeBaseYaw = (Mathf.Abs(angleDiff) > 90f) ? gapYaw + 180f : gapYaw;
             }
             else
@@ -750,9 +873,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             isSqueezing = false;
         }
     }
-    #endregion
 
-    #region Fall Stun & Crouch & Physics Movement
     private void HandleFallStunLogic()
     {
         if (isStunned)
@@ -761,7 +882,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             if (stunTimer <= 0f) isStunned = false;
         }
 
-        if (!grounded && !isWallGrabbing)
+        if (!grounded && !isEdgeShimmying && !isGrabbingLedge)
         {
             if (wasGroundedLastFrame) highestYPoint = transform.position.y;
             else highestYPoint = Mathf.Max(highestYPoint, transform.position.y);
@@ -781,7 +902,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         stunTimer = fallStunDuration;
         rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
         currentLandingImpact = landingImpactPitch;
-        if (isWallGrabbing) DetachFromWall();
+        if (isEdgeShimmying) DetachEdgeShimmy();
     }
 
     void HandleCrouchingAndSqueezing()
@@ -822,7 +943,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         bool wantsToSprint = (sprintAction != null) && sprintAction.IsPressed();
         bool isMoving = targetInput.sqrMagnitude > 0.01f;
 
-        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && !isWallGrabbing && !isStunned && currentStamina > 0f)
+        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && !isEdgeShimmying && !isStunned && currentStamina > 0f)
         {
             isSprinting = true;
             currentStamina -= staminaDrainRate * Time.deltaTime;
@@ -857,23 +978,22 @@ public class PlayerController3D_InputAction : MonoBehaviour
     void FixedUpdate()
     {
         if ((DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) ||
-            (PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp))
+            (PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp) || isClimbingVault)
         {
-            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
-            rb.angularVelocity = Vector3.zero;
+            if (!isClimbingVault) rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
             return;
         }
 
-        if (isStunned)
+        if (isStunned || isGrabbingLedge)
         {
-            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            rb.linearVelocity = Vector3.zero;
             return;
         }
 
-        if (isWallGrabbing)
+        if (isEdgeShimmying)
         {
-            float shimmyInput = targetInput.x;
-            Vector3 shimmyVelocity = transform.right * shimmyInput * wallShimmySpeed;
+            Vector3 shimmyRight = (currentShimmyTrigger != null) ? currentShimmyTrigger.right : Vector3.Cross(Vector3.up, shimmyWallNormal).normalized;
+            Vector3 shimmyVelocity = shimmyRight * targetInput.x * wallShimmySpeed;
             rb.linearVelocity = shimmyVelocity;
             return;
         }
@@ -973,7 +1093,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        if (enableHeadBob && !isSqueezing && !isWallGrabbing && !isStunned)
+        if (enableHeadBob && !isSqueezing && !isEdgeShimmying && !isClimbingVault && !isStunned)
         {
             Vector3 horizontalVel = rb.linearVelocity;
             horizontalVel.y = 0f;
@@ -1000,24 +1120,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         currentCameraOffset = Vector3.Lerp(currentCameraOffset, targetCameraOffset, headBobSmoothing * Time.deltaTime);
         playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
     }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag(wallGapTag))
-        {
-            isInGapZone = true;
-            currentGapTransform = other.transform;
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag(wallGapTag))
-        {
-            isInGapZone = false;
-            currentGapTransform = null;
-        }
-    }
+    #endregion
 
     void OnDisable()
     {
@@ -1036,19 +1139,25 @@ public class PlayerController3D_InputAction : MonoBehaviour
             Gizmos.color = Color.green;
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
+    }
 
-        Gizmos.color = isTouchWall ? Color.cyan : Color.red;
-        Vector3 rayOrigin = transform.position + Vector3.up * 1.0f;
-        Gizmos.DrawRay(rayOrigin, transform.forward * wallCheckDistance);
+    public void SetMouseSensitivity(float newSens)
+    {
+        mouseSensitivity = newSens;
+    }
 
-        if (capsuleCollider != null)
+    public void SetFOV(float newFOV)
+    {
+        defaultFOV = newFOV;
+        if (camComponent != null)
         {
-            Gizmos.color = isSqueezing ? Color.yellow : (isCrouching ? Color.red : Color.cyan);
-            float radius = capsuleCollider.radius * 0.85f;
-            Vector3 origin = transform.position + Vector3.up * (crouchHeight - radius);
-            float checkDistance = defaultHeight - crouchHeight;
-            Gizmos.DrawWireSphere(origin + Vector3.up * checkDistance, radius);
+            camComponent.fieldOfView = newFOV;
         }
     }
-    #endregion
+
+    // ✨ ดึงค่าความไวเมาส์มาตรฐานเดิมที่ตั้งไว้ใน Inspector (สำหรับให้ SettingsManager จัดวาง Slider ตรงกลาง)
+    public float GetDefaultSensitivity() => initialSensitivity > 0 ? initialSensitivity : 2f;
+
+    // ✨ ดึงค่า FOV มาตรฐานเดิมที่ตั้งไว้ใน Inspector/กล้อง (สำหรับให้ SettingsManager จัดวาง Slider ตรงกลาง)
+    public float GetDefaultFOV() => initialFOV > 0 ? initialFOV : 60f;
 }
