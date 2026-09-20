@@ -13,10 +13,8 @@ public class EntitySpawner : MonoBehaviour
     [Tooltip("เปิดใช้การเช็กระยะทางร่วมกับการเช็กมุมมองกล้อง")]
     public bool useDistanceFilter = true;
 
-    [Header("Target & UI References ✨")]
+    [Header("Target References ✨")]
     public Transform player;
-    [Tooltip("ลาก Canvas / Panel หน้า GameOver ใน Scene มาใส่ตรงนี้")]
-    public GameObject gameOverUI;
 
     [Header("Debug Test Settings")]
     public KeyCode testSpawnKey = KeyCode.G;
@@ -27,11 +25,6 @@ public class EntitySpawner : MonoBehaviour
         {
             GameObject p = GameObject.FindWithTag("Player");
             if (p != null) player = p.transform;
-        }
-
-        if (gameOverUI == null)
-        {
-            gameOverUI = GameObject.FindWithTag("GameOverUI");
         }
 
         if (spawnPoints == null || spawnPoints.Length == 0)
@@ -71,7 +64,7 @@ public class EntitySpawner : MonoBehaviour
             if (aiScript != null)
             {
                 if (player != null) aiScript.playerTransform = player;
-                if (gameOverUI != null) aiScript.gameOverUI = gameOverUI;
+                // ✨ ลบสั่ง aiScript.gameOverUI ออกเรียบร้อยแล้ว
             }
         }
         else
@@ -80,9 +73,6 @@ public class EntitySpawner : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ค้นหาและสุ่มจุดเกิดที่อยู่นอกสายตา และห่างจากผู้เล่นเกินระยะที่กำหนด ✨
-    /// </summary>
     Transform GetValidSpawnPoint()
     {
         if (spawnPoints == null || spawnPoints.Length == 0) return null;
@@ -94,22 +84,19 @@ public class EntitySpawner : MonoBehaviour
         {
             if (point == null) continue;
 
-            // 1. เช็กระยะห่างระหว่างจุดเกิดกับผู้เล่น
             if (player != null && useDistanceFilter)
             {
                 float distToPlayer = Vector3.Distance(point.position, player.position);
                 if (distToPlayer < minSpawnDistance)
                 {
-                    continue; // ข้ามจุดที่อยู่ใกล้ผู้เล่นเกินไป (รวมถึงห้องเดียวกันที่ระยะไม่ถึง)
+                    continue;
                 }
             }
 
-            // 2. เช็กว่าจุดเกิดอยู่นอกสายตากล้องหรือไม่
             bool isOutsideCamera = true;
             if (mainCam != null)
             {
                 Vector3 screenPoint = mainCam.WorldToViewportPoint(point.position);
-                // เช็กทั้งขอบจอ X, Y และค่า Z (Z < 0 คืออยู่หลังกล้อง)
                 bool isInFrontOfCamera = screenPoint.z > 0;
                 bool isInsideScreen = screenPoint.x >= 0 && screenPoint.x <= 1 && screenPoint.y >= 0 && screenPoint.y <= 1;
 
@@ -125,20 +112,15 @@ public class EntitySpawner : MonoBehaviour
             }
         }
 
-        // หากมีจุดเกิดที่ผ่านเงื่อนไข ให้สุ่มเลือกมา 1 จุด (เพื่อไม่ให้ผีเกิดซ้ำที่เดิมตลอด)
         if (validPoints.Count > 0)
         {
             int randomIndex = Random.Range(0, validPoints.Count);
             return validPoints[randomIndex];
         }
 
-        // Fallback: หากไม่มีจุดไหนผ่านเงื่อนไขเลย ให้เลือกจุดที่อยู่ไกลผู้เล่นมากที่สุดแทน
         return GetFarthestSpawnPoint();
     }
 
-    /// <summary>
-    /// ฟังก์ชันสำรอง: หาจุดเกิดที่อยู่ไกลจากผู้เล่นมากที่สุด
-    /// </summary>
     Transform GetFarthestSpawnPoint()
     {
         if (player == null || spawnPoints.Length == 0) return spawnPoints.Length > 0 ? spawnPoints[0] : null;

@@ -1,6 +1,6 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.SceneManagement;
 
 public enum EntityState { Chase, Investigate, Despawn }
 
@@ -14,10 +14,21 @@ public class EntityAI : MonoBehaviour
     public string isMovingParamName = "IsMoving";
     public bool defaultFacingLeft = false;
 
-    [Header("Catch & Game Over Settings")]
+    [Header("Catch & Respawn Settings")]
     public float catchDistance = 1.5f;
-    public GameObject gameOverUI;
-    public KeyCode restartKey = KeyCode.R;
+
+    [Header("😱 Jumpscare Settings ✨")]
+    [Tooltip("รูปภาพจั๊มสแกร์เฉพาะของผีตัวนี้")]
+    public Sprite jumpscareSprite;
+    [Tooltip("ไฟล์เสียงตกใจ/เสียงกรี๊ดเฉพาะของผีตัวนี้")]
+    public AudioClip jumpscareScreamClip;
+    [Tooltip("ระยะเวลาที่แสดงจั๊มสแกร์ (วินาที) ก่อนรีโหลดวนลูป")]
+    public float jumpscareDuration = 1.5f;
+    [Tooltip("ลากไฟล์ Sprite อนิเมชันจั๊มสแกร์ทุกเฟรมมาใส่ตรงนี้")]
+    public Sprite[] jumpscareFrames;
+    [Tooltip("ความเร็วอนิเมชัน (เช่น 12 หรือ 24 เฟรมต่อวินาที)")]
+    public float jumpscareFrameRate = 12f;
+    [Tooltip("ไฟล์เสียงตกใจ/เสียงกรี๊ดเฉพาะของผีตัวนี้")]
 
     [Header("Chase Timeout Settings")]
     public float maxChaseDuration = 15f;
@@ -36,19 +47,14 @@ public class EntityAI : MonoBehaviour
     public float investigateDuration = 5f;
     public float wanderRadius = 4f;
 
-    [Header("Ghost Footstep Sounds ✨ (ปรับความดังเพิ่มขึ้น)")]
+    [Header("Ghost Footstep Sounds ✨")]
     public AudioSource ghostAudioSource;
-    [Tooltip("ไฟล์เสียงเดินของผี (ใส่หลายๆ ไฟล์เพื่อสุ่มได้)")]
     public AudioClip[] footstepClips;
-    [Tooltip("ระยะห่างจังหวะก้าวขาปกติ (วินาที)")]
     public float baseStepInterval = 0.5f;
-    [Tooltip("ความดังตอนเดินสำรวจ (ปรับเพิ่มเป็น 0.8)")]
     [Range(0f, 2f)] public float volumeInvestigate = 0.8f;
-    [Tooltip("ความดังตอนวิ่งไล่ล่าผู้เล่น (ปรับเพิ่มเป็น 1.5 - ชัดเจนสะใจ)")]
     [Range(0f, 2f)] public float volumeChase = 1.5f;
 
     [Header("👻 Proximity Glitch/Static Effect Settings")]
-    [Tooltip("ระยะห่างสูงสุดที่จอจะเริ่มกระพริบซ่าๆ")]
     public float staticEffectMaxDistance = 15f;
 
     [Header("Current State")]
@@ -60,7 +66,7 @@ public class EntityAI : MonoBehaviour
     private float chaseTimer;
     private bool hasReachedLastKnownPos = false;
     private EntityState previousState;
-    private bool isGameOver = false;
+    private bool isPlayerCaught = false;
     private float stepTimer = 0f;
 
     void Start()
@@ -73,10 +79,9 @@ public class EntityAI : MonoBehaviour
             ghostAudioSource = GetComponent<AudioSource>();
         }
 
-        // ปรับ AudioSource ให้รองรับเสียงแบบ 3D Spatial Sound จะได้ยินทิศทางก้าวเท้า
         if (ghostAudioSource != null)
         {
-            ghostAudioSource.spatialBlend = 1.0f; // เสียง 3D ตามระยะห่าง
+            ghostAudioSource.spatialBlend = 1.0f;
             ghostAudioSource.minDistance = 2f;
             ghostAudioSource.maxDistance = 20f;
         }
@@ -87,32 +92,15 @@ public class EntityAI : MonoBehaviour
             if (p != null) playerTransform = p.transform;
         }
 
-        if (gameOverUI == null)
-        {
-            gameOverUI = GameObject.FindWithTag("GameOverUI");
-        }
-
         if (ghostAnimator == null && ghostSprite != null)
         {
             ghostAnimator = ghostSprite.GetComponent<Animator>();
-        }
-
-        if (gameOverUI != null)
-        {
-            gameOverUI.SetActive(false);
         }
     }
 
     void Update()
     {
-        if (isGameOver)
-        {
-            if (Input.GetKeyDown(restartKey))
-            {
-                RestartLevel();
-            }
-            return;
-        }
+        if (isPlayerCaught) return;
 
         bool canSee = CanSeePlayer();
 
@@ -140,7 +128,6 @@ public class EntityAI : MonoBehaviour
         UpdateProximityStatic();
     }
 
-    #region 👻 Proximity Static Update
     void UpdateProximityStatic()
     {
         if (playerTransform == null || GhostStaticEffectUI.Instance == null) return;
@@ -149,17 +136,14 @@ public class EntityAI : MonoBehaviour
 
         if (distance <= staticEffectMaxDistance)
         {
-            // คำนวณความเข้มข้น (0 = สถิติน้อยสุดที่ระยะขอบ, 1 = เข้มข้นมากที่สุดเมื่ออยู่ติดเพลเยอร์)
             float intensity = 1f - Mathf.Clamp01(distance / staticEffectMaxDistance);
             GhostStaticEffectUI.Instance.ReportGhostDistance(intensity);
         }
     }
-    #endregion
 
-    #region ✨ Ghost Footstep Audio Logic
     void HandleFootsteps()
     {
-        if (isGameOver || agent == null) return;
+        if (isPlayerCaught || agent == null) return;
 
         float currentSpeed = agent.velocity.magnitude;
 
@@ -192,21 +176,21 @@ public class EntityAI : MonoBehaviour
             ghostAudioSource.PlayOneShot(clip, volume);
         }
     }
-    #endregion
 
     void UpdateSpriteFacingAndAnimation()
     {
+        if (agent == null) return;
         float currentSpeed = agent.velocity.magnitude;
 
         if (ghostSprite != null)
         {
             if (agent.velocity.x > 0.1f)
             {
-                ghostSprite.flipX = defaultFacingLeft ? true : false;
+                ghostSprite.flipX = defaultFacingLeft;
             }
             else if (agent.velocity.x < -0.1f)
             {
-                ghostSprite.flipX = defaultFacingLeft ? false : true;
+                ghostSprite.flipX = !defaultFacingLeft;
             }
         }
 
@@ -250,7 +234,7 @@ public class EntityAI : MonoBehaviour
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer <= catchDistance)
             {
-                TriggerGameOver();
+                TriggerPlayerCaught();
                 return;
             }
         }
@@ -276,27 +260,58 @@ public class EntityAI : MonoBehaviour
         }
     }
 
-    void TriggerGameOver()
+    void TriggerPlayerCaught()
     {
-        isGameOver = true;
-        agent.isStopped = true;
+        if (isPlayerCaught) return;
+        isPlayerCaught = true;
 
-        if (gameOverUI != null)
+        if (agent != null) agent.isStopped = true;
+
+        if (GhostStaticEffectUI.Instance != null)
         {
-            gameOverUI.SetActive(true);
+            GhostStaticEffectUI.Instance.ReportGhostDistance(0f);
         }
 
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        Debug.Log("<color=red>😱 [EntityAI] ผีจับผู้เล่นได้แล้ว! กำลังเริ่มเล่น Jumpscare...</color>");
 
-        Time.timeScale = 0f;
-        Debug.Log("[Game Over] ผู้เล่นถูกผีจับได้แล้ว!");
+        StartCoroutine(JumpscareAndRespawnRoutine());
     }
 
-    public void RestartLevel()
+    /// <summary>
+    /// ✨ Coroutine เรียกใช้งาน JumpscareUI ผ่าน Singleton
+    /// </summary>
+    private IEnumerator JumpscareAndRespawnRoutine()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // 1. ส่งชุดภาพอนิเมชัน + ความเร็วเฟรม ไปให้ JumpscareUI
+        if (JumpscareUI.Instance != null)
+        {
+            JumpscareUI.Instance.ShowJumpscareAnimation(jumpscareFrames, jumpscareFrameRate, jumpscareScreamClip);
+        }
+
+        // 2. รอเวลา Jumpscare ที่กำหนด
+        yield return new WaitForSeconds(jumpscareDuration);
+
+        // 3. ปิดหน้า Jumpscare
+        if (JumpscareUI.Instance != null)
+        {
+            JumpscareUI.Instance.HideJumpscare();
+        }
+
+        // 4. วนลูปฉากใหม่ / รีโหลด
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnPlayerDiedInDream();
+        }
+        else
+        {
+            if (StressManager.Instance != null)
+            {
+                StressManager.Instance.IncreaseStressOnDeath();
+            }
+            UnityEngine.SceneManagement.SceneManager.LoadScene(
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
+            );
+        }
     }
 
     void HandleInvestigate(bool canSee)

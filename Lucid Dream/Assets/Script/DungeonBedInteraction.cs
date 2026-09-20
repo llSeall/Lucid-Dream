@@ -7,7 +7,7 @@ public class DungeonBedInteraction : MonoBehaviour
     [SerializeField] private float interactionDistance = 3f;
 
     [Header("📺 UI Prompt")]
-    [Tooltip("ลาก Text UI แจ้งเตือน เช่น 'กด E เพื่อเข้านอน (ผ่านด่าน)' มาใส่ตรงนี้")]
+    [Tooltip("ลาก Text UI แจ้งเตือน เช่น 'กด E เพื่อตื่นนอน (ออกจากฝัน)' มาใส่ตรงนี้")]
     [SerializeField] private GameObject interactionPromptUI;
 
     private bool isPlayerInRange = false;
@@ -51,19 +51,19 @@ public class DungeonBedInteraction : MonoBehaviour
     private void TriggerClearLevel()
     {
         if (interactionPromptUI != null) interactionPromptUI.SetActive(false);
-        Debug.Log("<color=lime>🎉 [DungeonBed] ผู้เล่นกดนอนท้ายด่านฝันร้าย! ผ่านด่านกลางคืนแล้ว กำลังเตรียมตัวตื่นตอนเช้า...</color>");
+        Debug.Log("<color=lime>🎉 [DungeonBed] ออกจากฝันร้ายสำเร็จ! กำลังตื่นนอนเข้าสู่ช่วงเช้า...</color>");
 
-        // 🌅 สั่งเปลี่ยนสถานะเกมกลับสู่ตอนเช้า (Daytime)
-        // ✨ [แก้ไขล็อกบั๊ก] ตัดระบบบวกวันแมนนวลออก เนื่องจากคำสั่ง ChangeState ด้านล่างนี้
-        // จะวิ่งเข้าไปเรียกฟังก์ชัน TimeManager.Instance.StartNewDay() ซึ่งทำหน้าที่บวกวัน, 
-        // ปรับเวลาเป็น 8 โมงเช้า, อัปเดตบทสนทนา NPC และเซฟเกมให้คุณโดยอัตโนมัติอยู่แล้วครับ!
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.ChangeState(GameState.Daytime);
+            GameManager.Instance.OnDreamCleared();
+        }
+        else if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.ExitDreamToDaytime();
         }
         else
         {
-            Debug.LogError("🚨 ไม่พบ GameManager ในฉาก! ไม่สามารถเปลี่ยนสถานะกลับเป็นตอนเช้าได้");
+            Debug.LogError("🚨 ไม่พบ GameManager หรือ TimeManager ในฉาก!");
         }
     }
 }

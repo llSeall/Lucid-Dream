@@ -698,10 +698,13 @@ MonoBehaviour:
   fadeCanvasGroup: {fileID: 0}
   playerController: {fileID: 4588418297210587679}
   wakeUpDuration: 3
+  gaspWakeUpDuration: 1.8
+  nightFadeDuration: 1.5
   lyingPosOffset: {x: 0, y: -0.9, z: 0}
   lyingRotationOffset: {x: -50, y: 0, z: 40}
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 2300102047043271300}
   wakeUpSound: {fileID: 0}
+  gaspStartleSound: {fileID: 0}
 --- !u!114 &4900828194951895049
 MonoBehaviour:
   m_ObjectHideFlags: 0

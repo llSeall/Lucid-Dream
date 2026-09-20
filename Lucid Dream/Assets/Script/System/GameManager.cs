@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
+using System.Collections;
 public enum GameState { Daytime, Nighttime }
 
 public class GameManager : MonoBehaviour
@@ -10,9 +10,16 @@ public class GameManager : MonoBehaviour
     [Header("Game States")]
     public GameState currentState = GameState.Nighttime;
 
-    [Header("Scene Names")]
+    [Header("Ghost Respawn Flag ✨")]
+    [Tooltip("บอกระบบว่าการรีโหลดฉากครั้งนี้เกิดจากผีจับได้หรือไม่")]
+    public bool wasCaughtByGhost = false;
+
+    [Header("Scene Names Config")]
     public string daytimeSceneName = "DaytimeScene";
-    public string nighttimeSceneName = "NighttimeScene";
+    public string tutorialSceneName = "TutorialScene";
+
+    [Tooltip("ใส่ชื่อฉากฝันร้ายเรียงตามวัน เช่น Index 0 = Day 1 Night, Index 1 = Day 2 Night")]
+    public string[] nightSceneNames;
 
     private void Awake()
     {
@@ -27,65 +34,114 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// เปลี่ยนสถานะเกม + เรียกฟังก์ชันใน TimeManager + โหลด Scene ใหม่
-    /// </summary>
-    public void ChangeState(GameState newState)
+    public string GetNightSceneNameForCurrentDay()
     {
-        currentState = newState;
+        int day = TimeManager.Instance != null ? TimeManager.Instance.currentDay : 0;
 
-        if (TimeManager.Instance != null)
+        if (day <= 0)
         {
-            if (currentState == GameState.Daytime)
-            {
-                TimeManager.Instance.StartNewDay();
-            }
-            else if (currentState == GameState.Nighttime)
-            {
-                TimeManager.Instance.EnterDreamWorld();
-            }
+            return tutorialSceneName;
         }
 
-        // สลับ Scene ตามสถานะใหม่
-        if (currentState == GameState.Daytime)
+        int index = day - 1;
+        if (nightSceneNames != null && index >= 0 && index < nightSceneNames.Length)
         {
-            Debug.Log("<color=yellow>--- [GameManager] สลับฉากสู่โลกความจริง (Daytime) ---</color>");
-            SceneManager.LoadScene(daytimeSceneName);
+            return nightSceneNames[index];
         }
-        else if (currentState == GameState.Nighttime)
+
+        Debug.LogWarning($"[GameManager] ไม่พบชื่อฉากกลางคืนสำหรับ Day {day}! กำลังดึงฉากสุดท้ายมาใช้");
+        if (nightSceneNames != null && nightSceneNames.Length > 0)
         {
-            Debug.Log("<color=purple>--- [GameManager] สลับฉากสู่โลกความฝัน (Nighttime) ---</color>");
-            SceneManager.LoadScene(nighttimeSceneName);
+            return nightSceneNames[nightSceneNames.Length - 1];
         }
+
+        return tutorialSceneName;
     }
 
     public void LoadSceneForState(GameState state)
     {
         currentState = state;
+
+        // หากมีการย้าย State ปกติ ให้แน่ใจว่า Flag โดนผีจับถูกรีเซ็ต
+        wasCaughtByGhost = false;
+
         if (currentState == GameState.Daytime)
         {
+            Debug.Log($"<color=yellow>--- สลับฉากสู่โลกจริง: {daytimeSceneName} ---</color>");
             SceneManager.LoadScene(daytimeSceneName);
         }
         else if (currentState == GameState.Nighttime)
         {
-            SceneManager.LoadScene(nighttimeSceneName);
+            string targetNightScene = GetNightSceneNameForCurrentDay();
+            Debug.Log($"<color=purple>--- สลับฉากสู่โลกฝันร้าย (Day {TimeManager.Instance?.currentDay}): {targetNightScene} ---</color>");
+            SceneManager.LoadScene(targetNightScene);
         }
     }
 
-    private void Update()
+    /// <summary>
+    /// เรียกเมื่อผู้เล่นแพ้/ตายในฝันร้าย (โดนผีจับได้)
+    /// </summary>
+    public void OnPlayerDiedInDream()
     {
-        HandleCheatKeys();
+        Debug.Log("<color=red><b>ผู้เล่นแพ้ในความฝัน! เพิ่มความเครียดและสะดุ้งตื่นขึ้นใหม่...</b></color>");
+
+        wasCaughtByGhost = true;
+
+        // ✨ ปิดจอดำสนิททันที ก่อนสั่งรีโหลด Scene (จอดำจะไม่ถูกลบเพราะเป็น DontDestroyOnLoad)
+        if (ScreenFader.Instance != null)
+        {
+            ScreenFader.Instance.SetBlackInstant();
+        }
+
+        if (StressManager.Instance != null)
+        {
+            StressManager.Instance.IncreaseStressOnDeath();
+        }
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SaveGame();
+        }
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    public void OnDreamCleared()
+    {
+        Debug.Log("<color=green><b>ผู้เล่นออกจากฝันสำเร็จ! ตื่นนอนเข้าสู่ตอนเช้า...</b></color>");
+        wasCaughtByGhost = false;
+
+        if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.ExitDreamToDaytime();
+        }
+    }
+    /// <summary>
+    /// สั่งเปลี่ยนฉากแบบมี Fade Out เป็นจอดำก่อนย้ายฉาก
+    /// </summary>
+    public void LoadSceneWithFade(string sceneName, CanvasGroup fadeCanvasGroup, float fadeDuration = 1.0f)
+    {
+        StartCoroutine(FadeAndLoadSceneRoutine(sceneName, fadeCanvasGroup, fadeDuration));
     }
 
-    private void HandleCheatKeys()
+    private IEnumerator FadeAndLoadSceneRoutine(string sceneName, CanvasGroup fadeCanvasGroup, float fadeDuration)
     {
-#if ENABLE_INPUT_SYSTEM        
-        if (UnityEngine.InputSystem.Keyboard.current == null) return;
-        if (UnityEngine.InputSystem.Keyboard.current.f1Key.wasPressedThisFrame) ChangeState(GameState.Daytime);
-        if (UnityEngine.InputSystem.Keyboard.current.f2Key.wasPressedThisFrame) ChangeState(GameState.Nighttime);
-#else
-        if (Input.GetKeyDown(KeyCode.F1)) ChangeState(GameState.Daytime);
-        if (Input.GetKeyDown(KeyCode.F2)) ChangeState(GameState.Nighttime);
-#endif
+        // 1. ค่อยๆ ปรับจอดำจากใส (0) เป็นดำสนิท (1)
+        if (fadeCanvasGroup != null)
+        {
+            float timer = 0f;
+            while (timer < fadeDuration)
+            {
+                timer += Time.deltaTime;
+                fadeCanvasGroup.alpha = Mathf.Clamp01(timer / fadeDuration);
+                yield return null;
+            }
+            fadeCanvasGroup.alpha = 1f;
+        }
+
+        // 2. รอสั้นๆ ให้มั่นใจว่าจอดำสนิทแล้ว
+        yield return new WaitForSeconds(0.1f);
+
+        // 3. โหลดฉากใหม่
+        SceneManager.LoadScene(sceneName);
     }
 }

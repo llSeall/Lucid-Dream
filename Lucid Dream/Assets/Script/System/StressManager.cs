@@ -8,7 +8,6 @@ public class StressManager : MonoBehaviour
     {
         get
         {
-            // ✨ ลบเซมิโคลอนออกแล้ว ทำงานเป็น get accessor ปกติ
             if (instance == null)
             {
                 GameObject go = new GameObject("StressManager (Auto-Created)");
@@ -21,7 +20,7 @@ public class StressManager : MonoBehaviour
 
     [Header("⚙️ Stress Settings")]
     [SerializeField] private float maxStress = 100f;
-    [SerializeField] private float stressPerGameOver = 25f;
+    [SerializeField] private float stressPerDeath = 25f;
     [Range(0f, 100f)]
     [SerializeField] private float currentStress = 0f;
 
@@ -49,15 +48,24 @@ public class StressManager : MonoBehaviour
         }
     }
 
-    public void IncreaseStressOnGameOver()
+    public void IncreaseStressOnDeath()
     {
-        AddStress(stressPerGameOver);
+        AddStress(stressPerDeath);
     }
 
     public void AddStress(float amount)
     {
         currentStress = Mathf.Clamp(currentStress + amount, 0f, maxStress);
         CheckStageChange();
+    }
+
+    public void SyncWithSaveManager()
+    {
+        if (SaveManager.Instance != null && SaveManager.Instance.gameData != null)
+        {
+            currentStress = SaveManager.Instance.gameData.currentStress;
+            CheckStageChange();
+        }
     }
 
     public StressStage GetCurrentStage()
@@ -84,10 +92,4 @@ public class StressManager : MonoBehaviour
     }
 
     public float CurrentStress => currentStress;
-
-    [ContextMenu("🧪 Test: Add 25 Stress")]
-    private void TestAddStress()
-    {
-        AddStress(25f);
-    }
 }

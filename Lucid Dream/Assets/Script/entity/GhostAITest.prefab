@@ -158,8 +158,12 @@ MonoBehaviour:
   isMovingParamName: IsMoving
   defaultFacingLeft: 0
   catchDistance: 1.5
-  gameOverUI: {fileID: 0}
-  restartKey: 114
+  jumpscareSprite: {fileID: 21300000, guid: 808e90157afa7784dbb160a00514720f, type: 3}
+  jumpscareScreamClip: {fileID: 8300000, guid: fffef0796abe84d499f9e2d808b7acf5, type: 3}
+  jumpscareDuration: 1.5
+  jumpscareFrames:
+  - {fileID: 21300000, guid: 808e90157afa7784dbb160a00514720f, type: 3}
+  jumpscareFrameRate: 12
   maxChaseDuration: 60
   playerTransform: {fileID: 0}
   obstacleMask:
@@ -351,7 +355,7 @@ AudioSource:
   m_GameObject: {fileID: 9010654155978660958}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: -6040525337477807889, guid: ba35ce9c53e22e441a12ee29e2db35a0, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1

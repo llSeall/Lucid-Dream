@@ -3,22 +3,24 @@ using UnityEngine.SceneManagement;
 
 public class GameOverManager : MonoBehaviour
 {
-    public void RestartGame()
+    /// <summary>
+    /// เรียกใช้เมื่อผู้เล่นแพ้/ตายในความฝัน (ตื่นขึ้นใหม่ในฝันคืนเดิมทันที + เพิ่มความเครียด)
+    /// </summary>
+    public void RespawnInDream()
     {
         Time.timeScale = 1f;
 
-        // ✨ เพิ่มค่าความเครียดทุกครั้งที่กด Restart
-        if (StressManager.Instance != null)
+        if (GameManager.Instance != null)
         {
-            StressManager.Instance.IncreaseStressOnGameOver();
-        }
-
-        if (SaveManager.Instance != null)
-        {
-            SaveManager.Instance.LoadGame(SaveManager.Instance.currentSlot, isFromMainMenu: false);
+            GameManager.Instance.OnPlayerDiedInDream();
         }
         else
         {
+            // Fallback หากไม่มี GameManager ในฉาก
+            if (StressManager.Instance != null)
+            {
+                StressManager.Instance.IncreaseStressOnDeath();
+            }
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }

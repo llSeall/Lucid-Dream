@@ -12,11 +12,14 @@ EditorBuildSettings:
     path: Assets/Scenes/DaytimeScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Scenes/ScenesNight/Day1/MoreHouse.unity
-    guid: 287c4eac9b3218d4180f61fed3deaa13
-  - enabled: 1
     path: Assets/Scenes/TutorialScenes.unity
     guid: aa26e60bd55278a49a5108a4a3621ee8
+  - enabled: 1
+    path: Assets/Scenes/TutorialScenes2.unity
+    guid: 8c8fee61a5fcc59429b29d0183733fa9
+  - enabled: 1
+    path: Assets/Scenes/ScenesNight/Day1/MoreHouse.unity
+    guid: 287c4eac9b3218d4180f61fed3deaa13
   - enabled: 1
     path: Assets/Scenes/ScenesNight/Day1/HouseEdit.unity
     guid: 156f4ca24ecd68e4b8fa26a1e23ac077

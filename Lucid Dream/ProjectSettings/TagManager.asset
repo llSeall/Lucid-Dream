@@ -9,6 +9,7 @@ TagManager:
   - Climbable
   - Enemy
   - WallShimmy
+  - JumpscareUI
   layers:
   - Default
   - TransparentFX
