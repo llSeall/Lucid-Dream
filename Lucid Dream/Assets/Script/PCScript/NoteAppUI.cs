@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -11,25 +12,47 @@ public class NoteAppUI : MonoBehaviour
     [SerializeField] private GameObject noteListItemPrefab;
     [SerializeField] private TextMeshProUGUI noteContentText;
 
-    [Header("🎨 Visual Colors")]
-    [SerializeField] private Color activeTabColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+    [Header("⌨️ Typewriter Effect & Sound")]
+    [Tooltip("ความเร็วในการพิมพ์ตัวอักษรต่อตัว (วินาที)")]
+    [SerializeField] private float typingSpeed = 0.03f;
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("ใส่ไฟล์เสียงต๊อกแต๊กพิมพ์ดีด (สามารถใส่หลายๆ เสียงเพื่อสุ่มได้)")]
+    [SerializeField] private AudioClip[] typingSounds;
+
+    [Header("🖼️ Visual Sprites & Colors")]
+    [Tooltip("รูปสไปรท์แท็บโน๊ตเมื่อกำลังเลือก")]
+    [SerializeField] private Sprite activeTabSprite;
+    [Tooltip("รูปสไปรท์แท็บโน๊ตเมื่อไม่ได้เลือก")]
+    [SerializeField] private Sprite waitingTabSprite;
     [SerializeField] private Color activeTextColor = Color.black;
-    [SerializeField] private Color waitingTabColor = new Color(0.2f, 0.2f, 0.2f, 1f);
     [SerializeField] private Color waitingTextColor = Color.gray;
 
     private List<NoteData> availableNotes = new List<NoteData>();
     private List<GameObject> spawnedItems = new List<GameObject>();
     private int selectedIndex = 0;
+    private Coroutine typewriterCoroutine;
+
+    private void Awake()
+    {
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+    }
 
     private void OnEnable()
     {
         LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
+
+        if (ComputerUIManager.Instance != null)
+        {
+            ComputerUIManager.Instance.hasReadTodayNote = true;
+        }
+
         LoadNotes();
     }
 
     private void OnDisable()
     {
         LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
+        if (typewriterCoroutine != null) StopCoroutine(typewriterCoroutine);
     }
 
     private void OnLocaleChanged(UnityEngine.Localization.Locale newLocale)
@@ -54,6 +77,8 @@ public class NoteAppUI : MonoBehaviour
         var manager = ComputerUIManager.Instance;
         if (manager == null || manager.pcData == null) return;
 
+        manager.SyncDayWithTimeManager();
+
         foreach (var note in manager.pcData.notes)
         {
             if (note.dayNumber <= manager.currentDay) availableNotes.Add(note);
@@ -66,14 +91,15 @@ public class NoteAppUI : MonoBehaviour
 
             TextMeshProUGUI tabText = newItem.GetComponentInChildren<TextMeshProUGUI>();
             if (tabText != null)
+            {
                 tabText.text = availableNotes[i].noteTitle.GetLocalizedString();
+            }
 
-            // 🖱️ ระบบรองรับการคลิกเม้าส์สำหรับ Image Prefab
             Image bgImage = newItem.GetComponent<Image>();
-            if (bgImage != null) bgImage.raycastTarget = true; // เปิดรับคลิกเม้าส์
+            if (bgImage != null) bgImage.raycastTarget = true;
 
             Button btn = newItem.GetComponent<Button>();
-            if (btn == null) btn = newItem.AddComponent<Button>(); // เพิ่มคอมโพเนนต์ Button ให้อัตโนมัติ
+            if (btn == null) btn = newItem.AddComponent<Button>();
 
             btn.onClick.RemoveAllListeners();
             btn.onClick.AddListener(() => SelectNote(index));
@@ -91,17 +117,50 @@ public class NoteAppUI : MonoBehaviour
         selectedIndex = Mathf.Clamp(index, 0, availableNotes.Count - 1);
         var selectedNote = availableNotes[selectedIndex];
 
-        if (noteContentText != null)
-            noteContentText.text = selectedNote.noteContent.GetLocalizedString();
-
+        // ✨ สลับ Sprite ของแท็บโน๊ต (Active vs Waiting)
         for (int i = 0; i < spawnedItems.Count; i++)
         {
             bool isSelected = (i == selectedIndex);
             Image bg = spawnedItems[i].GetComponent<Image>();
             TextMeshProUGUI txt = spawnedItems[i].GetComponentInChildren<TextMeshProUGUI>();
 
-            if (bg != null) bg.color = isSelected ? activeTabColor : waitingTabColor;
+            if (bg != null)
+            {
+                Sprite targetSprite = isSelected ? activeTabSprite : waitingTabSprite;
+                if (targetSprite != null)
+                {
+                    bg.sprite = targetSprite;
+                    bg.color = Color.white; // รีเซ็ตสีเพื่อแสดงสีจริงของรูปสไปรท์
+                }
+            }
+
             if (txt != null) txt.color = isSelected ? activeTextColor : waitingTextColor;
+        }
+
+        if (typewriterCoroutine != null) StopCoroutine(typewriterCoroutine);
+
+        string localizedContent = selectedNote.noteContent.GetLocalizedString();
+        typewriterCoroutine = StartCoroutine(TypewriterRoutine(localizedContent));
+    }
+
+    private IEnumerator TypewriterRoutine(string textToType)
+    {
+        if (noteContentText == null) yield break;
+
+        noteContentText.text = "";
+
+        foreach (char letter in textToType)
+        {
+            noteContentText.text += letter;
+
+            if (audioSource != null && typingSounds != null && typingSounds.Length > 0 && letter != ' ' && letter != '\n')
+            {
+                AudioClip clip = typingSounds[Random.Range(0, typingSounds.Length)];
+                audioSource.pitch = Random.Range(0.95f, 1.05f);
+                audioSource.PlayOneShot(clip);
+            }
+
+            yield return new WaitForSeconds(typingSpeed);
         }
     }
 }

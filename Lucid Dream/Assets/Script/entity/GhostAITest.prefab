@@ -162,7 +162,13 @@ MonoBehaviour:
   jumpscareScreamClip: {fileID: 8300000, guid: fffef0796abe84d499f9e2d808b7acf5, type: 3}
   jumpscareDuration: 1.5
   jumpscareFrames:
-  - {fileID: 21300000, guid: 808e90157afa7784dbb160a00514720f, type: 3}
+  - {fileID: -1476081729, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
+  - {fileID: -275031132, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
+  - {fileID: -1996279986, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
+  - {fileID: -169238695, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
+  - {fileID: 1903681978, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
+  - {fileID: 628262468, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
+  - {fileID: 36343010, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
   jumpscareFrameRate: 12
   maxChaseDuration: 60
   playerTransform: {fileID: 0}

@@ -292,4 +292,15 @@ public class EyeToggleWorldManager : MonoBehaviour
     {
         ToggleSketchEffect(false);
     }
+    /// <summary>
+    /// ✨ ถอดวัตถุออกจากระบบ EyeToggle เพื่อไม่ให้โดนสั่งเปิด/ปิดสลับไปมาอีกต่อไป
+    /// </summary>
+    public void UnregisterObject(GameObject obj)
+    {
+        if (obj == null) return;
+
+        closedEyeOnlyObjects.Remove(obj);
+        normalOnlyObjects.Remove(obj);
+        objectPairs.RemoveAll(pair => pair.normalWorldObject == obj || pair.closedEyeWorldObject == obj);
+    }
 }

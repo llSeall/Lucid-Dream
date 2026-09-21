@@ -11,6 +11,10 @@ public class ComputerUIManager : MonoBehaviour
     public int currentDay = 1;
     public PCData pcData;
 
+    [Header("🔊 Audio FX")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip notificationSound; // ✨ เสียงเอฟเฟกต์เวลามีข้อความเข้า
+
     [Header("🖥️ Windows & Apps")]
     [SerializeField] private GameObject noteWindow;
     [SerializeField] private GameObject chatWindow;
@@ -20,36 +24,60 @@ public class ComputerUIManager : MonoBehaviour
 
     [Header("🔔 Toast Notification (Slide Animation)")]
     [SerializeField] private GameObject notificationPanel;
-    [SerializeField] private RectTransform notificationRect; // ✨ ลาก RectTransform ของ NotificationPanel มาใส่
+    [SerializeField] private RectTransform notificationRect;
     [SerializeField] private TextMeshProUGUI notificationText;
     [SerializeField] private LocalizedString newMessageNotificationText;
 
     [Header("📐 Slide Settings")]
-    [SerializeField] private Vector2 hiddenAnchoredPosition = new Vector2(400f, -200f); // ✨ ตำแหน่งซ่อนนอกจอ (ขวา)
-    [SerializeField] private Vector2 shownAnchoredPosition = new Vector2(0f, -200f);   // ✨ ตำแหน่งแสดงบนจอ
-    [SerializeField] private float slideDuration = 0.4f;                              // ความเร็วในการสไลด์ เข้า/ออก
-    [SerializeField] private float toastDuration = 2.5f;                              // ระยะเวลาแช่ค้างไว้ก่อนสไลด์ออก
+    [SerializeField] private Vector2 hiddenAnchoredPosition = new Vector2(400f, -200f);
+    [SerializeField] private Vector2 shownAnchoredPosition = new Vector2(0f, -200f);
+    [SerializeField] private float slideDuration = 0.4f;
+    [SerializeField] private float toastDuration = 2.5f;
 
-    private int lastShownDay = -1; // ✨ บันทึกวันที่เคยแสดงแจ้งเตือนไปแล้ว
+    [Header("📋 Quest Conditions")]
+    public bool hasReadTodayNote = false; // ✨ เช็กว่าผู้เล่นอ่านโน๊ตของวันนั้นหรือยัง
+
+    private int lastShownDay = -1;
     private Coroutine toastCoroutine;
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
     {
+        SyncDayWithTimeManager();
         CloseAllWindows();
         if (notificationPanel != null) notificationPanel.SetActive(false);
         UpdateChatDotStatus();
+    }
+
+    /// <summary>
+    /// ซิงค์วันกับ TimeManager อัตโนมัติ
+    /// </summary>
+    public void SyncDayWithTimeManager()
+    {
+        if (TimeManager.Instance != null)
+        {
+            if (currentDay != TimeManager.Instance.currentDay)
+            {
+                currentDay = TimeManager.Instance.currentDay;
+                hasReadTodayNote = false; // ✨ รีเซ็ตสถานะการอ่านโน๊ตเมื่อขึ้นวันใหม่
+            }
+        }
     }
 
     public void OpenNoteApp()
     {
         CloseAllWindows();
         if (noteWindow != null) noteWindow.SetActive(true);
+
+        // ✨ ปลดล็อก: เมื่อผู้เล่นกดเปิดแอปโน๊ต ถือว่าได้อ่านโน๊ตประจำวันเรียบร้อยแล้ว
+        hasReadTodayNote = true;
     }
 
     public void OpenChatApp()
@@ -78,27 +106,28 @@ public class ComputerUIManager : MonoBehaviour
     public void AdvanceToNextDay()
     {
         currentDay++;
+        hasReadTodayNote = false;
         UpdateChatDotStatus();
     }
 
-    // อัปเดตจุดสีแดงบนไอคอนแชต
     public void UpdateChatDotStatus()
     {
+        SyncDayWithTimeManager();
         bool hasNewMessage = pcData != null && pcData.chatMessages.Exists(m => m.dayNumber == currentDay);
         if (chatNotificationDot != null) chatNotificationDot.SetActive(hasNewMessage);
     }
 
-    // ✨ ฟังก์ชันที่จะถูกเรียกเมื่อผู้เล่นกดเปิดคอมพิวเตอร์สำเร็จ
     public void TryShowDailyNotification()
     {
-        // 🛑 ถ้าวันนี้เคยโชว์แจ้งเตือนไปแล้ว จะไม่โชว์ซ้ำอีก
+        SyncDayWithTimeManager();
+
         if (currentDay == lastShownDay) return;
 
         bool hasNewMessage = pcData != null && pcData.chatMessages.Exists(m => m.dayNumber == currentDay);
 
         if (hasNewMessage)
         {
-            lastShownDay = currentDay; // บันทึกว่าวันนี้แสดงผลแล้ว
+            lastShownDay = currentDay;
 
             string msg = (newMessageNotificationText != null && !newMessageNotificationText.IsEmpty)
                 ? newMessageNotificationText.GetLocalizedString()
@@ -111,21 +140,25 @@ public class ComputerUIManager : MonoBehaviour
     public void ShowNotification(string message)
     {
         if (toastCoroutine != null) StopCoroutine(toastCoroutine);
+
+        // 🔊 เล่นเสียงเอฟเฟกต์แจ้งเตือน
+        if (audioSource != null && notificationSound != null)
+        {
+            audioSource.PlayOneShot(notificationSound);
+        }
+
         toastCoroutine = StartCoroutine(SlideToastRoutine(message));
     }
 
-    // 🎬 Coroutine สำหรับอนิเมชัน สไลด์เข้า -> แช่ค้าง -> สไลด์ออก
     private IEnumerator SlideToastRoutine(string msg)
     {
         if (notificationPanel == null || notificationRect == null) yield break;
 
         if (notificationText != null) notificationText.text = msg;
 
-        // ตั้งค่าตำแหน่งเริ่มต้นนอกจอก่อนเปิด Object
         notificationRect.anchoredPosition = hiddenAnchoredPosition;
         notificationPanel.SetActive(true);
 
-        // 1. ⏩ สไลด์เข้า (Hidden -> Shown)
         float t = 0f;
         while (t < 1f)
         {
@@ -135,10 +168,8 @@ public class ComputerUIManager : MonoBehaviour
         }
         notificationRect.anchoredPosition = shownAnchoredPosition;
 
-        // 2. ⏳ แช่ค้างไว้
         yield return new WaitForSeconds(toastDuration);
 
-        // 3. ⏪ สไลด์ออก (Shown -> Hidden)
         t = 0f;
         while (t < 1f)
         {

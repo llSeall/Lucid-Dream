@@ -1,11 +1,18 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+
 public enum GameState { Daytime, Nighttime }
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+
+    [Header("🎮 Demo Mode Config")]
+    [Tooltip("ติ๊กเปิดช่องนี้เพื่อเปิดใช้งานโหมด Demo (เล่นจบ Day 1 เข้า Day 2 จะตัดจบเข้าหน้า Main Menu)")]
+    public bool isDemoMode = true;
+
+    [SerializeField] private string mainMenuSceneName = "MainMenuScene";
 
     [Header("Game States")]
     public GameState currentState = GameState.Nighttime;
@@ -65,6 +72,16 @@ public class GameManager : MonoBehaviour
         // หากมีการย้าย State ปกติ ให้แน่ใจว่า Flag โดนผีจับถูกรีเซ็ต
         wasCaughtByGhost = false;
 
+        int currentDay = TimeManager.Instance != null ? TimeManager.Instance.currentDay : 0;
+
+        // 🛑 ตรวจสอบเงื่อนไข Demo: ถ้าเล่นจบ Day 1 ขึ้น Day 2 (currentDay >= 2)
+        if (isDemoMode && currentDay >= 2)
+        {
+            Debug.Log("<color=orange><b>[Demo Mode] ผู้เล่นเล่นจบเนื้อหา Demo แล้ว! สั่งส่งกลับหน้า Main Menu</b></color>");
+            TriggerDemoEnd();
+            return;
+        }
+
         if (currentState == GameState.Daytime)
         {
             Debug.Log($"<color=yellow>--- สลับฉากสู่โลกจริง: {daytimeSceneName} ---</color>");
@@ -73,9 +90,22 @@ public class GameManager : MonoBehaviour
         else if (currentState == GameState.Nighttime)
         {
             string targetNightScene = GetNightSceneNameForCurrentDay();
-            Debug.Log($"<color=purple>--- สลับฉากสู่โลกฝันร้าย (Day {TimeManager.Instance?.currentDay}): {targetNightScene} ---</color>");
+            Debug.Log($"<color=purple>--- สลับฉากสู่โลกฝันร้าย (Day {currentDay}): {targetNightScene} ---</color>");
             SceneManager.LoadScene(targetNightScene);
         }
+    }
+
+    /// <summary>
+    /// ✨ ฟังก์ชันตัดจบ Demo
+    /// </summary>
+    private void TriggerDemoEnd()
+    {
+        // บันทึก Flag บอกว่าผู้เล่นเพิ่งเล่นจบ Demo มา
+        PlayerPrefs.SetInt("ShowDemoEndPopup", 1);
+        PlayerPrefs.Save();
+
+        // โหลดกลับเข้าหน้า Main Menu
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     /// <summary>
@@ -87,7 +117,6 @@ public class GameManager : MonoBehaviour
 
         wasCaughtByGhost = true;
 
-        // ✨ ปิดจอดำสนิททันที ก่อนสั่งรีโหลด Scene (จอดำจะไม่ถูกลบเพราะเป็น DontDestroyOnLoad)
         if (ScreenFader.Instance != null)
         {
             ScreenFader.Instance.SetBlackInstant();
@@ -105,6 +134,7 @@ public class GameManager : MonoBehaviour
 
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+
     public void OnDreamCleared()
     {
         Debug.Log("<color=green><b>ผู้เล่นออกจากฝันสำเร็จ! ตื่นนอนเข้าสู่ตอนเช้า...</b></color>");
@@ -115,6 +145,7 @@ public class GameManager : MonoBehaviour
             TimeManager.Instance.ExitDreamToDaytime();
         }
     }
+
     /// <summary>
     /// สั่งเปลี่ยนฉากแบบมี Fade Out เป็นจอดำก่อนย้ายฉาก
     /// </summary>
@@ -125,7 +156,6 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator FadeAndLoadSceneRoutine(string sceneName, CanvasGroup fadeCanvasGroup, float fadeDuration)
     {
-        // 1. ค่อยๆ ปรับจอดำจากใส (0) เป็นดำสนิท (1)
         if (fadeCanvasGroup != null)
         {
             float timer = 0f;
@@ -138,10 +168,7 @@ public class GameManager : MonoBehaviour
             fadeCanvasGroup.alpha = 1f;
         }
 
-        // 2. รอสั้นๆ ให้มั่นใจว่าจอดำสนิทแล้ว
         yield return new WaitForSeconds(0.1f);
-
-        // 3. โหลดฉากใหม่
         SceneManager.LoadScene(sceneName);
     }
 }

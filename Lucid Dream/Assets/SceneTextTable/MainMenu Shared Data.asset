@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: MainMenu Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: MainMenu
+  m_TableCollectionNameGuidString: 1f2dfe389ca1aff438d6bc12a22526a3
+  m_Entries:
+  - m_Id: 27938844672
+    m_Key: night_label
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33454354432
+    m_Key: day_label
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43143196672
+    m_Key: slot_format
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57575796736
+    m_Key: corrupted_slot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67822481408
+    m_Key: empty_slot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81101647872
+    m_Key: overwrite_confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90211676160
+    m_Key: delete_confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18862389653504
+    m_Key: Demo_End_Message
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19318381801472
+    m_Key: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22038673158144
+    m_Key: Day_Display_Format
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25028159139840
+    m_Key: Demo_Block_Load_Message
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 1843705563999895701
+  references:
+    version: 2
+    RefIds:
+    - rid: 1843705563999895701
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1790012420925

@@ -10,6 +10,7 @@ TagManager:
   - Enemy
   - WallShimmy
   - JumpscareUI
+  - ClearPicture
   layers:
   - Default
   - TransparentFX
@@ -22,7 +23,7 @@ TagManager:
   - Screen3D
   - PostProcess_Main
   - PostProcess_Com
-  - 
+  - ClearPicture
   - 
   - 
   - 

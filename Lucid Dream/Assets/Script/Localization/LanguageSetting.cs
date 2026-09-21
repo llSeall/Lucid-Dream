@@ -1,56 +1,66 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 
 public class LanguageSetting : MonoBehaviour
 {
-    private const string LANGUAGE_KEY = "SelectedLanguage";
+    private const string LANGUAGE_KEY = "SelectedLanguageCode";
 
-    private int languageIndex = 0;
-
-    private void Start()
+    private IEnumerator Start()
     {
-        languageIndex = PlayerPrefs.GetInt(LANGUAGE_KEY, GetCurrentLanguageIndex());
+        // ⏳ 1. รอให้ระบบ Unity Localization โหลดไฟล์ตารางภาษาเสร็จสมบูรณ์ก่อน
+        yield return LocalizationSettings.InitializationOperation;
 
-        UpdateLanguage();
+        // 📥 2. ดึงรหัสภาษาที่เคยเซฟไว้ (ถ้าไม่มี ให้ใช้ภาษาปัจจุบันของเครื่อง/ระบบ)
+        string defaultCode = LocalizationSettings.SelectedLocale != null
+            ? LocalizationSettings.SelectedLocale.Identifier.Code
+            : "th";
+
+        string savedLanguageCode = PlayerPrefs.GetString(LANGUAGE_KEY, defaultCode);
+
+        // 🌐 3. ปรับภาษาตามค่าที่โหลดมา
+        SetLanguageByCode(savedLanguageCode);
     }
 
+    /// <summary>
+    /// 🌐 เปลี่ยนภาษาตาม Code (เช่น "th", "en") - แนะนำให้ใช้ฟังก์ชันนี้เป็นหลัก
+    /// </summary>
     public void SetLanguageByCode(string languageCode)
     {
+        if (LocalizationSettings.AvailableLocales == null) return;
+
         var locale = LocalizationSettings.AvailableLocales.Locales.Find(l => l.Identifier.Code == languageCode);
 
         if (locale != null)
         {
             LocalizationSettings.SelectedLocale = locale;
 
+            // บันทึกค่าลง PlayerPrefs เป็น String
             PlayerPrefs.SetString(LANGUAGE_KEY, languageCode);
             PlayerPrefs.Save();
+
+            // ซิงค์ภาษาเข้า SaveManager (ถ้ามี)
+            if (SaveManager.Instance != null)
+            {
+                SaveManager.Instance.gameData.selectedLanguage = languageCode;
+            }
+
+            Debug.Log($"<color=green><b>[LanguageSetting] เปลี่ยนภาษาเป็น: {languageCode} สำเร็จ!</b></color>");
         }
     }
 
+    /// <summary>
+    /// 🔢 เปลี่ยนภาษาตาม Index (0 = TH, 1 = EN)
+    /// </summary>
     public void SetLanguage(int index)
     {
-        if (index < 0 || index >= LocalizationSettings.AvailableLocales.Locales.Count)
-            return;
+        if (LocalizationSettings.AvailableLocales == null) return;
 
-        var selectedLocale = LocalizationSettings.AvailableLocales.Locales[index];
-        LocalizationSettings.SelectedLocale = selectedLocale;
-
-        PlayerPrefs.SetInt(LANGUAGE_KEY, index);
-        PlayerPrefs.Save();
-    }
-
-    private void UpdateLanguage()
-    {
-        var selectedLocale = LocalizationSettings.AvailableLocales.Locales[languageIndex];
-        LocalizationSettings.SelectedLocale = selectedLocale;
-
-        PlayerPrefs.SetInt(LANGUAGE_KEY, languageIndex);
-        PlayerPrefs.Save();
-    }
-
-    private int GetCurrentLanguageIndex()
-    {
-        var currentLocale = LocalizationSettings.SelectedLocale;
-        return LocalizationSettings.AvailableLocales.Locales.IndexOf(currentLocale);
+        var locales = LocalizationSettings.AvailableLocales.Locales;
+        if (index >= 0 && index < locales.Count)
+        {
+            SetLanguageByCode(locales[index].Identifier.Code);
+        }
     }
 }

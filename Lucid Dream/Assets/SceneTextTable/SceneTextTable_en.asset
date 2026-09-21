@@ -38,6 +38,11 @@ MonoBehaviour:
     m_Localized: Close You Eyes
     m_Metadata:
       m_Items: []
+  - m_Id: 717201619873792
+    m_Localized: "I can\u2019t go to sleep yet\u2026 My doctor told me to write in
+      my journal every night before bed, so I have to do it."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

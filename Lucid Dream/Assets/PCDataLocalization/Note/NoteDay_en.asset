@@ -23,11 +23,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 21417849057280
-    m_Localized: test
+    m_Localized: Day1
     m_Metadata:
       m_Items: []
   - m_Id: 23668550332416
-    m_Localized: test(2)
+    m_Localized: Day2
     m_Metadata:
       m_Items: []
   - m_Id: 23655787065344

@@ -15,6 +15,12 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private Slider bgmVolumeSlider;
     [SerializeField] private Slider sfxVolumeSlider;
 
+    [Header("🖥️ Display Settings")]
+    [Tooltip("ใส่ Toggle สำหรับเปิด/ปิด Fullscreen (ถ้าใช้ Toggle)")]
+    [SerializeField] private Toggle fullscreenToggle;
+    [Tooltip("ใส่ Dropdown สำหรับเลือกโหมด เช่น 0: Fullscreen, 1: Windowed, 2: Borderless (ถ้าใช้ Dropdown)")]
+    [SerializeField] private TMP_Dropdown displayModeDropdown;
+
     [Header("🖱️ Controls & Camera Settings")]
     [SerializeField] private Slider sensitivitySlider;
     [SerializeField] private Slider fovSlider;
@@ -28,6 +34,8 @@ public class SettingsManager : MonoBehaviour
     private const string KEY_SENSITIVITY = "MouseSensitivity";
     private const string KEY_FOV = "CameraFOV";
     private const string KEY_LANGUAGE = "SelectedLanguage";
+    private const string KEY_FULLSCREEN = "IsFullscreen";
+    private const string KEY_DISPLAY_MODE = "DisplayModeIndex";
 
     private void Awake()
     {
@@ -59,37 +67,51 @@ public class SettingsManager : MonoBehaviour
         SetBGMVolume(bgmVol);
         SetSFXVolume(sfxVol);
 
-        // --- 2. Mouse Sensitivity ---
+        // --- 2. Display Settings (Fullscreen & Windowed) ---
+        if (fullscreenToggle != null)
+        {
+            // ดึงค่าเซฟ (Default = true เต็มจอ)
+            bool isFullscreen = PlayerPrefs.GetInt(KEY_FULLSCREEN, 1) == 1;
+            fullscreenToggle.isOn = isFullscreen;
+            SetFullscreen(isFullscreen);
+        }
+
+        if (displayModeDropdown != null)
+        {
+            int modeIndex = PlayerPrefs.GetInt(KEY_DISPLAY_MODE, 0);
+            displayModeDropdown.value = modeIndex;
+            SetDisplayMode(modeIndex);
+        }
+
+        // --- 3. Mouse Sensitivity ---
         float defaultSens = (player != null) ? player.GetDefaultSensitivity() : 2f;
         if (defaultSens <= 0) defaultSens = 2f;
 
         if (sensitivitySlider != null)
         {
-            // ตั้งค่า Min และ Max ให้อยู่รอบๆ ค่าเริ่มต้น เพื่อให้ค่าเริ่มต้นอยู่ "ตรงกลางหลอด" พอดี
             sensitivitySlider.minValue = 0.1f;
-            sensitivitySlider.maxValue = defaultSens * 2f; // ตัวอย่าง: ถ้าตั้งใน Inspector ไว้ 2 -> Max จะเท่ากับ 4 (ตรงกลางคือ 2 พอดี)
+            sensitivitySlider.maxValue = defaultSens * 2f;
 
             float sensitivity = PlayerPrefs.GetFloat(KEY_SENSITIVITY, defaultSens);
             sensitivitySlider.value = sensitivity;
             SetMouseSensitivity(sensitivity);
         }
 
-        // --- 3. Camera FOV ---
+        // --- 4. Camera FOV ---
         float defaultFOV = (player != null) ? player.GetDefaultFOV() : 60f;
         if (defaultFOV <= 0) defaultFOV = 60f;
 
         if (fovSlider != null)
         {
-            // ตั้งค่า Min และ Max ให้ครอบคลุม ±30 จากค่าเริ่มต้น เพื่อให้ค่าเริ่มต้นอยู่ "ตรงกลางหลอด"
-            fovSlider.minValue = Mathf.Max(10f, defaultFOV - 30f); // ตัวอย่าง: ถ้าตั้งกล้องไว้ 60 -> Min = 30
-            fovSlider.maxValue = defaultFOV + 60f;                  // Max = 90 (ตรงกลางคือ 60 พอดี)
+            fovSlider.minValue = Mathf.Max(10f, defaultFOV - 30f);
+            fovSlider.maxValue = defaultFOV + 60f;
 
             float fov = PlayerPrefs.GetFloat(KEY_FOV, defaultFOV);
             fovSlider.value = fov;
             SetFOV(fov);
         }
 
-        // --- 4. Language ---
+        // --- 5. Language ---
         if (languageDropdown != null)
         {
             int langIndex = PlayerPrefs.GetInt(KEY_LANGUAGE, 0);
@@ -103,6 +125,9 @@ public class SettingsManager : MonoBehaviour
         if (masterVolumeSlider) masterVolumeSlider.onValueChanged.AddListener(SetMasterVolume);
         if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.AddListener(SetBGMVolume);
         if (sfxVolumeSlider) sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
+
+        if (fullscreenToggle) fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
+        if (displayModeDropdown) displayModeDropdown.onValueChanged.AddListener(SetDisplayMode);
 
         if (sensitivitySlider) sensitivitySlider.onValueChanged.AddListener(SetMouseSensitivity);
         if (fovSlider) fovSlider.onValueChanged.AddListener(SetFOV);
@@ -138,6 +163,47 @@ public class SettingsManager : MonoBehaviour
     }
     #endregion
 
+    #region --- Display Settings System ---
+    /// <summary>
+    /// สลับโหมดเต็มจอด้วย Toggle (True = เต็มจอ, False = หน้าต่าง)
+    /// </summary>
+    public void SetFullscreen(bool isFullscreen)
+    {
+        Screen.fullScreen = isFullscreen;
+        PlayerPrefs.SetInt(KEY_FULLSCREEN, isFullscreen ? 1 : 0);
+        PlayerPrefs.Save();
+        //  ปริ้นท์เช็กใน Console
+        Debug.Log($"<color=yellow>[Display Settings] Fullscreen Status: {isFullscreen}</color>");
+    }
+
+    /// <summary>
+    /// สลับโหมดหน้าจอด้วย Dropdown 
+    /// 0: Fullscreen (Exclusive)
+    /// 1: Windowed
+    /// 2: Borderless Window
+    /// </summary>
+    public void SetDisplayMode(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+                break;
+            case 1:
+                Screen.fullScreenMode = FullScreenMode.Windowed;
+                break;
+            case 2:
+                Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+                break;
+        }
+
+        PlayerPrefs.SetInt(KEY_DISPLAY_MODE, index);
+        PlayerPrefs.Save();
+        //  ปริ้นท์เช็กใน Console
+        Debug.Log($"<color=yellow>[Display Settings] Mode set to: {Screen.fullScreenMode}</color>");
+    }
+    #endregion
+
     #region --- Controls & Camera System ---
     public void SetMouseSensitivity(float value)
     {
@@ -165,7 +231,7 @@ public class SettingsManager : MonoBehaviour
     #region --- Language System ---
     public void SetLanguage(int index)
     {
-        if (LocalizationSettings.AvailableLocales.Locales.Count > index)
+        if (LocalizationSettings.AvailableLocales != null && LocalizationSettings.AvailableLocales.Locales.Count > index)
         {
             LocalizationSettings.SelectedLocale = LocalizationSettings.AvailableLocales.Locales[index];
             PlayerPrefs.SetInt(KEY_LANGUAGE, index);

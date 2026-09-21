@@ -35,6 +35,10 @@ MonoBehaviour:
     m_Key: Close You Eyes
     m_Metadata:
       m_Items: []
+  - m_Id: 717201619873792
+    m_Key: Read the notes first
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

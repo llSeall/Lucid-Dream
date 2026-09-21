@@ -597,7 +597,7 @@ MonoBehaviour:
   staminaCanvasGroup: {fileID: 0}
   hideWhenFull: 1
   fadeSpeed: 5
-  jumpForce: 7
+  jumpForce: 5
   maxJumps: 1
   coyoteTime: 0.12
   jumpBufferTime: 0.12
@@ -695,7 +695,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerWakeUpEffect
   playerCamera: {fileID: 4329501868272541037}
-  fadeCanvasGroup: {fileID: 0}
   playerController: {fileID: 4588418297210587679}
   wakeUpDuration: 3
   gaspWakeUpDuration: 1.8
@@ -718,7 +717,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EyeToggleWorldManager
   playerCamera: {fileID: 4329501868272541037}
-  rendererData: {fileID: 0}
+  rendererData: {fileID: 11400000, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
   featureName: Pencil Sketch Pass
   eyeOverlayCanvasGroup: {fileID: 0}
   fadeCloseDuration: 0.25
@@ -733,10 +732,12 @@ MonoBehaviour:
   eyeStaminaCanvasGroup: {fileID: 0}
   bloodVesselsImage: {fileID: 0}
   bloodVesselSprites:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1274938479, guid: ad402bb9930ca034c8b43d94e1ab7e92, type: 3}
+  - {fileID: -2135205829, guid: ad402bb9930ca034c8b43d94e1ab7e92, type: 3}
+  - {fileID: -933158974, guid: ad402bb9930ca034c8b43d94e1ab7e92, type: 3}
+  - {fileID: 109075108, guid: ad402bb9930ca034c8b43d94e1ab7e92, type: 3}
+  - {fileID: -1788575515, guid: ad402bb9930ca034c8b43d94e1ab7e92, type: 3}
+  - {fileID: -550932433, guid: ad402bb9930ca034c8b43d94e1ab7e92, type: 3}
   minBloodAlpha: 0.1
   maxBloodAlpha: 1
   objectPairs: []

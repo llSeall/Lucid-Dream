@@ -2,14 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using UnityEngine.SceneManagement;
+using UnityEngine.Localization.Settings;
 
 [System.Serializable]
 public class GameData
 {
-    public int currentDay = 0; // เริ่มต้นที่คืนที่ 0
-    public GameState currentState = GameState.Nighttime; // เริ่มต้นที่กลางคืน
-    public float currentStress = 0f; // ค่าความเครียดสะสม
+    public int currentDay = 0;
+    public GameState currentState = GameState.Nighttime;
+    public float currentStress = 0f;
     public string mapSeed = "";
+    public string selectedLanguage = "th";
     public List<string> collectedItems = new List<string>();
 }
 
@@ -52,6 +54,12 @@ public class SaveManager : MonoBehaviour
     private void Start()
     {
         ResetData();
+
+        string savedLanguage = PlayerPrefs.GetString("SelectedLanguageCode", "");
+        if (!string.IsNullOrEmpty(savedLanguage))
+        {
+            SetLanguageByCode(savedLanguage);
+        }
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -85,10 +93,18 @@ public class SaveManager : MonoBehaviour
             if (InventoryManager.Instance != null) InventoryManager.Instance.PackageDataForSave(ref gameData);
             if (LevelGenerator.Instance != null) gameData.mapSeed = LevelGenerator.Instance.GetMapSeed();
 
+            if (LocalizationSettings.SelectedLocale != null)
+            {
+                string langCode = LocalizationSettings.SelectedLocale.Identifier.Code;
+                gameData.selectedLanguage = langCode;
+                PlayerPrefs.SetString("SelectedLanguageCode", langCode);
+                PlayerPrefs.Save();
+            }
+
             string json = JsonUtility.ToJson(gameData, true);
             File.WriteAllText(GetSaveFilePath(currentSlot), json);
 
-            Debug.Log($"<color=green><b>[Slot {currentSlot}] บันทึกสำเร็จ! วันที่/คืนที่ {gameData.currentDay} | สถานะ: {gameData.currentState}</b></color>");
+            Debug.Log($"<color=green><b>[Slot {currentSlot}] บันทึกสำเร็จ! ภาษา: {gameData.selectedLanguage} | วันที่/คืนที่ {gameData.currentDay}</b></color>");
         }
         catch (System.Exception e)
         {
@@ -114,8 +130,21 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             gameData = JsonUtility.FromJson<GameData>(json);
 
+            if (!string.IsNullOrEmpty(gameData.selectedLanguage))
+            {
+                SetLanguageByCode(gameData.selectedLanguage);
+            }
+
+            // ✨ ถ้าผู้เล่นกดโหลดเกมมาจาก Main Menu และอยู่ในช่วงกลางคืน ให้ย้อนกลับไปเริ่มตอนเช้า (Daytime) ของวันนั้นแทน
+            GameState targetState = gameData.currentState;
+            if (targetState == GameState.Nighttime && gameData.currentDay > 0)
+            {
+                targetState = GameState.Daytime;
+                gameData.currentState = GameState.Daytime; // ปรับ State ใน RAM ให้ตรงกัน
+            }
+
             if (GameManager.Instance != null)
-                GameManager.Instance.LoadSceneForState(gameData.currentState);
+                GameManager.Instance.LoadSceneForState(targetState);
         }
         catch (System.Exception e)
         {
@@ -146,5 +175,20 @@ public class SaveManager : MonoBehaviour
         if (StressManager.Instance != null) StressManager.Instance.SyncWithSaveManager();
         if (InventoryManager.Instance != null) InventoryManager.Instance.SyncFromSaveManager();
         if (LevelGenerator.Instance != null) LevelGenerator.Instance.GenerateMapFromSave(gameData.mapSeed);
+    }
+
+    public void SetLanguageByCode(string langCode)
+    {
+        var locales = LocalizationSettings.AvailableLocales.Locales;
+        foreach (var locale in locales)
+        {
+            if (locale.Identifier.Code == langCode)
+            {
+                LocalizationSettings.SelectedLocale = locale;
+                PlayerPrefs.SetString("SelectedLanguageCode", langCode);
+                PlayerPrefs.Save();
+                break;
+            }
+        }
     }
 }
