@@ -26,6 +26,7 @@ public class RaycastTo3DUI : MonoBehaviour
     [SerializeField] private RectTransform debugPointer;
 
     private GameObject currentHoveredUI;
+    private GameObject currentDraggedUI;
 
     private void Start()
     {
@@ -55,10 +56,22 @@ public class RaycastTo3DUI : MonoBehaviour
             if (invertX) uv.x = 1f - uv.x;
             if (invertY) uv.y = 1f - uv.y;
 
-            Vector2 uiScreenPosition = new Vector2(
-                uv.x * uiCamera.pixelWidth,
-                uv.y * uiCamera.pixelHeight
-            );
+            // ✨ คำนวณ Screen Position ผ่าน Canvas Rect โดยตรงเพื่อให้ตำแหน่งตรงเป๊ะ 100%
+            Vector2 uiScreenPosition = Vector2.zero;
+            if (uiCamera != null && pcCanvasRect != null)
+            {
+                Vector3 localPos = new Vector3(
+                    (uv.x - pcCanvasRect.pivot.x) * pcCanvasRect.rect.width,
+                    (uv.y - pcCanvasRect.pivot.y) * pcCanvasRect.rect.height,
+                    0f
+                );
+                Vector3 worldPos = pcCanvasRect.TransformPoint(localPos);
+                uiScreenPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, worldPos);
+            }
+            else
+            {
+                uiScreenPosition = new Vector2(uv.x * Screen.width, uv.y * Screen.height);
+            }
 
             // ขยับจุดแดง Debug Pointer
             if (debugPointer != null && pcCanvasRect != null)
@@ -75,7 +88,6 @@ public class RaycastTo3DUI : MonoBehaviour
                 debugPointer.anchoredPosition = localPoint;
             }
 
-            // ✨ สร้าง PointerEventData โดยระบุเฉพาะ property ที่ writable ได้
             PointerEventData pointerData = new PointerEventData(EventSystem.current)
             {
                 position = uiScreenPosition,
@@ -92,13 +104,13 @@ public class RaycastTo3DUI : MonoBehaviour
 
             if (results.Count > 0)
             {
-                // ✨ ใส่ข้อมูล RaycastResult เพื่อให้ Unity รู้ว่าใช้กล้องตัวไหนโดยอัตโนมัติ
                 pointerData.pointerCurrentRaycast = results[0];
                 targetUI = results[0].gameObject;
             }
 
             ProcessHover(targetUI, pointerData);
-            ProcessClick(targetUI, pointerData, results.Count > 0 ? results[0] : new RaycastResult());
+            ProcessClickAndDrag(targetUI, pointerData, results.Count > 0 ? results[0] : new RaycastResult());
+            ProcessScroll(targetUI, pointerData); // ✨ เพิ่มฟังก์ชันส่ง Event ลูกกลิ้ง
         }
         else
         {
@@ -129,25 +141,61 @@ public class RaycastTo3DUI : MonoBehaviour
         }
     }
 
-    private void ProcessClick(GameObject targetUI, PointerEventData pointerData, RaycastResult raycastResult)
+    private void ProcessClickAndDrag(GameObject targetUI, PointerEventData pointerData, RaycastResult raycastResult)
     {
-        if (targetUI == null) return;
+        if (targetUI == null && currentDraggedUI == null) return;
 
-        // กดเม้าส์ซ้ายลง
+        // กดเมาส์ซ้ายลง (Begin Drag & Press Down)
         if (Input.GetMouseButtonDown(0))
         {
             pointerData.pointerPressRaycast = raycastResult;
             pointerData.pointerPress = targetUI;
+            pointerData.rawPointerPress = targetUI;
+
             ExecuteEvents.ExecuteHierarchy(targetUI, pointerData, ExecuteEvents.pointerDownHandler);
-            Debug.Log($"👇 Press Down บน UI: <color=yellow>{targetUI.name}</color>");
+
+            // เริ่มต้นระบบ Drag
+            currentDraggedUI = ExecuteEvents.GetEventHandler<IDragHandler>(targetUI);
+            if (currentDraggedUI != null)
+            {
+                pointerData.pointerDrag = currentDraggedUI;
+                ExecuteEvents.Execute(currentDraggedUI, pointerData, ExecuteEvents.beginDragHandler);
+            }
         }
 
-        // ปล่อยเม้าส์ซ้าย
+        // ขณะถือเมาส์ซ้ายลาก (Dragging)
+        if (Input.GetMouseButton(0) && currentDraggedUI != null)
+        {
+            pointerData.pointerDrag = currentDraggedUI;
+            ExecuteEvents.Execute(currentDraggedUI, pointerData, ExecuteEvents.dragHandler);
+        }
+
+        // ปล่อยเมาส์ซ้าย (End Drag & Press Up)
         if (Input.GetMouseButtonUp(0))
         {
-            ExecuteEvents.ExecuteHierarchy(targetUI, pointerData, ExecuteEvents.pointerUpHandler);
-            ExecuteEvents.ExecuteHierarchy(targetUI, pointerData, ExecuteEvents.pointerClickHandler);
-            Debug.Log($"✅ Executed Click บน UI: <color=green>{targetUI.name}</color>");
+            if (currentDraggedUI != null)
+            {
+                pointerData.pointerDrag = currentDraggedUI;
+                ExecuteEvents.Execute(currentDraggedUI, pointerData, ExecuteEvents.endDragHandler);
+                currentDraggedUI = null;
+            }
+
+            if (targetUI != null)
+            {
+                ExecuteEvents.ExecuteHierarchy(targetUI, pointerData, ExecuteEvents.pointerUpHandler);
+                ExecuteEvents.ExecuteHierarchy(targetUI, pointerData, ExecuteEvents.pointerClickHandler);
+            }
+        }
+    }
+
+    // ✨ ฟังก์ชันจัดการ Scroll Wheel (ลูกกลิ้งเมาส์)
+    private void ProcessScroll(GameObject targetUI, PointerEventData pointerData)
+    {
+        float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scrollDelta) > 0.001f && targetUI != null)
+        {
+            pointerData.scrollDelta = new Vector2(0, scrollDelta);
+            ExecuteEvents.ExecuteHierarchy(targetUI, pointerData, ExecuteEvents.scrollHandler);
         }
     }
 

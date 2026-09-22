@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,9 +12,12 @@ public class ChatAppUI : MonoBehaviour
     [SerializeField] private GameObject contactItemPrefab;
 
     [Header("💬 Chat Content Display")]
-    [Tooltip("ลาก Text UI ส่วนหัวของหน้าแชท (เช่น ชื่อเพื่อน/ชื่อคนส่ง) มาใส่ตรงนี้")]
+    [Tooltip("ลาก Text UI ส่วนหัวของหน้าแชต (ชื่อผู้ส่ง) มาใส่ตรงนี้")]
     [SerializeField] private TextMeshProUGUI chatHeaderTitleText;
     [SerializeField] private TextMeshProUGUI chatContentText;
+
+    [Tooltip("ลาก ScrollRect ของหน้าต่างแชตฝั่งขวามาใส่ เพื่อสั่งให้ Scroll Bar กลับไปบนสุดเมื่อสลับแชต")]
+    [SerializeField] private ScrollRect chatScrollRect;
 
     [Header("🖼️ Visual Sprites & Colors")]
     [Tooltip("รูปสไปรท์กรอบแชตเมื่อกำลังเลือกช่องนั้นอยู่")]
@@ -23,7 +27,14 @@ public class ChatAppUI : MonoBehaviour
     [SerializeField] private Color activeTextColor = Color.white;
     [SerializeField] private Color waitingTextColor = new Color(0.7f, 0.7f, 0.7f, 1f);
 
-    private List<ChatMessageData> activeChats = new List<ChatMessageData>();
+    private struct ContactData
+    {
+        public string senderID;
+        public string senderName;
+        public int latestDay;
+    }
+
+    private List<ContactData> contactList = new List<ContactData>();
     private List<GameObject> spawnedContacts = new List<GameObject>();
     private HashSet<string> readSenderIDs = new HashSet<string>();
     private int selectedIndex = 0;
@@ -46,7 +57,7 @@ public class ChatAppUI : MonoBehaviour
 
     private void Update()
     {
-        if (activeChats.Count == 0) return;
+        if (contactList.Count == 0) return;
 
         if (Input.GetKeyDown(KeyCode.UpArrow)) SelectChat(selectedIndex - 1);
         else if (Input.GetKeyDown(KeyCode.DownArrow)) SelectChat(selectedIndex + 1);
@@ -56,46 +67,51 @@ public class ChatAppUI : MonoBehaviour
     {
         foreach (var item in spawnedContacts) Destroy(item);
         spawnedContacts.Clear();
-        activeChats.Clear();
+        contactList.Clear();
 
         var manager = ComputerUIManager.Instance;
         if (manager == null || manager.pcData == null) return;
 
         manager.SyncDayWithTimeManager();
 
-        foreach (var chat in manager.pcData.chatMessages)
+        // 1. ดึงข้อความที่มีวัน <= วันปัจจุบัน
+        var availableMessages = manager.pcData.chatMessages
+            .Where(m => m.dayNumber <= manager.currentDay)
+            .ToList();
+
+        // 2. จัดกลุ่มรายชื่อผู้ส่งไม่ให้ซ้ำกัน
+        var groupedSenders = availableMessages.GroupBy(m => m.senderID);
+
+        foreach (var group in groupedSenders)
         {
-            if (chat.dayNumber <= manager.currentDay)
+            var firstMsg = group.First();
+            int maxDay = group.Max(m => m.dayNumber);
+
+            contactList.Add(new ContactData
             {
-                int existingIndex = activeChats.FindIndex(c => c.senderID == chat.senderID);
-                if (existingIndex >= 0)
-                {
-                    if (chat.dayNumber > activeChats[existingIndex].dayNumber)
-                        activeChats[existingIndex] = chat;
-                }
-                else
-                {
-                    activeChats.Add(chat);
-                }
-            }
+                senderID = group.Key,
+                senderName = firstMsg.senderName.GetLocalizedString(),
+                latestDay = maxDay
+            });
         }
 
-        for (int i = 0; i < activeChats.Count; i++)
+        // 3. สร้างปุ่มรายชื่อฝั่งซ้าย
+        for (int i = 0; i < contactList.Count; i++)
         {
             int index = i;
             GameObject newItem = Instantiate(contactItemPrefab, contactListContainer);
-            var chatData = activeChats[i];
+            var contact = contactList[i];
 
             TextMeshProUGUI nameText = newItem.GetComponentInChildren<TextMeshProUGUI>();
             if (nameText != null)
-                nameText.text = "@" + chatData.senderName.GetLocalizedString();
+                nameText.text = "@" + contact.senderName;
 
-            // เช็กจุดแจ้งเตือนประจำวันในช่องแชท
-            bool isNewTodayMessage = (chatData.dayNumber == manager.currentDay) && !readSenderIDs.Contains(chatData.senderID);
+            // ✨ เช็กและแสดงจุดแดง NotificationDot หากเป็นแชตใหม่ประจำวันที่ยังไม่ได้เปิดอ่าน
+            bool isUnread = !readSenderIDs.Contains(contact.senderID);
             Transform dotTransform = newItem.transform.Find("NotificationDot");
             if (dotTransform != null)
             {
-                dotTransform.gameObject.SetActive(isNewTodayMessage);
+                dotTransform.gameObject.SetActive(isUnread);
             }
 
             Image bgImage = newItem.GetComponent<Image>();
@@ -115,25 +131,33 @@ public class ChatAppUI : MonoBehaviour
 
     public void SelectChat(int index)
     {
-        if (activeChats.Count == 0) return;
+        Debug.Log("SelectChat Called");
+        if (contactList.Count == 0) return;
 
-        selectedIndex = Mathf.Clamp(index, 0, activeChats.Count - 1);
-        var currentChat = activeChats[selectedIndex];
+        selectedIndex = Mathf.Clamp(index, 0, contactList.Count - 1);
+        var currentContact = contactList[selectedIndex];
 
-        // แสดงชื่อผู้ส่งที่หัวข้อบนสุด
+        // แสดงชื่อผู้ส่ง
         if (chatHeaderTitleText != null)
         {
-            chatHeaderTitleText.text = currentChat.senderName.GetLocalizedString();
+            chatHeaderTitleText.text = currentContact.senderName;
         }
 
-        // แสดงข้อความแชท
-        if (chatContentText != null)
+        // ดึงประวัติข้อความทั้งหมดมาแสดง
+        var manager = ComputerUIManager.Instance;
+        if (manager != null && manager.pcData != null && chatContentText != null)
         {
-            chatContentText.text = currentChat.messageText.GetLocalizedString();
+            var chatHistory = manager.pcData.chatMessages
+                .Where(m => m.senderID == currentContact.senderID && m.dayNumber <= manager.currentDay)
+                .OrderBy(m => m.dayNumber)
+                .Select(m => m.messageText.GetLocalizedString())
+                .ToList();
+
+            chatContentText.text = string.Join("\n\n", chatHistory);
         }
 
-        // อ่านแล้วปิดจุดแจ้งเตือน
-        readSenderIDs.Add(currentChat.senderID);
+        // ✨ เมื่อเปิดอ่านแล้ว ให้ทำเครื่องหมายว่าอ่านแล้ว และปิดจุดแดงของแท็บนี้
+        readSenderIDs.Add(currentContact.senderID);
         if (selectedIndex < spawnedContacts.Count)
         {
             Transform dotTransform = spawnedContacts[selectedIndex].transform.Find("NotificationDot");
@@ -143,7 +167,20 @@ public class ChatAppUI : MonoBehaviour
             }
         }
 
-        // ✨ สลับ Sprite ของกรอบแชต (Active vs Waiting)
+        // ✨ รีเซ็ตตำแหน่ง Scroll Bar ให้กลับไปเริ่มต้นที่ด้านบนสุดของข้อความ
+        if (chatScrollRect != null)
+        {
+            // สั่ง Rebuild Layout ให้ Text และ Content คำนวณขนาดความสูงจริงใหม่ทันที
+            if (chatContentText != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(chatContentText.rectTransform);
+            }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(chatScrollRect.content);
+            Canvas.ForceUpdateCanvases();
+            chatScrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        // สลับ Visual Sprites ของแท็บรายชื่อ
         for (int i = 0; i < spawnedContacts.Count; i++)
         {
             bool isSelected = (i == selectedIndex);
@@ -156,7 +193,7 @@ public class ChatAppUI : MonoBehaviour
                 if (targetSprite != null)
                 {
                     bg.sprite = targetSprite;
-                    bg.color = Color.white; // รีเซ็ตสีเพื่อแสดงสีจริงของรูปสไปรท์
+                    bg.color = Color.white;
                 }
             }
 

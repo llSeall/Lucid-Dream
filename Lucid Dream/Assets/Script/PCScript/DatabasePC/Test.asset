@@ -53,7 +53,7 @@ MonoBehaviour:
       m_LocalVariables: []
   chatMessages:
   - dayNumber: 1
-    senderID: PJ
+    senderID: MOM
     senderName:
       m_TableReference:
         m_TableCollectionName: GUID:3c93e93ef0b530e4bbc1cf40c22229e8
@@ -88,6 +88,26 @@ MonoBehaviour:
         m_TableCollectionName: GUID:3c93e93ef0b530e4bbc1cf40c22229e8
       m_TableEntryReference:
         m_KeyId: 23585888989184
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - dayNumber: 1
+    senderID: MOM
+    senderName:
+      m_TableReference:
+        m_TableCollectionName: GUID:3c93e93ef0b530e4bbc1cf40c22229e8
+      m_TableEntryReference:
+        m_KeyId: 21159194718208
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+    messageText:
+      m_TableReference:
+        m_TableCollectionName: GUID:21da6373e06dea048a350eb903131615
+      m_TableEntryReference:
+        m_KeyId: 11182623223808
         m_Key: 
       m_FallbackState: 0
       m_WaitForCompletion: 0

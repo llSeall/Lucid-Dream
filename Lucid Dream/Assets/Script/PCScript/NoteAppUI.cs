@@ -11,7 +11,8 @@ public class NoteAppUI : MonoBehaviour
     [SerializeField] private Transform noteListContainer;
     [SerializeField] private GameObject noteListItemPrefab;
     [SerializeField] private TextMeshProUGUI noteContentText;
-
+    // ✨ เพิ่มตัวแปรสำหรับลาก ScrollRect ของหน้าต่าง Note มาใส่
+    [SerializeField] private ScrollRect noteScrollRect;
     [Header("⌨️ Typewriter Effect & Sound")]
     [Tooltip("ความเร็วในการพิมพ์ตัวอักษรต่อตัว (วินาที)")]
     [SerializeField] private float typingSpeed = 0.03f;
@@ -147,25 +148,36 @@ public class NoteAppUI : MonoBehaviour
         // ✨ เช็กว่าโน๊ตประจำวันนั้นเคยเล่นอนิเมชันพิมพ์ไปหรือยัง
         if (typedNoteDays.Contains(selectedNote.dayNumber))
         {
-            // ถ้าเคยเล่นแล้ว ให้ขึ้นข้อความเต็มทันที (ไม่เล่นเอฟเฟกต์พิมพ์ดีดและไม่มีเสียง)
             if (noteContentText != null)
             {
                 noteContentText.text = localizedContent;
             }
+
+            // ✨ สั่ง Rebuild Layout และรีเซ็ต Scrollbar ไปบนสุด
+            ResetScrollPosition();
         }
         else
         {
-            // ถ้าเป็นครั้งแรกของวัน ให้บันทึกเข้า HashSet และเริ่มเอฟเฟกต์พิมพ์ดีด
             typedNoteDays.Add(selectedNote.dayNumber);
             typewriterCoroutine = StartCoroutine(TypewriterRoutine(localizedContent));
         }
     }
 
+   
     private IEnumerator TypewriterRoutine(string textToType)
     {
         if (noteContentText == null) yield break;
 
         noteContentText.text = "";
+
+        // ✨ บังคับ Rebuild Layout ตั้งแต่เริ่มเพื่อให้ Content ขยายขนาดรับข้อความเต็มตั้งแต่วินาทีแรก (ป้องกัน Scroll เด้ง)
+        if (noteContentText != null)
+        {
+            noteContentText.text = textToType;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(noteContentText.rectTransform);
+            if (noteScrollRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(noteScrollRect.content);
+            noteContentText.text = ""; // เคลียร์ข้อความเพื่อเริ่มพิมพ์ดีด
+        }
 
         foreach (char letter in textToType)
         {
@@ -179,6 +191,27 @@ public class NoteAppUI : MonoBehaviour
             }
 
             yield return new WaitForSeconds(typingSpeed);
+        }
+
+        // ✨ เมื่อพิมพ์เสร็จสมบูรณ์ คำนวณขนาดจริงอีกครั้ง
+        ResetScrollPosition();
+    }
+
+    public void ResetScrollPosition()
+    {
+        if (noteScrollRect != null)
+        {
+            if (noteContentText != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(noteContentText.rectTransform);
+            }
+            if (noteScrollRect.content != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(noteScrollRect.content);
+            }
+            Canvas.ForceUpdateCanvases();
+            // ปรับตำแหน่งไปบนสุด
+            noteScrollRect.verticalNormalizedPosition = 1f;
         }
     }
 }
