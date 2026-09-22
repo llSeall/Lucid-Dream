@@ -10,6 +10,10 @@ public class ComputerInteraction : MonoBehaviour
     [SerializeField] private float transitionSpeed = 5f;
     [SerializeField] private GameObject pcCanvasUI;
 
+    [Header("🎯 Player UI / Crosshair Settings")]
+    [Tooltip("ลาก UI Crosshair / เป้าเล็งตรงกลางจอของผู้เล่นมาใส่ตรงนี้")]
+    [SerializeField] private GameObject playerCrosshairUI;
+
     [Header("🔑 Interaction Settings")]
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private KeyCode exitKey = KeyCode.Escape;
@@ -65,8 +69,15 @@ public class ComputerInteraction : MonoBehaviour
 
             mainCam.transform.SetParent(null);
 
+            // 1. ซ่อนเป้าเล็ง/เมาส์ของผู้เล่นตอนเดินปกติ
+            if (playerCrosshairUI != null)
+            {
+                playerCrosshairUI.SetActive(false);
+            }
+
+            // 2. ปลดล็อกพิกัดเมาส์ให้ขยับได้ แต่ซ่อนเมาส์จริงของ Windows ไว้ (เพื่อให้แสดงเฉพาะเมาส์ในจอคอม)
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            Cursor.visible = false;
 
             if (ComputerUIManager.Instance != null)
             {
@@ -111,7 +122,6 @@ public class ComputerInteraction : MonoBehaviour
             mainCam.transform.rotation = computerScreenTarget.rotation;
             if (pcCanvasUI != null) pcCanvasUI.SetActive(true);
 
-            // ✨ เมื่อเปิดคอมสำเร็จ สั่งทำงานแจ้งเตือนทันที (ถ้ายังไม่ได้แสดงในวันนั้น)
             if (ComputerUIManager.Instance != null)
             {
                 ComputerUIManager.Instance.TryShowDailyNotification();
@@ -123,6 +133,13 @@ public class ComputerInteraction : MonoBehaviour
             mainCam.transform.localPosition = originalCamLocalPos;
             mainCam.transform.localRotation = originalCamLocalRot;
 
+            // 3. เปิดเป้าเล็ง/เมาส์ของผู้เล่นกลับมาเมื่อออกจากหน้าจอคอม
+            if (playerCrosshairUI != null)
+            {
+                playerCrosshairUI.SetActive(true);
+            }
+
+            // 4. ล็อกเมาส์ให้อยู่กลางจอตามเดิมสำหรับการเล่นเกม
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 

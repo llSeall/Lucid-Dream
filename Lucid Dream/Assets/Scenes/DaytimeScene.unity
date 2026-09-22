@@ -17604,6 +17604,7 @@ MonoBehaviour:
   computerScreenTarget: {fileID: 856696114}
   transitionSpeed: 5
   pcCanvasUI: {fileID: 602204016}
+  playerCrosshairUI: {fileID: 2137233992}
   interactKey: 101
   exitKey: 27
   interactDistance: 3
@@ -23783,6 +23784,18 @@ PrefabInstance:
       value: 0.92627335
       objectReference: {fileID: 0}
     - target: {fileID: 3399139307578838712, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
+      propertyPath: promptTextUI
+      value: 
+      objectReference: {fileID: 1796079649}
+    - target: {fileID: 3399139307578838712, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
+      propertyPath: promptPanelUI
+      value: 
+      objectReference: {fileID: 711612279}
+    - target: {fileID: 3399139307578838712, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
+      propertyPath: warningTextUI
+      value: 
+      objectReference: {fileID: 1796079649}
+    - target: {fileID: 3399139307578838712, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
       propertyPath: interactionPromptUI
       value: 
       objectReference: {fileID: 965478953}
@@ -23790,6 +23803,14 @@ PrefabInstance:
       propertyPath: mustReadNotePromptUI
       value: 
       objectReference: {fileID: 711612279}
+    - target: {fileID: 3399139307578838712, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
+      propertyPath: warningPromptMessage.m_TableEntryReference.m_KeyId
+      value: 717201619873792
+      objectReference: {fileID: 0}
+    - target: {fileID: 3399139307578838712, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
+      propertyPath: warningPromptMessage.m_TableReference.m_TableCollectionName
+      value: GUID:21da6373e06dea048a350eb903131615
+      objectReference: {fileID: 0}
     - target: {fileID: 4817338597714625645, guid: 6bc2a469295dcc4449d5e5a72e12dbcd, type: 3}
       propertyPath: m_LocalPosition.x
       value: -8.266
@@ -32218,6 +32239,11 @@ MonoBehaviour:
   anisotropy: 0.25
   scattering: 1
   radius: 0.2
+--- !u!1 &2137233992 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5945323642246360665, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+  m_PrefabInstance: {fileID: 1282802122858915281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2138333138
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32733,6 +32759,27 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasPC
       objectReference: {fileID: 0}
+    - target: {fileID: 4213981270539136600, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_text
+      value: "Hey!! I heard you went to the hospital to get treatment for your dream
+        sickness?\n\nWait, is that actually true?? I was so surprised I had to dig
+        through my old chats just to find this one, lol.\n\nOh, yeah\u2014anyway,
+        that's not actually the only reason I messaged you.\nI just wanted to ask
+        how you've been doing lately. Do you still wanna draw? I kinda miss your
+        art style, man."
+      objectReference: {fileID: 0}
+    - target: {fileID: 4213981270539136600, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_fontSize
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4213981270539136600, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 5262792109515880448, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5420883424344589606, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
       propertyPath: audioSource
       value: 
@@ -32741,6 +32788,24 @@ PrefabInstance:
       propertyPath: audioSource
       value: 
       objectReference: {fileID: 478645811}
+    - target: {fileID: 8828273060226683230, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_text
+      value: "Day 1 of preparing for the injection\n  I honestly have no idea what
+        I'm even dealing with anymore.\nWhy have these dreams within dreams gotten
+        this bad?\n\nWho would've thought I'd actually lose my job just because I've
+        been having nightmares night after night?\n\nGod... Is my life not miserable
+        enough already?\n\nThe doctor told me I have about three days to decide whether
+        I want to get the injection to erase these dreams.\n\nSigh... Why do I even
+        have to wait?\nThey could just erase them now.\n"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8828273060226683230, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_fontSize
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 8828273060226683230, guid: 2e34244a20f6e4b4eafe84465cab0613, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 40
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -19,7 +19,7 @@ public class GhostStaticEffectUI : MonoBehaviour
     [Tooltip("GameObject หรือ Panel พื้นหลังของข้อความ (จะติด-ดับ พร้อมกับข้อความ)")]
     public GameObject textBackgroundObject;
 
-    [Tooltip("ใส่ LocalizedString จาก String Table ของ Unity Localization สุ่มเลือกแสดงผล")]
+    [Tooltip("ใส่ LocalizedString จาก String Table ของ Unity Localization สุ่มเลือกแสดงผล (ใช้กับระบบผี)")]
     public List<LocalizedString> localizedGlitchMessages = new List<LocalizedString>();
 
     [Header("🔊 Static Sound Settings")]
@@ -41,6 +41,10 @@ public class GhostStaticEffectUI : MonoBehaviour
     private float stateTimer = 0f;
     private float frameTimer = 0f;
     private int currentFrameIndex = 0;
+
+    // ตัวแปรสำหรับรองรับข้อความพิเศษภายนอก (เช่น ไอเท็มใน StaticVanishTrigger)
+    private bool isCustomTextActive = false;
+    private string customTextMessage = "";
 
     private void Awake()
     {
@@ -108,9 +112,68 @@ public class GhostStaticEffectUI : MonoBehaviour
         currentIntensity = Mathf.Lerp(currentIntensity, 0f, Time.deltaTime * 3f);
     }
 
+    #region 💬 Custom Item Message Handling
+    /// <summary>
+    /// ฟังก์ชันสั่งให้แสดงจอซ่าพร้อมข้อความเฉพาะ (จะล็อกไม่ให้ข้อความผีสุ่มขึ้นมาทับ)
+    /// </summary>
+    public void TriggerCustomGlitch(float intensity, string message, float duration)
+    {
+        currentIntensity = intensity;
+        isGlitching = true;
+        stateTimer = duration;
+
+        if (!string.IsNullOrEmpty(message))
+        {
+            isCustomTextActive = true;
+            customTextMessage = message;
+
+            if (glitchTextUI != null)
+            {
+                glitchTextUI.text = customTextMessage;
+                glitchTextUI.enabled = true;
+            }
+
+            if (textBackgroundObject != null)
+            {
+                textBackgroundObject.SetActive(true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// ล้างข้อความพิเศษและปิดจอซ่า
+    /// </summary>
+    public void ClearCustomGlitch()
+    {
+        isCustomTextActive = false;
+        customTextMessage = "";
+        currentIntensity = 0f;
+        isGlitching = false;
+
+        if (glitchTextUI != null) glitchTextUI.enabled = false;
+        if (textBackgroundObject != null) textBackgroundObject.SetActive(false);
+        SetOverlayAlpha(0f);
+    }
+    #endregion
+
     #region 💬 Unity Localization & Background Handling
     private void ShowRandomGlitchText()
     {
+        // ถ้ามีการใช้ข้อความพิเศษจากไอเท็มอยู่ ให้แสดงข้อความไอเท็มต่อ ไม่ต้องสุ่มข้อความผี
+        if (isCustomTextActive)
+        {
+            if (glitchTextUI != null)
+            {
+                glitchTextUI.text = customTextMessage;
+                glitchTextUI.enabled = true;
+            }
+            if (textBackgroundObject != null)
+            {
+                textBackgroundObject.SetActive(true);
+            }
+            return;
+        }
+
         if (glitchTextUI == null || localizedGlitchMessages == null || localizedGlitchMessages.Count == 0) return;
 
         int randomIndex = Random.Range(0, localizedGlitchMessages.Count);
@@ -119,7 +182,6 @@ public class GhostStaticEffectUI : MonoBehaviour
         glitchTextUI.text = selectedLocalizedString.GetLocalizedString();
         glitchTextUI.enabled = true;
 
-        // เปิดพื้นหลังข้อความ
         if (textBackgroundObject != null)
         {
             textBackgroundObject.SetActive(true);
@@ -128,12 +190,14 @@ public class GhostStaticEffectUI : MonoBehaviour
 
     private void HideGlitchText()
     {
+        // ถ้าอยู่ในโหมดข้อความพิเศษของไอเท็ม จะไม่ซ่อนข้อความอัตโนมัติจนกว่าไอเท็มจะสั่ง Clear
+        if (isCustomTextActive) return;
+
         if (glitchTextUI != null)
         {
             glitchTextUI.enabled = false;
         }
 
-        // ปิดพื้นหลังข้อความ
         if (textBackgroundObject != null)
         {
             textBackgroundObject.SetActive(false);

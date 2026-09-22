@@ -1,5 +1,7 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Localization; // ระบบแปลภาษา Unity
+using TMPro;
 
 public class BedInteraction : MonoBehaviour
 {
@@ -13,6 +15,13 @@ public class BedInteraction : MonoBehaviour
 
     [Tooltip("ลาก UI ข้อความเตือน เช่น 'คุณยังไม่ได้อ่านโน๊ตประจำวัน!' มาใส่")]
     [SerializeField] private GameObject mustReadNotePromptUI;
+
+    [Header("💬 Warning Localization ✨")]
+    [Tooltip("ใส่ TextMeshPro ของข้อความเตือนเพื่ออัปเดตภาษา (ปล่อยว่างได้ถ้าใช้ Localize String Event)")]
+    [SerializeField] private TextMeshProUGUI warningTextUI;
+
+    [Tooltip("เลือก String Table และ Entry ข้อความเตือนภาษาไทย/อังกฤษ")]
+    [SerializeField] private LocalizedString warningPromptMessage;
 
     [Tooltip("ระยะเวลาที่ข้อความเตือนจะแสดงบนจอก่อนเปลี่ยนกลับเป็นปกติ (วินาที)")]
     [SerializeField] private float warningDisplayDuration = 3.0f;
@@ -63,7 +72,7 @@ public class BedInteraction : MonoBehaviour
     {
         bool hasReadNote = (ComputerUIManager.Instance != null && ComputerUIManager.Instance.hasReadTodayNote);
 
-        // ✨ เงื่อนไข: ถ้ายังไม่อ่านโน๊ต แล้วกด E ให้เด้งข้อความเตือนขึ้นมาค้างไว้สักครู่
+        // เงื่อนไข: ถ้ายังไม่อ่านโน๊ต แล้วกด E ให้เด้งข้อความเตือนขึ้นมา
         if (!hasReadNote)
         {
             if (warningCoroutine != null) StopCoroutine(warningCoroutine);
@@ -79,6 +88,12 @@ public class BedInteraction : MonoBehaviour
     {
         if (interactionPromptUI != null) interactionPromptUI.SetActive(false);
         if (mustReadNotePromptUI != null) mustReadNotePromptUI.SetActive(true);
+
+        // ดึงค่าภาษาแปลเฉพาะข้อความเตือนมาใส่ (ถ้าผูกไว้)
+        if (warningTextUI != null && warningPromptMessage != null && !warningPromptMessage.IsEmpty)
+        {
+            warningTextUI.text = warningPromptMessage.GetLocalizedString();
+        }
 
         yield return new WaitForSeconds(warningDisplayDuration);
 

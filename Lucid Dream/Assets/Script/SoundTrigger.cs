@@ -10,6 +10,12 @@ public class SoundTrigger : MonoBehaviour
     [Range(0f, 1f)]
     public float volume = 1.0f;
 
+    [Header("Fade Settings ✨")]
+    [Tooltip("ติ๊กถูกหากต้องการให้เสียงค่อยๆ เฟดดังขึ้นมาจาก 0")]
+    public bool useFadeIn = false;
+    [Tooltip("ระยะเวลา (วินาที) ที่จะให้เสียงเฟดจาก 0 ขึ้นไปจนถึงค่า Volume หลัก")]
+    public float fadeInDuration = 1.0f;
+
     [Header("Trigger Behavior")]
     [Tooltip("ติ๊กถูกหากต้องการให้เหยียบติดเสียงครั้งเดียวแล้วทำลายวัตถุทิ้ง")]
     public bool oneTimeUse = true;
@@ -47,7 +53,19 @@ public class SoundTrigger : MonoBehaviour
     {
         if (soundClip != null)
         {
-            audioSource.PlayOneShot(soundClip, volume);
+            if (useFadeIn)
+            {
+                // หากเลือกใช้ Fade In ให้เล่นเสียงผ่าน clip หลักของ AudioSource และเริ่มเล่น Coroutine ค่อยๆ เพิ่มระดับเสียง
+                audioSource.clip = soundClip;
+                audioSource.volume = 0f;
+                audioSource.Play();
+                StartCoroutine(FadeInRoutine());
+            }
+            else
+            {
+                // เล่นแบบปกติ (ไม่มีการเฟด)
+                audioSource.PlayOneShot(soundClip, volume);
+            }
         }
 
         hasTriggered = true;
@@ -63,6 +81,21 @@ public class SoundTrigger : MonoBehaviour
         {
             StartCoroutine(CooldownRoutine());
         }
+    }
+
+    private IEnumerator FadeInRoutine()
+    {
+        float timer = 0f;
+
+        while (timer < fadeInDuration)
+        {
+            timer += Time.deltaTime;
+            // ค่อยๆ เพิ่มระดับเสียงจาก 0f ไปจนถึงค่า volume ที่ตั้งไว้
+            audioSource.volume = Mathf.Lerp(0f, volume, timer / fadeInDuration);
+            yield return null;
+        }
+
+        audioSource.volume = volume;
     }
 
     private IEnumerator CooldownRoutine()

@@ -32,6 +32,9 @@ public class NoteAppUI : MonoBehaviour
     private int selectedIndex = 0;
     private Coroutine typewriterCoroutine;
 
+    // ✨ จดจำวันของโน๊ตที่เคยพิมพ์พิมพ์ดีดไปแล้ว เพื่อไม่ให้เล่นซ้ำ
+    private HashSet<int> typedNoteDays = new HashSet<int>();
+
     private void Awake()
     {
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
@@ -130,7 +133,7 @@ public class NoteAppUI : MonoBehaviour
                 if (targetSprite != null)
                 {
                     bg.sprite = targetSprite;
-                    bg.color = Color.white; // รีเซ็ตสีเพื่อแสดงสีจริงของรูปสไปรท์
+                    bg.color = Color.white;
                 }
             }
 
@@ -140,7 +143,22 @@ public class NoteAppUI : MonoBehaviour
         if (typewriterCoroutine != null) StopCoroutine(typewriterCoroutine);
 
         string localizedContent = selectedNote.noteContent.GetLocalizedString();
-        typewriterCoroutine = StartCoroutine(TypewriterRoutine(localizedContent));
+
+        // ✨ เช็กว่าโน๊ตประจำวันนั้นเคยเล่นอนิเมชันพิมพ์ไปหรือยัง
+        if (typedNoteDays.Contains(selectedNote.dayNumber))
+        {
+            // ถ้าเคยเล่นแล้ว ให้ขึ้นข้อความเต็มทันที (ไม่เล่นเอฟเฟกต์พิมพ์ดีดและไม่มีเสียง)
+            if (noteContentText != null)
+            {
+                noteContentText.text = localizedContent;
+            }
+        }
+        else
+        {
+            // ถ้าเป็นครั้งแรกของวัน ให้บันทึกเข้า HashSet และเริ่มเอฟเฟกต์พิมพ์ดีด
+            typedNoteDays.Add(selectedNote.dayNumber);
+            typewriterCoroutine = StartCoroutine(TypewriterRoutine(localizedContent));
+        }
     }
 
     private IEnumerator TypewriterRoutine(string textToType)

@@ -160,7 +160,7 @@ MonoBehaviour:
   catchDistance: 1.5
   jumpscareSprite: {fileID: 21300000, guid: 808e90157afa7784dbb160a00514720f, type: 3}
   jumpscareScreamClip: {fileID: 8300000, guid: fffef0796abe84d499f9e2d808b7acf5, type: 3}
-  jumpscareDuration: 1.5
+  jumpscareDuration: 0.5
   jumpscareFrames:
   - {fileID: -1476081729, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}
   - {fileID: -275031132, guid: 38efe5250e0382249a86e6fae69a8e72, type: 3}

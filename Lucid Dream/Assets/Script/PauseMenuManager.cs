@@ -38,6 +38,13 @@ public class PauseMenuManager : MonoBehaviour
         // ตรวจจับการกดปุ่ม Esc
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // ✨ [เพิ่มส่วนนี้] ถ้าผู้เล่นกำลังส่องจอคอมพิวเตอร์อยู่ ให้ข้ามการเปิด Pause Menu 
+            // เพื่อปล่อยให้ ComputerInteraction.cs ทำหน้าที่พาผู้เล่นออกจากหน้าจอคอมก่อน
+            if (ComputerInteraction.IsInteractingWithPC)
+            {
+                return;
+            }
+
             // ถ้าหน้า Settings กำลังเปิดอยู่ ให้ปิด Settings แล้วกลับมาหน้า Pause Menu
             if (settingsPanel != null && settingsPanel.activeSelf)
             {
