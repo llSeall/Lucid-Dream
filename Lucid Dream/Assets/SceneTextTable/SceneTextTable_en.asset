@@ -43,6 +43,14 @@ MonoBehaviour:
       my journal every night before bed, so I have to do it."
     m_Metadata:
       m_Items: []
+  - m_Id: 1472150133862400
+    m_Localized: You can't run away forever
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1480025019314176
+    m_Localized: this way
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

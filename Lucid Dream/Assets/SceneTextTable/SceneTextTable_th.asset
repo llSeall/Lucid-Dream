@@ -44,6 +44,14 @@ MonoBehaviour:
       ...\u0E15\u0E49\u0E2D\u0E07\u0E17\u0E33\u0E01\u0E48\u0E2D\u0E19\u0E19\u0E30\u0E15\u0E31\u0E27\u0E09\u0E31\u0E19"
     m_Metadata:
       m_Items: []
+  - m_Id: 1472150133862400
+    m_Localized: "\u0E41\u0E01\u0E2B\u0E19\u0E35\u0E15\u0E25\u0E2D\u0E14\u0E44\u0E1B\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1480025019314176
+    m_Localized: "\u0E17\u0E32\u0E07\u0E19\u0E35\u0E49"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

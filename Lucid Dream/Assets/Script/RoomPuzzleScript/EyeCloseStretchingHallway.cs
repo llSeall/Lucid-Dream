@@ -20,6 +20,12 @@ public class EyeCloseStretchingHallway : MonoBehaviour
     [Tooltip("ลากกำแพงสองข้างทางที่มีสคริปต์ WallUVScroller มาใส่ในนี้")]
     [SerializeField] private List<WallUVScroller> wallScrollers = new List<WallUVScroller>();
 
+    [Header("🔊 Audio FX ✨")]
+    [Tooltip("ลาก AudioSource มาใส่ตรงนี้ (ถ้าไม่ใส่จะค้นหาใน Object นี้ให้อัตโนมัติ)")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("ใส่ไฟล์เสียงปลดล็อก (เช่น เสียงประตูปลดล็อก/เสียงเคลียร์คำสาป)")]
+    [SerializeField] private AudioClip unlockSound;
+
     [Header("Speed Settings")]
     [Tooltip("ความเร็วในการยืดประตูออกไปตอนแรก")]
     [SerializeField] private float stretchSpeed = 8f;
@@ -44,6 +50,16 @@ public class EyeCloseStretchingHallway : MonoBehaviour
         if (eyeWorldManager == null)
         {
             eyeWorldManager = FindObjectOfType<EyeToggleWorldManager>();
+        }
+
+        // ✨ เช็กและดึง AudioSource อัตโนมัติหากไม่ได้ลากมาใส่
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
         }
 
         GetComponent<BoxCollider>().isTrigger = true;
@@ -134,6 +150,13 @@ public class EyeCloseStretchingHallway : MonoBehaviour
         isCurseBroken = true;
         isCurseActive = false;
         hallwayEnd.position = originalPoint.position;
+
+        // ✨ เล่นเสียงปลดล็อกเมื่อประตูย่นกลับมาสุดเรียบร้อยแล้ว
+        if (audioSource != null && unlockSound != null)
+        {
+            audioSource.PlayOneShot(unlockSound);
+        }
+
         Debug.Log("ปลดล็อกคำสาปสำเร็จ! ทางเดินกลับเป็นปกติแล้ว");
     }
 

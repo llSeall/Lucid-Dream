@@ -378,6 +378,7 @@ GameObject:
   - component: {fileID: 1084014364854226176}
   - component: {fileID: 8968904058566600339}
   - component: {fileID: 4900828194951895049}
+  - component: {fileID: 6690043627837173247}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -745,6 +746,26 @@ MonoBehaviour:
   normalOnlyObjects:
   - {fileID: 0}
   - {fileID: 0}
+--- !u!114 &6690043627837173247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2370224047580390765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d6b01e49b0b26b41a0b5252422eabd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerLookDetector
+  playerCamera: {fileID: 547373285434030787}
+  maxDistance: 12
+  scareLayer:
+    serializedVersion: 2
+    m_Bits: 4096
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!1 &3481294799354020697
 GameObject:
   m_ObjectHideFlags: 0
