@@ -113,6 +113,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [Range(0f, 1f)][SerializeField] float variableJumpMultiplier = 0.5f;
     [SerializeField] float groundCheckRadius = 0.2f;
 
+    private float jumpCooldownTimer = 0f;
+
     [Header("Crouch Settings")]
     [SerializeField] float crouchHeight = 1f;
     [SerializeField] float crouchCameraYOffset = 0.6f;
@@ -197,6 +199,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private float squeezeTargetYaw;
     private bool isFacingReverseInGap = false;
     private bool sKeyPressedLastFrame = false;
+
+    public bool IsSqueezing => isSqueezing;
 
     // Audio & Bob
     private float nextStepPhase = Mathf.PI;
@@ -356,7 +360,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             rb.linearVelocity = vel;
         }
     }
-
     void Update()
     {
         if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) return;
@@ -367,6 +370,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
             climbCooldownTimer -= Time.deltaTime;
         }
 
+        // 1. นัยนับถอยหลัง Cooldown กระโดด
+        if (jumpCooldownTimer > 0f)
+        {
+            jumpCooldownTimer -= Time.deltaTime;
+        }
+
+        // ✨ [แก้ไขจุดซ้ำซ้อน] เช็กพื้นแบบผ่าน Filter เพียงจุดเดียวที่ต้น Update
+        // (ห้ามมี grounded = CheckGroundedNoLayer(); บรรทัดเดี่ยวๆ อีก)
+        grounded = (jumpCooldownTimer <= 0f) && (rb.linearVelocity.y <= 0.1f) && CheckGroundedNoLayer();
+
         if ((DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) ||
             (PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp))
         {
@@ -376,8 +389,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             UpdateProceduralArmAnimation();
             return;
         }
-
-        grounded = CheckGroundedNoLayer();
 
         HandleFallStunLogic();
         HandleWallClimbAndShimmyLogic();
@@ -438,7 +449,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (isEdgeShimmying)
         {
-            // ปรับตัวคูณจาก 0.01f เป็น 0.05f เพื่อให้รับค่า Sensitivity จาก Settings ได้แม่นยำขึ้น
             Vector2 mouse = lookInput * (mouseSensitivity * 0.05f);
             pitch -= mouse.y;
             pitch = Mathf.Clamp(pitch, shimmyPitchMin, shimmyPitchMax);
@@ -460,7 +470,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (!isClimbingVault)
         {
-            // ปรับตัวคูณการหมุนกล้องปกติเป็น 0.05f ให้พอดีกับสเกล Slider 0.1 - 10.0
             Vector2 mouse = lookInput * (mouseSensitivity * 0.05f);
             yaw += mouse.x;
             pitch -= mouse.y;
@@ -476,6 +485,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             playerCamera.localEulerAngles = new Vector3(pitch + currentLandingImpact, 0f, currentCameraTiltZ);
         }
 
+        // ✨ เมื่อผ่าน Filter มาแล้ว ถึงค่อยอนุญาตให้รีเซ็ตโควตากระโดด
         if (grounded)
         {
             lastGroundTime = Time.time;
@@ -495,6 +505,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             isCrouching = false;
         }
+
+        // ✨ (ลบบรรทัด 330-334 เก่าออก เพราะย้ายไปคำนวณไว้ด้านบนสุดแล้ว)
 
         HandleCrouchingAndSqueezing();
         HandleStamina();
@@ -843,9 +855,15 @@ public class PlayerController3D_InputAction : MonoBehaviour
         footstepAudioSource.pitch = Random.Range(0.95f, 1.05f);
         footstepAudioSource.PlayOneShot(clip, volume);
     }
-
     private void HandleSqueezeInput()
     {
+        // ✨ [แก้ไขบั๊ก] เช็กว่า Trigger ที่แคบยัง active หรือหลุดออกไปแล้วหรือไม่
+        if (currentGapTransform != null && (!currentGapTransform.gameObject.activeInHierarchy || !currentGapTransform.GetComponent<Collider>().enabled))
+        {
+            isInGapZone = false;
+            currentGapTransform = null;
+        }
+
         if (isInGapZone && !isSqueezing && !isStunned && !isEdgeShimmying && targetInput.z > 0.1f)
         {
             isSqueezing = true;
@@ -868,6 +886,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             PlaySingleSoundEffect(squeezeEnterClip, volumeSqueezeEnter);
         }
 
+        // ✨ หากไม่ได้อยู่ในเขต หรือ Collider หายไป ให้ยกเลิกการลอดกำแพงทันที
         if (!isInGapZone && isSqueezing)
         {
             isSqueezing = false;
@@ -1078,15 +1097,20 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         return false;
     }
-
     void DoJump()
     {
         if (jumpsLeft <= 0) return;
+
         Vector3 v = rb.linearVelocity;
         v.y = 0f;
         rb.linearVelocity = v;
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+
+        // ✨ [แก้ไขบั๊ก Double Jump สมบูรณ์]
         jumpsLeft--;
+        grounded = false;
+        jumpCooldownTimer = 0.2f; // หน่วงการเช็กพื้น 0.2 วินาที ป้องกันการรีเซ็ตสถานะแตะพื้นทันที
+        lastGroundTime = -10f;    // ตัดสิทธิ์ Coyote Time ทันที
     }
 
     void UpdateHeadBob()

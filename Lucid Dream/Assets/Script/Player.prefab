@@ -605,7 +605,7 @@ MonoBehaviour:
   variableJumpMultiplier: 0.5
   groundCheckRadius: 0.2
   crouchHeight: 1
-  crouchCameraYOffset: 0.6
+  crouchCameraYOffset: 0.8
   crouchSmoothing: 10
   mouseSensitivity: 2
   pitchMin: -75
@@ -729,6 +729,7 @@ MonoBehaviour:
   staminaRegenRate: 25
   hideBarWhenFull: 1
   uiFadeSpeed: 5
+  playerController: {fileID: 0}
   eyeStaminaFillRect: {fileID: 0}
   eyeStaminaCanvasGroup: {fileID: 0}
   bloodVesselsImage: {fileID: 0}

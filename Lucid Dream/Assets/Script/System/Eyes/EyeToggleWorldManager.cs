@@ -29,6 +29,10 @@ public class EyeToggleWorldManager : MonoBehaviour
     [SerializeField] private bool hideBarWhenFull = true;     // ซ่อนหลอดเมื่อเต็มหลอด
     [SerializeField] private float uiFadeSpeed = 5f;          // ความเร็วในการจางเข้า/ออกของ UI
 
+    // ✨ เพิ่ม Reference หาตัว PlayerController
+    [Header("🏃 Player Controller Reference ✨")]
+    [SerializeField] private PlayerController3D_InputAction playerController;
+
     [Header("📊 Eye Stamina UI ✨")]
     [Tooltip("RectTransform ของรูปหลอด Stamina (ให้ตั้ง Pivot X = 0.5 ใน Unity เพื่อให้หุบเข้าตรงกลาง)")]
     [SerializeField] private RectTransform eyeStaminaFillRect;
@@ -70,6 +74,10 @@ public class EyeToggleWorldManager : MonoBehaviour
 
     private void Start()
     {
+        if (playerController == null)
+        {
+            playerController = FindAnyObjectByType<PlayerController3D_InputAction>();
+        }
         if (playerCamera == null && Camera.main != null)
         {
             playerCamera = Camera.main.transform;
@@ -104,17 +112,28 @@ public class EyeToggleWorldManager : MonoBehaviour
 
     private void HandleEyeStamina()
     {
-        // 1. คำนวณการลดลง / ฟื้นฟู Stamina
         if (isEyesClosed && !isTransitioning)
         {
             currentEyeStamina -= staminaDrainRate * Time.deltaTime;
 
-            // เมื่อพลังการใช้ตาหมดหลอด
             if (currentEyeStamina <= 0f)
             {
                 currentEyeStamina = 0f;
-                isExhausted = true; // ล็อคการใช้งานจนกว่าจะเต็ม
-                StartCoroutine(ForceOpenEyesRoutine()); // บังคับเปิดตาอัตโนมัติ
+                isExhausted = true;
+
+                // ✨ ถ้าหมดหลอด แต่ผู้เล่นกำลังเบียดช่องแคบอยู่ จะยังไม่บังคับเปิดตาทันที (ป้องกันกำแพงหนีบทับ)
+                if (playerController == null || !playerController.IsSqueezing)
+                {
+                    StartCoroutine(ForceOpenEyesRoutine());
+                }
+            }
+        }
+        else if (isEyesClosed && isExhausted && !isTransitioning)
+        {
+            // ✨ กรณีที่เคยหมดหลอดขณะลอดช่องแคบ พอเดินพ้นช่องแคบเมื่อไหร่ ให้บังคับเปิดตาทันที
+            if (playerController == null || !playerController.IsSqueezing)
+            {
+                StartCoroutine(ForceOpenEyesRoutine());
             }
         }
         else if (!isEyesClosed)
@@ -124,10 +143,9 @@ public class EyeToggleWorldManager : MonoBehaviour
             if (currentEyeStamina >= maxEyeStamina)
             {
                 currentEyeStamina = maxEyeStamina;
-                isExhausted = false; // ฟื้นฟูเต็มหลอดแล้ว ปลดล็อคให้ใช้ได้อีกครั้ง
+                isExhausted = false;
             }
         }
-
         // 2. อัปเดตขนาด UI หลอด Stamina (หุบเข้าตรงกลาง)
         if (eyeStaminaFillRect != null)
         {
@@ -195,7 +213,13 @@ public class EyeToggleWorldManager : MonoBehaviour
 
         if (leftClickPressed)
         {
-            // ถ้าหลอดหมดและยังไม่เต็ม 100% จะไม่อนุญาตให้กดหลับตา
+            // ✨ [เงื่อนไขใหม่] ไม่อนุญาตให้กดหลับตา/ลืมตา ขณะที่กำลังลอดช่องแคบอยู่
+            if (playerController != null && playerController.IsSqueezing)
+            {
+                Debug.Log("⚠️ ไม่สามารถเปิด/ปิดตาได้ขณะกำลังลอดช่องแคบ");
+                return;
+            }
+
             if (!isEyesClosed && isExhausted)
             {
                 Debug.Log("⚠️ พลังการใช้ตาหมด! ต้องรอชาร์จจนเต็มหลอดก่อน");
@@ -206,7 +230,8 @@ public class EyeToggleWorldManager : MonoBehaviour
         }
     }
 
-    private IEnumerator BlinkAndToggleWorldRoutine()
+
+private IEnumerator BlinkAndToggleWorldRoutine()
     {
         isTransitioning = true;
 

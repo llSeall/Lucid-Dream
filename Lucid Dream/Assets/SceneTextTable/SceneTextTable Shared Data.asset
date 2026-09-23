@@ -47,6 +47,30 @@ MonoBehaviour:
     m_Key: this way
     m_Metadata:
       m_Items: []
+  - m_Id: 1510709230366720
+    m_Key: "It\u2019s time you grew up"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511889385877504
+    m_Key: Give up on that dream
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1514002929217536
+    m_Key: They don't really love you
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1515159659540480
+    m_Key: Are you really giving up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1516227873271808
+    m_Key: You need to make up your mind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1516958823018496
+    m_Key: Stop comparing yourself to your sibling
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
