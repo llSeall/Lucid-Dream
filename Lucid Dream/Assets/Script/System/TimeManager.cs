@@ -38,7 +38,10 @@ public class TimeManager : MonoBehaviour
         currentState = GameState.Daytime;
 
         OnDayChangedSafe?.Invoke();
-
+        if (ComputerUIManager.Instance != null)
+        {
+            ComputerUIManager.Instance.hasReadTodayNote = false;
+        }
         if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
         if (GameManager.Instance != null) GameManager.Instance.LoadSceneForState(GameState.Daytime);
     }

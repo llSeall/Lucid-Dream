@@ -77,10 +77,29 @@ public class SecretPathRevealer : MonoBehaviour
 
     private void CheckIfPlayerIsLooking()
     {
+        // 🌟 1. เช็กว่าถ้าวัตถุรูปภาพประตูหลับตาถูกปิดอยู่ (Inactive) ให้ยกเลิกการตรวจจับทันที
+        if (closedEyeDoorPictureObject != null && !closedEyeDoorPictureObject.activeInHierarchy)
+        {
+            currentLookTimer = 0f;
+            return;
+        }
+
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, maxLookDistance))
         {
-            if (hit.transform == transform || hit.transform.IsChildOf(transform))
+            // 🌟 2. เช็กเฉพาะ Collider ของ closedEyeDoorPictureObject (หรือลูกของมัน) เท่านั้น ไม่รวมกำแพง/วัตถุอื่น
+            bool isLookingAtTarget = false;
+
+            if (closedEyeDoorPictureObject != null)
+            {
+                isLookingAtTarget = (hit.transform == closedEyeDoorPictureObject.transform || hit.transform.IsChildOf(closedEyeDoorPictureObject.transform));
+            }
+            else
+            {
+                isLookingAtTarget = (hit.transform == transform || hit.transform.IsChildOf(transform));
+            }
+
+            if (isLookingAtTarget)
             {
                 currentLookTimer += Time.deltaTime;
 

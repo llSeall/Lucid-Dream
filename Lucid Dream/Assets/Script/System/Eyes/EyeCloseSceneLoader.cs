@@ -25,6 +25,14 @@ public class EyeCloseSceneLoader : MonoBehaviour
     [Tooltip("(Optional) CanvasGroup สีดำสนิทรองพื้นหลังสไปร์ปิดตา เพื่อบังคับให้จอดำสนิทก่อนย้ายซีน")]
     [SerializeField] private CanvasGroup blackScreenCanvasGroup;
 
+    [Header("Audio Settings 🔊")]
+    [Tooltip("ตัวเล่นเสียง (หากไม่ใส่ ระบบจะหา AudioSource บนวัตถุนี้ให้อัตโนมัติ)")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("ใส่ไฟล์เสียงปิดตา (เช่น เสียงพรึบบ / เสียงวูบ / เสียงพริบตา)")]
+    [SerializeField] private AudioClip eyeCloseSound;
+    [Tooltip("ความดังของเสียง")]
+    [Range(0f, 1f)][SerializeField] private float soundVolume = 1f;
+
     [Header("Input & Timing Settings")]
     [Tooltip("ระยะเวลาที่ใช้ในการค่อยๆ ปิดตาสนิทแล้วเปลี่ยนซีน (วินาที)")]
     [SerializeField] private float holdDuration = 1.5f;
@@ -37,12 +45,23 @@ public class EyeCloseSceneLoader : MonoBehaviour
     private bool isSceneLoading = false;
     private bool isPlayerInZone = false;
     private bool hasBeenTriggered = false;
+    private bool hasPlayedSound = false; // ✨ เช็กว่าเล่นเสียงไปแล้วหรือยัง (ป้องกันเสียงเล่นซ้ำทุกเฟรม)
 
     void Start()
     {
         // ตั้งค่า Collider ของวัตถุนี้ให้เป็น Trigger อัตโนมัติ
         BoxCollider col = GetComponent<BoxCollider>();
         if (col != null) col.isTrigger = true;
+
+        // ดึง AudioSource อัตโนมัติถ้าไม่ได้ลากใส่
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
 
         // ซ่อนภาพปิดตาในตอนเริ่มต้น
         if (eyeCloseImage != null)
@@ -66,24 +85,24 @@ public class EyeCloseSceneLoader : MonoBehaviour
         {
             if (requireKeyPressInsideZone)
             {
-                // เงื่อนไข: ต้องอยู่ใน Trigger Zone + กดปุ่มค้างไว้
                 shouldCloseEyes = isPlayerInZone && Input.GetKey(interactKey);
             }
             else
             {
-                // เงื่อนไข: แค่เดินเหยียบเข้ามาใน Trigger ก็เริ่มปิดตาเปลี่ยนซีนทันที
                 shouldCloseEyes = isPlayerInZone || hasBeenTriggered;
             }
         }
         else
         {
-            // โหมดเดิม: กดปุ่มค้างไว้ตรงไหนก็ได้ในเกม
             shouldCloseEyes = Input.GetKey(interactKey);
         }
 
         // 1. กระบวนการค่อยๆ ปิดตา
         if (shouldCloseEyes)
         {
+            // ✨ เล่นเสียงปิดตา 1 ครั้งเมื่อเริ่มกระบวนการ
+            PlayEyeCloseSound();
+
             currentHoldTime += Time.deltaTime;
             currentHoldTime = Mathf.Min(currentHoldTime, holdDuration);
 
@@ -107,11 +126,26 @@ public class EyeCloseSceneLoader : MonoBehaviour
             }
             else
             {
+                // ✨ รีเซ็ตสถานะเสียงเพื่อให้เล่นได้อีกครั้งเมื่อเหยียบใหม่
+                hasPlayedSound = false;
+
                 if (eyeCloseImage != null && eyeCloseImage.gameObject.activeSelf)
                 {
                     eyeCloseImage.gameObject.SetActive(false);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// ✨ ฟังก์ชันสั่งเล่นเสียงปิดตา
+    /// </summary>
+    private void PlayEyeCloseSound()
+    {
+        if (!hasPlayedSound && eyeCloseSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(eyeCloseSound, soundVolume);
+            hasPlayedSound = true;
         }
     }
 
@@ -121,7 +155,6 @@ public class EyeCloseSceneLoader : MonoBehaviour
         {
             isPlayerInZone = true;
 
-            // เมื่อเหยียบแล้ว ให้ล็อกสภาวะไว้เพื่อให้กระบวนการหลับตารันจนจบและเปลี่ยนซีน
             if (autoTriggerOnStep && !requireKeyPressInsideZone)
             {
                 hasBeenTriggered = true;

@@ -215,7 +215,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private Quaternion leftArmDefaultLocalRot;
     private Quaternion rightArmDefaultLocalRot;
 
-    // ✨ สำหรับระบบ Settings (เก็บค่าเริ่มต้นแท้จริงจาก Inspector)
+    // Settings Defaults
     private float initialSensitivity;
     private float initialFOV;
 
@@ -224,7 +224,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
 
-        // 1. ค้นหากล้องและบันทึกค่ามาตรฐานจาก Inspector ก่อนเสมอ
         if (playerCamera == null && Camera.main != null) playerCamera = Camera.main.transform;
 
         if (playerCamera != null)
@@ -235,7 +234,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             camComponent = playerCamera.GetComponent<Camera>();
             if (camComponent != null)
             {
-                initialFOV = camComponent.fieldOfView; // บันทึกค่า FOV ตั้งต้นของกล้อง
+                initialFOV = camComponent.fieldOfView;
                 defaultFOV = initialFOV;
                 camComponent.nearClipPlane = 0.01f;
             }
@@ -246,9 +245,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
             defaultFOV = 60f;
         }
 
-        initialSensitivity = mouseSensitivity; // บันทึกค่า Sensitivity ตั้งต้นจาก Inspector
+        initialSensitivity = mouseSensitivity;
 
-        // 2. โหลดค่าความไวเมาส์และ FOV ที่เคยเซฟไว้ (ถ้ามี)
         if (PlayerPrefs.HasKey("MouseSensitivity"))
         {
             mouseSensitivity = PlayerPrefs.GetFloat("MouseSensitivity");
@@ -306,6 +304,15 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             staminaCanvasGroup.alpha = 0f;
         }
+    }
+
+    private void OnEnable()
+    {
+        if (inputActionAsset != null && PlayerPrefs.HasKey("UserKeybindingsOverrides"))
+        {
+            string overrideJson = PlayerPrefs.GetString("UserKeybindingsOverrides");
+            inputActionAsset.LoadBindingOverridesFromJson(overrideJson);
+        }
 
         SetupInputActions();
     }
@@ -323,8 +330,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
         sprintAction = playerActionMap.FindAction("Sprint");
         crouchAction = playerActionMap.FindAction("Crouch");
 
+        if (crouchAction != null)
+        {
+            crouchAction.ApplyBindingOverride("<Keyboard>/leftCtrl");
+        }
+
         if (jumpAction != null)
         {
+            jumpAction.started -= OnJumpPressed;
+            jumpAction.canceled -= OnJumpReleased;
+
             jumpAction.started += OnJumpPressed;
             jumpAction.canceled += OnJumpReleased;
         }
@@ -360,6 +375,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             rb.linearVelocity = vel;
         }
     }
+
     void Update()
     {
         if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) return;
@@ -370,15 +386,13 @@ public class PlayerController3D_InputAction : MonoBehaviour
             climbCooldownTimer -= Time.deltaTime;
         }
 
-        // 1. นัยนับถอยหลัง Cooldown กระโดด
         if (jumpCooldownTimer > 0f)
         {
             jumpCooldownTimer -= Time.deltaTime;
         }
 
-        // ✨ [แก้ไขจุดซ้ำซ้อน] เช็กพื้นแบบผ่าน Filter เพียงจุดเดียวที่ต้น Update
-        // (ห้ามมี grounded = CheckGroundedNoLayer(); บรรทัดเดี่ยวๆ อีก)
-        grounded = (jumpCooldownTimer <= 0f) && (rb.linearVelocity.y <= 0.1f) && CheckGroundedNoLayer();
+        // ✨ [แก้ไข] ถอดข้อจำกัด linearVelocity.y <= 0.1f ออกเพื่อให้สถานะแตะพื้นไม่หลุดขณะเดิน/วิ่งขึ้นเนิน
+        grounded = (jumpCooldownTimer <= 0f) && CheckGroundedNoLayer();
 
         if ((DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) ||
             (PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp))
@@ -485,14 +499,15 @@ public class PlayerController3D_InputAction : MonoBehaviour
             playerCamera.localEulerAngles = new Vector3(pitch + currentLandingImpact, 0f, currentCameraTiltZ);
         }
 
-        // ✨ เมื่อผ่าน Filter มาแล้ว ถึงค่อยอนุญาตให้รีเซ็ตโควตากระโดด
         if (grounded)
         {
             lastGroundTime = Time.time;
             jumpsLeft = maxJumps;
         }
 
-        bool crouchKeyPressed = (crouchAction != null) && crouchAction.IsPressed();
+        bool ctrlKeyPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        bool crouchKeyPressed = ((crouchAction != null) && crouchAction.IsPressed()) || ctrlKeyPressed;
+
         if (crouchKeyPressed && !isSqueezing && !isEdgeShimmying && !isClimbingVault)
         {
             isCrouching = true;
@@ -505,8 +520,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             isCrouching = false;
         }
-
-        // ✨ (ลบบรรทัด 330-334 เก่าออก เพราะย้ายไปคำนวณไว้ด้านบนสุดแล้ว)
 
         HandleCrouchingAndSqueezing();
         HandleStamina();
@@ -538,11 +551,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         UpdateArmSprites();
 
-        Vector3 horizontalVel = rb.linearVelocity;
-        horizontalVel.y = 0f;
-        float currentSpeed = isEdgeShimmying ? (Mathf.Abs(targetInput.x) * wallShimmySpeed) : horizontalVel.magnitude;
-        bool isMoving = currentSpeed > 0.1f && targetInput.sqrMagnitude > 0.01f;
-
         Vector3 targetLeftPos = leftArmDefaultLocalPos;
         Vector3 targetRightPos = rightArmDefaultLocalPos;
         Quaternion targetLeftRot = leftArmDefaultLocalRot;
@@ -559,6 +567,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (isSprinting)
         {
+            // ✨ [แก้วิ่งแล้วมือไม่ขยับ] ใช้ walkCyclePhase ในการคำนวณวงสวิงมือขณะวิ่งอย่างต่อเนื่อง
             float armSwing = Mathf.Sin(walkCyclePhase);
             float leftSwingY = armSwing * runArmSwingAmount;
             float leftSwingX = Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
@@ -574,12 +583,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (isCrouching)
         {
+            bool isMoving = targetInput.sqrMagnitude > 0.01f;
             float armSwing = isMoving ? Mathf.Sin(walkCyclePhase) * crouchArmSwingAmount : 0f;
             targetLeftPos += raisedArmOffset + new Vector3(0, armSwing, 0);
             targetRightPos += raisedArmOffset + new Vector3(0, -armSwing, 0);
         }
         else
         {
+            // ยืนหรือเดินธรรมดา -> พักมือด้านล่างตามกลไกเดิมของเกม
             targetLeftPos += idleLoweredOffset;
             targetRightPos += idleLoweredOffset;
         }
@@ -788,7 +799,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
             currentSpeed = horizontalVel.magnitude;
         }
 
-        if (currentSpeed < 0.1f)
+        if (currentSpeed < 0.1f && targetInput.sqrMagnitude < 0.01f)
         {
             walkCyclePhase = 0f;
             nextStepPhase = Mathf.PI;
@@ -819,11 +830,18 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (isSprinting)
         {
-            stepInterval = baseStepInterval * 0.78f;
+            stepInterval = baseStepInterval * 0.65f;
             volume = volumeRun;
         }
 
-        float speedMultiplier = isEdgeShimmying ? (currentSpeed / wallShimmySpeed) : (currentSpeed / walkSpeed);
+        float speedMultiplier = isEdgeShimmying ? (currentSpeed / wallShimmySpeed) : (currentSpeed / (isSprinting ? runSpeed : walkSpeed));
+
+        // ✨ หากกำลังกดปุ่มวิ่ง ให้คงความเร็วจังหวะก้าวไว้เพื่อประกันว่าแอนิเมชันมือวิ่งแกว่งสมบูรณ์
+        if (isSprinting && speedMultiplier < 0.5f && targetInput.sqrMagnitude > 0.01f)
+        {
+            speedMultiplier = 1.0f;
+        }
+
         walkCyclePhase += (Time.deltaTime * speedMultiplier / stepInterval) * Mathf.PI;
 
         if (walkCyclePhase >= nextStepPhase)
@@ -855,9 +873,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
         footstepAudioSource.pitch = Random.Range(0.95f, 1.05f);
         footstepAudioSource.PlayOneShot(clip, volume);
     }
+
     private void HandleSqueezeInput()
     {
-        // ✨ [แก้ไขบั๊ก] เช็กว่า Trigger ที่แคบยัง active หรือหลุดออกไปแล้วหรือไม่
         if (currentGapTransform != null && (!currentGapTransform.gameObject.activeInHierarchy || !currentGapTransform.GetComponent<Collider>().enabled))
         {
             isInGapZone = false;
@@ -886,7 +904,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             PlaySingleSoundEffect(squeezeEnterClip, volumeSqueezeEnter);
         }
 
-        // ✨ หากไม่ได้อยู่ในเขต หรือ Collider หายไป ให้ยกเลิกการลอดกำแพงทันที
         if (!isInGapZone && isSqueezing)
         {
             isSqueezing = false;
@@ -959,7 +976,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void HandleStamina()
     {
-        bool wantsToSprint = (sprintAction != null) && sprintAction.IsPressed();
+        // ✨ รองรับทั้ง Sprint Action จาก Input System และปุ่ม Left/Right Shift บนคีย์บอร์ด
+        bool shiftKeyPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        bool wantsToSprint = ((sprintAction != null) && sprintAction.IsPressed()) || shiftKeyPressed;
         bool isMoving = targetInput.sqrMagnitude > 0.01f;
 
         if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && !isEdgeShimmying && !isStunned && currentStamina > 0f)
@@ -992,6 +1011,24 @@ public class PlayerController3D_InputAction : MonoBehaviour
             float targetAlpha = (hideWhenFull && currentStamina >= maxStamina) ? 0f : 1f;
             staminaCanvasGroup.alpha = Mathf.MoveTowards(staminaCanvasGroup.alpha, targetAlpha, fadeSpeed * Time.deltaTime);
         }
+    }
+
+    // ✨ ฟังก์ชันสำหรับตรวจสอบระนาบความชันเนิน
+    private bool CheckSlope(out Vector3 slopeNormal)
+    {
+        slopeNormal = Vector3.up;
+        if (groundCheck == null) return false;
+
+        if (Physics.Raycast(transform.position + Vector3.up * 0.2f, Vector3.down, out RaycastHit hit, 0.6f + groundCheckRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            float angle = Vector3.Angle(Vector3.up, hit.normal);
+            if (angle > 0f && angle < 50f)
+            {
+                slopeNormal = hit.normal;
+                return true;
+            }
+        }
+        return false;
     }
 
     void FixedUpdate()
@@ -1060,12 +1097,44 @@ public class PlayerController3D_InputAction : MonoBehaviour
             desiredHorizontalVel = (cameraRight * targetInput.x + cameraForward * targetInput.z) * speed;
         }
 
-        Vector3 currentVel = rb.linearVelocity;
-        Vector3 horizontalVel = new Vector3(currentVel.x, 0f, currentVel.z);
-        Vector3 newHorizontalVel = Vector3.MoveTowards(horizontalVel, desiredHorizontalVel, acceleration * Time.fixedDeltaTime);
+        // ✨ ระบบเดินบนเนินและป้องกันตัวละครสไลด์ลงเนิน
+        bool isOnSlope = CheckSlope(out Vector3 slopeNormal);
 
-        Vector3 newVel = newHorizontalVel + Vector3.up * currentVel.y;
-        rb.linearVelocity = newVel;
+        if (isOnSlope && grounded && !isSqueezing)
+        {
+            // เบี่ยงเวกเตอร์ทิศทางการเดินให้ขนานกับระนาบเนิน
+            desiredHorizontalVel = Vector3.ProjectOnPlane(desiredHorizontalVel, slopeNormal);
+
+            // หากยืนหยุดนิ่งบนเนิน ให้ปิดแรงโน้มถ่วงและหยุดแรงสะสมเพื่อไม่ให้ตัวละครสไลด์ลงมา
+            if (targetInput.sqrMagnitude < 0.01f)
+            {
+                rb.useGravity = false;
+                rb.linearVelocity = Vector3.zero;
+                return;
+            }
+            else
+            {
+                rb.useGravity = false;
+            }
+        }
+        else
+        {
+            rb.useGravity = true;
+        }
+
+        Vector3 currentVel = rb.linearVelocity;
+
+        if (isOnSlope && grounded && !isSqueezing)
+        {
+            rb.linearVelocity = Vector3.MoveTowards(currentVel, desiredHorizontalVel, acceleration * Time.fixedDeltaTime);
+        }
+        else
+        {
+            Vector3 horizontalVel = new Vector3(currentVel.x, 0f, currentVel.z);
+            Vector3 newHorizontalVel = Vector3.MoveTowards(horizontalVel, desiredHorizontalVel, acceleration * Time.fixedDeltaTime);
+            Vector3 newVel = newHorizontalVel + Vector3.up * currentVel.y;
+            rb.linearVelocity = newVel;
+        }
     }
 
     bool CheckGroundedNoLayer()
@@ -1097,20 +1166,21 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         return false;
     }
+
     void DoJump()
     {
         if (jumpsLeft <= 0) return;
 
+        rb.useGravity = true;
         Vector3 v = rb.linearVelocity;
         v.y = 0f;
         rb.linearVelocity = v;
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 
-        // ✨ [แก้ไขบั๊ก Double Jump สมบูรณ์]
         jumpsLeft--;
         grounded = false;
-        jumpCooldownTimer = 0.2f; // หน่วงการเช็กพื้น 0.2 วินาที ป้องกันการรีเซ็ตสถานะแตะพื้นทันที
-        lastGroundTime = -10f;    // ตัดสิทธิ์ Coyote Time ทันที
+        jumpCooldownTimer = 0.2f;
+        lastGroundTime = -10f;
     }
 
     void UpdateHeadBob()
@@ -1153,7 +1223,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
             jumpAction.started -= OnJumpPressed;
             jumpAction.canceled -= OnJumpReleased;
         }
-        if (playerActionMap != null) playerActionMap.Disable();
+
+        if (playerActionMap != null)
+        {
+            playerActionMap.Disable();
+        }
     }
 
     void OnDrawGizmosSelected()
@@ -1179,9 +1253,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
     }
 
-    // ✨ ดึงค่าความไวเมาส์มาตรฐานเดิมที่ตั้งไว้ใน Inspector (สำหรับให้ SettingsManager จัดวาง Slider ตรงกลาง)
     public float GetDefaultSensitivity() => initialSensitivity > 0 ? initialSensitivity : 2f;
-
-    // ✨ ดึงค่า FOV มาตรฐานเดิมที่ตั้งไว้ใน Inspector/กล้อง (สำหรับให้ SettingsManager จัดวาง Slider ตรงกลาง)
     public float GetDefaultFOV() => initialFOV > 0 ? initialFOV : 60f;
 }

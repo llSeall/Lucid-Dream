@@ -2172,7 +2172,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 1169, y: -25}
+  m_AnchoredPosition: {x: 909, y: -29}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &222157343
@@ -8860,6 +8860,7 @@ GameObject:
   - component: {fileID: 974457711}
   - component: {fileID: 974457710}
   - component: {fileID: 974457709}
+  - component: {fileID: 974457713}
   m_Layer: 0
   m_Name: ScreenFader
   m_TagString: Untagged
@@ -8962,6 +8963,21 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 999
   m_TargetDisplay: 0
+--- !u!114 &974457713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 974457706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4dd484c8327a4f4d837a567480bbd73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenFader
+  fadeCanvasGroup: {fileID: 974457709}
+  autoFadeInOnStart: 1
+  startFadeDuration: 1.2
 --- !u!1 &975481632
 GameObject:
   m_ObjectHideFlags: 0
@@ -12094,7 +12110,6 @@ GameObject:
   - component: {fileID: 1221881097}
   - component: {fileID: 1221881096}
   - component: {fileID: 1221881100}
-  - component: {fileID: 1221881101}
   m_Layer: 0
   m_Name: -----System-----
   m_TagString: Untagged
@@ -12191,21 +12206,6 @@ MonoBehaviour:
   currentStress: 0
   mediumStressThreshold: 34
   highStressThreshold: 67
---- !u!114 &1221881101
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1221881091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e4dd484c8327a4f4d837a567480bbd73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScreenFader
-  fadeCanvasGroup: {fileID: 974457709}
-  autoFadeInOnStart: 1
-  startFadeDuration: 1.2
 --- !u!1 &1231512272
 GameObject:
   m_ObjectHideFlags: 0
@@ -13628,8 +13628,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 89.1
-  m_fontSizeBase: 89.1
+  m_fontSize: 70.82
+  m_fontSizeBase: 70.82
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -17217,7 +17217,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1571130379
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18573,6 +18573,7 @@ MonoBehaviour:
   sfxVolumeSlider: {fileID: 343741780}
   fullscreenToggle: {fileID: 0}
   displayModeDropdown: {fileID: 0}
+  resolutionDropdown: {fileID: 0}
   sensitivitySlider: {fileID: 1301584231}
   fovSlider: {fileID: 1291773589}
   languageDropdown: {fileID: 1056537816}
@@ -18672,7 +18673,8 @@ MonoBehaviour:
   bgmVolumeSlider: {fileID: 413660132}
   sfxVolumeSlider: {fileID: 870994952}
   fullscreenToggle: {fileID: 222157343}
-  displayModeDropdown: {fileID: 1571130380}
+  displayModeDropdown: {fileID: 0}
+  resolutionDropdown: {fileID: 1571130380}
   sensitivitySlider: {fileID: 1855838496}
   fovSlider: {fileID: 766066188}
   languageDropdown: {fileID: 645182036}
@@ -19440,7 +19442,7 @@ AudioSource:
   m_GameObject: {fileID: 1761673570}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: -6040525337477807889, guid: ba35ce9c53e22e441a12ee29e2db35a0, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -21191,6 +21193,7 @@ MonoBehaviour:
   sfxVolumeSlider: {fileID: 2022791814}
   fullscreenToggle: {fileID: 0}
   displayModeDropdown: {fileID: 0}
+  resolutionDropdown: {fileID: 0}
   sensitivitySlider: {fileID: 74539494}
   fovSlider: {fileID: 1479714692}
   languageDropdown: {fileID: 1658123434}
@@ -22087,7 +22090,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96

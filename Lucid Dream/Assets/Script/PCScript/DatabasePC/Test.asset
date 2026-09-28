@@ -32,25 +32,6 @@ MonoBehaviour:
       m_FallbackState: 0
       m_WaitForCompletion: 0
       m_LocalVariables: []
-  - dayNumber: 1
-    noteTitle:
-      m_TableReference:
-        m_TableCollectionName: GUID:d28c641dc6814a248837ea2f59cd22f0
-      m_TableEntryReference:
-        m_KeyId: 23668550332416
-        m_Key: 
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    noteContent:
-      m_TableReference:
-        m_TableCollectionName: GUID:d28c641dc6814a248837ea2f59cd22f0
-      m_TableEntryReference:
-        m_KeyId: 23655787065344
-        m_Key: 
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
   chatMessages:
   - dayNumber: 1
     senderID: MOM
@@ -73,7 +54,7 @@ MonoBehaviour:
       m_WaitForCompletion: 0
       m_LocalVariables: []
   - dayNumber: 1
-    senderID: AB
+    senderID: Tim
     senderName:
       m_TableReference:
         m_TableCollectionName: GUID:3c93e93ef0b530e4bbc1cf40c22229e8
@@ -88,26 +69,6 @@ MonoBehaviour:
         m_TableCollectionName: GUID:3c93e93ef0b530e4bbc1cf40c22229e8
       m_TableEntryReference:
         m_KeyId: 23585888989184
-        m_Key: 
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-  - dayNumber: 1
-    senderID: MOM
-    senderName:
-      m_TableReference:
-        m_TableCollectionName: GUID:3c93e93ef0b530e4bbc1cf40c22229e8
-      m_TableEntryReference:
-        m_KeyId: 21159194718208
-        m_Key: 
-      m_FallbackState: 0
-      m_WaitForCompletion: 0
-      m_LocalVariables: []
-    messageText:
-      m_TableReference:
-        m_TableCollectionName: GUID:21da6373e06dea048a350eb903131615
-      m_TableEntryReference:
-        m_KeyId: 11182623223808
         m_Key: 
       m_FallbackState: 0
       m_WaitForCompletion: 0

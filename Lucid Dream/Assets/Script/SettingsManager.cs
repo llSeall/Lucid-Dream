@@ -20,6 +20,8 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private Toggle fullscreenToggle;
     [Tooltip("ใส่ Dropdown สำหรับเลือกโหมด เช่น 0: Fullscreen, 1: Windowed, 2: Borderless (ถ้าใช้ Dropdown)")]
     [SerializeField] private TMP_Dropdown displayModeDropdown;
+    [Tooltip("✨ ใส่ Dropdown สำหรับเลือก Resolution เช่น 1920x1080, 1280x720")]
+    [SerializeField] private TMP_Dropdown resolutionDropdown;
 
     [Header("🖱️ Controls & Camera Settings")]
     [SerializeField] private Slider sensitivitySlider;
@@ -36,6 +38,9 @@ public class SettingsManager : MonoBehaviour
     private const string KEY_LANGUAGE = "SelectedLanguage";
     private const string KEY_FULLSCREEN = "IsFullscreen";
     private const string KEY_DISPLAY_MODE = "DisplayModeIndex";
+    private const string KEY_RESOLUTION = "ResolutionIndex";
+
+    private List<Resolution> filteredResolutions = new List<Resolution>();
 
     private void Awake()
     {
@@ -46,8 +51,61 @@ public class SettingsManager : MonoBehaviour
     private void Start()
     {
         // โหลดและตั้งค่า Min/Max ของ Slider ก่อนผูก Event เพื่อป้องกันการแจ้งเตือนเปลี่ยนค่าโดยไม่ตั้งใจ
+        InitResolutionDropdown();
         LoadAndApplyAllSettings();
         SetupUIListeners();
+    }
+
+    /// <summary>
+    /// ✨ ดึงรายการ Resolution ทั้งหมดที่จอรองรับเข้ามาใส่ใน Dropdown
+    /// </summary>
+    private void InitResolutionDropdown()
+    {
+        if (resolutionDropdown == null) return;
+
+        Resolution[] allResolutions = Screen.resolutions;
+        filteredResolutions.Clear();
+        resolutionDropdown.ClearOptions();
+
+        List<string> options = new List<string>();
+        int currentResolutionIndex = 0;
+        double currentRefreshRate = Screen.currentResolution.refreshRateRatio.value;
+
+        for (int i = 0; i < allResolutions.Length; i++)
+        {
+            // กรองเฉพาะ Refresh Rate ที่ตรงกับจอปัจจุบัน เพื่อไม่ให้มี Resolution ซ้ำกัน
+            if (Mathf.Approximately((float)allResolutions[i].refreshRateRatio.value, (float)currentRefreshRate))
+            {
+                filteredResolutions.Add(allResolutions[i]);
+                string option = allResolutions[i].width + " x " + allResolutions[i].height;
+                options.Add(option);
+
+                if (allResolutions[i].width == Screen.currentResolution.width &&
+                    allResolutions[i].height == Screen.currentResolution.height)
+                {
+                    currentResolutionIndex = filteredResolutions.Count - 1;
+                }
+            }
+        }
+
+        // กรณีลูปข้างบนไม่มีค่าตรง ให้ดึงทั้งหมดมาใช้งาน
+        if (filteredResolutions.Count == 0)
+        {
+            foreach (var res in allResolutions)
+            {
+                filteredResolutions.Add(res);
+                options.Add(res.width + " x " + res.height);
+            }
+        }
+
+        resolutionDropdown.AddOptions(options);
+
+        // โหลดค่า Resolution ที่เคยเซฟไว้
+        int savedIndex = PlayerPrefs.GetInt(KEY_RESOLUTION, currentResolutionIndex);
+        savedIndex = Mathf.Clamp(savedIndex, 0, filteredResolutions.Count - 1);
+
+        resolutionDropdown.value = savedIndex;
+        resolutionDropdown.RefreshShownValue();
     }
 
     private void LoadAndApplyAllSettings()
@@ -67,10 +125,9 @@ public class SettingsManager : MonoBehaviour
         SetBGMVolume(bgmVol);
         SetSFXVolume(sfxVol);
 
-        // --- 2. Display Settings (Fullscreen & Windowed) ---
+        // --- 2. Display Settings (Fullscreen & Windowed & Resolution) ---
         if (fullscreenToggle != null)
         {
-            // ดึงค่าเซฟ (Default = true เต็มจอ)
             bool isFullscreen = PlayerPrefs.GetInt(KEY_FULLSCREEN, 1) == 1;
             fullscreenToggle.isOn = isFullscreen;
             SetFullscreen(isFullscreen);
@@ -81,6 +138,12 @@ public class SettingsManager : MonoBehaviour
             int modeIndex = PlayerPrefs.GetInt(KEY_DISPLAY_MODE, 0);
             displayModeDropdown.value = modeIndex;
             SetDisplayMode(modeIndex);
+        }
+
+        if (resolutionDropdown != null && filteredResolutions.Count > 0)
+        {
+            int resIndex = PlayerPrefs.GetInt(KEY_RESOLUTION, resolutionDropdown.value);
+            SetResolution(resIndex);
         }
 
         // --- 3. Mouse Sensitivity ---
@@ -128,6 +191,7 @@ public class SettingsManager : MonoBehaviour
 
         if (fullscreenToggle) fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
         if (displayModeDropdown) displayModeDropdown.onValueChanged.AddListener(SetDisplayMode);
+        if (resolutionDropdown) resolutionDropdown.onValueChanged.AddListener(SetResolution);
 
         if (sensitivitySlider) sensitivitySlider.onValueChanged.AddListener(SetMouseSensitivity);
         if (fovSlider) fovSlider.onValueChanged.AddListener(SetFOV);
@@ -165,6 +229,22 @@ public class SettingsManager : MonoBehaviour
 
     #region --- Display Settings System ---
     /// <summary>
+    /// ✨ เปลี่ยนความละเอียดหน้าจอ (Resolution)
+    /// </summary>
+    public void SetResolution(int index)
+    {
+        if (filteredResolutions == null || index < 0 || index >= filteredResolutions.Count) return;
+
+        Resolution res = filteredResolutions[index];
+        Screen.SetResolution(res.width, res.height, Screen.fullScreenMode);
+
+        PlayerPrefs.SetInt(KEY_RESOLUTION, index);
+        PlayerPrefs.Save();
+
+        Debug.Log($"<color=yellow>[Display Settings] Resolution set to: {res.width}x{res.height}</color>");
+    }
+
+    /// <summary>
     /// สลับโหมดเต็มจอด้วย Toggle (True = เต็มจอ, False = หน้าต่าง)
     /// </summary>
     public void SetFullscreen(bool isFullscreen)
@@ -172,7 +252,7 @@ public class SettingsManager : MonoBehaviour
         Screen.fullScreen = isFullscreen;
         PlayerPrefs.SetInt(KEY_FULLSCREEN, isFullscreen ? 1 : 0);
         PlayerPrefs.Save();
-        //  ปริ้นท์เช็กใน Console
+
         Debug.Log($"<color=yellow>[Display Settings] Fullscreen Status: {isFullscreen}</color>");
     }
 
@@ -199,7 +279,7 @@ public class SettingsManager : MonoBehaviour
 
         PlayerPrefs.SetInt(KEY_DISPLAY_MODE, index);
         PlayerPrefs.Save();
-        //  ปริ้นท์เช็กใน Console
+
         Debug.Log($"<color=yellow>[Display Settings] Mode set to: {Screen.fullScreenMode}</color>");
     }
     #endregion

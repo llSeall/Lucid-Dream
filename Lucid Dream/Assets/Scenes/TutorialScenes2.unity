@@ -962,7 +962,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bed_Night
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4568108813899903224, guid: 5259ca6813a74394199cc1ff14b4b13f, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -1495,6 +1496,22 @@ PrefabInstance:
     - target: {fileID: 607345446535682570, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: OpenSettings
+      objectReference: {fileID: 0}
+    - target: {fileID: 781274332007945845, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 781274332007945845, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 781274332007945845, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 781274332007945845, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 955793827875060133, guid: 9908ba1dd8ffac043b90128cc4f7eb3e, type: 3}
       propertyPath: m_IsActive
