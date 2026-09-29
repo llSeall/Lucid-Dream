@@ -590,7 +590,7 @@ MonoBehaviour:
   volumeSqueezeMove: 0.4
   volumeWallGrabEnter: 0.8
   volumeWallShimmy: 0.5
-  maxStamina: 100
+  maxStamina: 130
   staminaDrainRate: 25
   staminaRegenRate: 15
   staminaRegenDelay: 1

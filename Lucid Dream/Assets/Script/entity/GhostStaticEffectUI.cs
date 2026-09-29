@@ -12,6 +12,13 @@ public class GhostStaticEffectUI : MonoBehaviour
     public RawImage staticOverlayImage;
     public Texture2D[] staticTextures;
 
+    [Header("🎚️ Opacity Settings (ปรับความจางจอนอยส์) ✨")]
+    [Tooltip("ความโปร่งแสงต่ำสุดเมื่อนอยส์เริ่มขึ้น")]
+    [Range(0f, 1f)] public float minStaticOpacity = 0.05f;
+
+    [Tooltip("ความโปร่งแสงสูงสุดเมื่ออยู่ใกล้นอยส์รุนแรง (ปรับลดหากชัดเกินไป)")]
+    [Range(0f, 1f)] public float maxStaticOpacity = 0.4f;
+
     [Header("💬 Glitch Text UI (Unity Localization) ✨")]
     [Tooltip("UI TextMeshProUGUI สำหรับแสดงข้อความ")]
     public TextMeshProUGUI glitchTextUI;
@@ -75,7 +82,8 @@ public class GhostStaticEffectUI : MonoBehaviour
         {
             AnimateNoiseTexture();
 
-            float alpha = Mathf.Lerp(0.5f, 1f, currentIntensity);
+            // ✨ คำนวณความโปร่งแสงโดยใช้อัตราส่วน Min - Max ที่กำหนดใน Inspector
+            float alpha = Mathf.Lerp(minStaticOpacity, maxStaticOpacity, currentIntensity);
             SetOverlayAlpha(alpha);
 
             if (staticAudioSource != null)

@@ -9266,6 +9266,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 85bda73d65250494d8d292c01e08776a, type: 3}
   - {fileID: 2800000, guid: 63eaba870a060a14ba8e33467b2fe3e4, type: 3}
   - {fileID: 2800000, guid: 21000f4e73b0ef6489460f1b444ac4e2, type: 3}
+  minStaticOpacity: 0.05
+  maxStaticOpacity: 0.2
   glitchTextUI: {fileID: 3129723461982969584}
   textBackgroundObject: {fileID: 7596720470331027132}
   localizedGlitchMessages:
