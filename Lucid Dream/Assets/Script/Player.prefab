@@ -605,7 +605,7 @@ MonoBehaviour:
   variableJumpMultiplier: 0.5
   groundCheckRadius: 0.2
   crouchHeight: 1
-  crouchCameraYOffset: 0.8
+  crouchCameraYOffset: 1.3
   crouchSmoothing: 10
   mouseSensitivity: 2
   pitchMin: -75
