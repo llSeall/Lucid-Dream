@@ -306,6 +306,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ฟังก์ชันสำหรับให้ CheatManager เรียกใช้เพื่อเติมสเตมิน่าให้เต็ม 100% เสมอ
+    /// </summary>
+    public void RefillStaminaToMax()
+    {
+        currentStamina = maxStamina;
+        if (staminaFillRect != null) staminaFillRect.localScale = Vector3.one;
+        if (staminaCanvasGroup != null && hideWhenFull) staminaCanvasGroup.alpha = 0f;
+    }
+
     private void OnEnable()
     {
         if (inputActionAsset != null && PlayerPrefs.HasKey("UserKeybindingsOverrides"))
@@ -391,7 +401,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             jumpCooldownTimer -= Time.deltaTime;
         }
 
-        // ✨ [แก้ไข] ถอดข้อจำกัด linearVelocity.y <= 0.1f ออกเพื่อให้สถานะแตะพื้นไม่หลุดขณะเดิน/วิ่งขึ้นเนิน
         grounded = (jumpCooldownTimer <= 0f) && CheckGroundedNoLayer();
 
         if ((DialogueUIController.Instance != null && DialogueUIController.Instance.IsDialogueActive) ||
@@ -567,7 +576,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else if (isSprinting)
         {
-            // ✨ [แก้วิ่งแล้วมือไม่ขยับ] ใช้ walkCyclePhase ในการคำนวณวงสวิงมือขณะวิ่งอย่างต่อเนื่อง
             float armSwing = Mathf.Sin(walkCyclePhase);
             float leftSwingY = armSwing * runArmSwingAmount;
             float leftSwingX = Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
@@ -590,7 +598,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
         else
         {
-            // ยืนหรือเดินธรรมดา -> พักมือด้านล่างตามกลไกเดิมของเกม
             targetLeftPos += idleLoweredOffset;
             targetRightPos += idleLoweredOffset;
         }
@@ -836,7 +843,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         float speedMultiplier = isEdgeShimmying ? (currentSpeed / wallShimmySpeed) : (currentSpeed / (isSprinting ? runSpeed : walkSpeed));
 
-        // ✨ หากกำลังกดปุ่มวิ่ง ให้คงความเร็วจังหวะก้าวไว้เพื่อประกันว่าแอนิเมชันมือวิ่งแกว่งสมบูรณ์
         if (isSprinting && speedMultiplier < 0.5f && targetInput.sqrMagnitude > 0.01f)
         {
             speedMultiplier = 1.0f;
@@ -976,7 +982,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void HandleStamina()
     {
-        // ✨ รองรับทั้ง Sprint Action จาก Input System และปุ่ม Left/Right Shift บนคีย์บอร์ด
         bool shiftKeyPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         bool wantsToSprint = ((sprintAction != null) && sprintAction.IsPressed()) || shiftKeyPressed;
         bool isMoving = targetInput.sqrMagnitude > 0.01f;
@@ -1013,7 +1018,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
     }
 
-    // ✨ ฟังก์ชันสำหรับตรวจสอบระนาบความชันเนิน
     private bool CheckSlope(out Vector3 slopeNormal)
     {
         slopeNormal = Vector3.up;
@@ -1097,15 +1101,12 @@ public class PlayerController3D_InputAction : MonoBehaviour
             desiredHorizontalVel = (cameraRight * targetInput.x + cameraForward * targetInput.z) * speed;
         }
 
-        // ✨ ระบบเดินบนเนินและป้องกันตัวละครสไลด์ลงเนิน
         bool isOnSlope = CheckSlope(out Vector3 slopeNormal);
 
         if (isOnSlope && grounded && !isSqueezing)
         {
-            // เบี่ยงเวกเตอร์ทิศทางการเดินให้ขนานกับระนาบเนิน
             desiredHorizontalVel = Vector3.ProjectOnPlane(desiredHorizontalVel, slopeNormal);
 
-            // หากยืนหยุดนิ่งบนเนิน ให้ปิดแรงโน้มถ่วงและหยุดแรงสะสมเพื่อไม่ให้ตัวละครสไลด์ลงมา
             if (targetInput.sqrMagnitude < 0.01f)
             {
                 rb.useGravity = false;
@@ -1214,7 +1215,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         currentCameraOffset = Vector3.Lerp(currentCameraOffset, targetCameraOffset, headBobSmoothing * Time.deltaTime);
         playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
     }
-    #endregion
 
     void OnDisable()
     {
@@ -1255,4 +1255,5 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     public float GetDefaultSensitivity() => initialSensitivity > 0 ? initialSensitivity : 2f;
     public float GetDefaultFOV() => initialFOV > 0 ? initialFOV : 60f;
+    #endregion
 }

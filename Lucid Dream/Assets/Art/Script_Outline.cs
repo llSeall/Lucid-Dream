@@ -8,7 +8,8 @@ public class Script_Outline : MonoBehaviour
 
     private KeyPickup currentKey;
     private EntityTriggerItem currentEntityItem;
-    private HintObject currentHint; // เพิ่มตัวแปรเก็บวัตถุคำใบ้ปัจจุบัน
+    private HintObject currentHint;
+    private AnswerPaper currentPaper;
     private Outline currentOutlineOnly;
 
     void Start()
@@ -23,13 +24,13 @@ public class Script_Outline : MonoBehaviour
     void Update()
     {
         Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-        RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, maxRaycastDistance, interactableLayer))
+        if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactableLayer))
         {
             KeyPickup key = hit.collider.GetComponentInParent<KeyPickup>();
             EntityTriggerItem entityItem = hit.collider.GetComponentInParent<EntityTriggerItem>();
-            HintObject hint = hit.collider.GetComponentInParent<HintObject>(); // ดึง Component HintObject
+            HintObject hint = hit.collider.GetComponentInParent<HintObject>();
+            AnswerPaper paper = hit.collider.GetComponentInParent<AnswerPaper>();
             Outline outline = hit.collider.GetComponentInParent<Outline>();
 
             // 1. ตรวจสอบกุญแจ
@@ -91,8 +92,35 @@ public class Script_Outline : MonoBehaviour
                 }
             }
 
-            // 4. วัตถุทั่วไปที่มีเฉพาะ Outline
-            if (outline != null && (key == null || !key.enabled) && (hint == null || !hint.enabled) && (entityItem == null || !entityItem.enabled))
+            // 4. ตรวจสอบกระดาษคำตอบ (AnswerPaper)
+            if (paper != null && paper.enabled && paper.CanInteract())
+            {
+                if (hit.distance <= paper.interactDistance)
+                {
+                    if (currentPaper != paper)
+                    {
+                        Clear();
+                        currentPaper = paper;
+                        currentPaper.SetHighlight(true);
+                        Debug.Log($"👁️ [Script_Outline] ยิง Raycast โดนกระดาษแผ่นที่ {paper.paperIndex} -> เปิด Outline");
+                    }
+
+                    if (Input.GetKeyDown(KeyCode.E))
+                    {
+                        Debug.Log($"⌨️ [Script_Outline] กดปุ่ม E ใส่กระดาษแผ่นที่ {currentPaper.paperIndex}");
+                        AnswerPaper targetPaper = currentPaper;
+                        Clear();
+                        if (targetPaper != null)
+                        {
+                            targetPaper.Interact();
+                        }
+                    }
+                    return;
+                }
+            }
+
+            // 5. วัตถุทั่วไปที่มีเฉพาะ Outline
+            if (outline != null && (key == null || !key.enabled) && (hint == null || !hint.enabled) && (entityItem == null || !entityItem.enabled) && (paper == null || !paper.enabled))
             {
                 if (currentOutlineOnly != outline)
                 {
@@ -103,12 +131,10 @@ public class Script_Outline : MonoBehaviour
                 return;
             }
 
-            // ถ้ามองโดนสิ่งของอย่างอื่นที่ไม่ใช่กุญแจ/คำใบ้/ไอเท็ม ให้เคลียร์การแสดงผล
             Clear();
         }
         else
         {
-            // ถ้าไม่มองโดนอะไรเลย ให้เคลียร์การแสดงผลทั้งหมด
             Clear();
         }
     }
@@ -121,7 +147,6 @@ public class Script_Outline : MonoBehaviour
             currentKey = null;
         }
 
-        // ปิด UI/Outline ของวัตถุคำใบ้เดิมก่อนสลับหรือเมื่อเดินออกห่าง
         if (currentHint != null)
         {
             currentHint.SetHighlight(false);
@@ -132,6 +157,12 @@ public class Script_Outline : MonoBehaviour
         {
             currentEntityItem.SetHighlight(false);
             currentEntityItem = null;
+        }
+
+        if (currentPaper != null)
+        {
+            currentPaper.SetHighlight(false);
+            currentPaper = null;
         }
 
         if (currentOutlineOnly != null)

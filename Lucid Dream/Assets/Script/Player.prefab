@@ -378,6 +378,7 @@ GameObject:
   - component: {fileID: 1084014364854226176}
   - component: {fileID: 8968904058566600339}
   - component: {fileID: 4900828194951895049}
+  - component: {fileID: 1419564645914659793}
   - component: {fileID: 6690043627837173247}
   m_Layer: 0
   m_Name: Player
@@ -747,6 +748,31 @@ MonoBehaviour:
   normalOnlyObjects:
   - {fileID: 0}
   - {fileID: 0}
+--- !u!114 &1419564645914659793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2370224047580390765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70fcb44079dc67f4ead61b5d1532eb7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheatManager
+  enableCheatSystem: 1
+  playerController: {fileID: 4588418297210587679}
+  isInfiniteStamina: 0
+  toggleStaminaKey: 282
+  sceneWarps:
+  - sceneName: MoreHouse
+    warpKey: 283
+  - sceneName: HouseEdit
+    warpKey: 284
+  - sceneName: House
+    warpKey: 285
+  - sceneName: DaytimeScene
+    warpKey: 286
 --- !u!114 &6690043627837173247
 MonoBehaviour:
   m_ObjectHideFlags: 0
