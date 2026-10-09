@@ -2970,6 +2970,8 @@ MonoBehaviour:
   resolutionDropdown: {fileID: 6889005339715278522}
   sensitivitySlider: {fileID: 1024740866185042201}
   fovSlider: {fileID: 6934824487560671341}
+  minFOV: 50
+  maxFOV: 70
   languageDropdown: {fileID: 8021527692844253627}
 --- !u!1 &2321828537887885919
 GameObject:

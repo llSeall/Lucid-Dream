@@ -46,6 +46,11 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ac2d681db6d8dd04ca22138afd59815d
+    m_Address: Assets/Quiz/Quiz Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d28c641dc6814a248837ea2f59cd22f0
     m_Address: Assets/PCDataLocalization/Note/NoteDay Shared Data.asset
     m_ReadOnly: 1

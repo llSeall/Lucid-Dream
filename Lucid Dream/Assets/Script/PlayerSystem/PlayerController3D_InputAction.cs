@@ -84,6 +84,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] AudioClip[] squeezeMoveClips;
     [SerializeField] AudioClip wallGrabEnterClip;
     [SerializeField] AudioClip[] wallShimmyClips;
+    [SerializeField] AudioClip fallStunClip; // ✨ เพิ่มช่องใส่ไฟล์เสียงตอนตกกระแทกจนติดสตั้น
 
     [Header("Audio Tuning")]
     [SerializeField] float baseStepInterval = 0.5f;
@@ -94,6 +95,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float volumeSqueezeMove = 0.4f;
     [SerializeField] float volumeWallGrabEnter = 0.8f;
     [SerializeField] float volumeWallShimmy = 0.5f;
+    [SerializeField] float volumeFallStun = 1.0f; // ✨ ความดังของเสียงตกกระแทก
 
     [Header("Stamina Settings ✨")]
     [SerializeField] float maxStamina = 100f;
@@ -135,7 +137,12 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [Header("Camera Sway")]
     [SerializeField] bool enableCameraSway = true;
     [SerializeField] float swayAmount = 0.05f;
-
+    [Header("Sprint Frame-by-Frame Animation ✨")]
+    [SerializeField] SpriteRenderer sprintSpriteRenderer; // SpriteRenderer ของภาพวิ่งขนาดเต็มจอ
+    [SerializeField] Sprite[] sprintFrames;               // เฟรมภาพสไปร์ทวิ่งทั้งหมด
+    [SerializeField] float sprintAnimFPS = 12f;           // ความเร็วการเล่นเฟรม (เฟรม/วินาที)
+    private float sprintAnimTimer = 0f;
+    private int currentSprintFrameIndex = 0;
     // Input Action references
     private InputActionMap playerActionMap;
     private InputAction moveAction;
@@ -553,10 +560,16 @@ public class PlayerController3D_InputAction : MonoBehaviour
         bool isWakingUp = PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp;
         bool shouldHideArms = isWakingUp || isSqueezing || isEdgeShimmying;
 
-        if (leftArmSpriteRenderer != null) leftArmSpriteRenderer.enabled = !shouldHideArms;
-        if (rightArmSpriteRenderer != null) rightArmSpriteRenderer.enabled = !shouldHideArms;
+        // ซ่อนมือซ้าย-ขวาเดิมเมื่ออยูในสถานะพิเศษ หรือเมื่อ "กำลังวิ่ง"
+        bool hideNormalArms = shouldHideArms || isSprinting;
 
-        if (shouldHideArms) return;
+        if (leftArmSpriteRenderer != null) leftArmSpriteRenderer.enabled = !hideNormalArms;
+        if (rightArmSpriteRenderer != null) rightArmSpriteRenderer.enabled = !hideNormalArms;
+
+        // เล่นอนิเมชันวิ่งแบบ Frame-by-Frame
+        HandleSprintSpriteAnimation();
+
+        if (hideNormalArms) return;
 
         UpdateArmSprites();
 
@@ -573,21 +586,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             float shimmySwing = Mathf.Sin(walkCyclePhase) * 0.03f;
             targetLeftPos.y += shimmySwing;
             targetRightPos.y -= shimmySwing;
-        }
-        else if (isSprinting)
-        {
-            float armSwing = Mathf.Sin(walkCyclePhase);
-            float leftSwingY = armSwing * runArmSwingAmount;
-            float leftSwingX = Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
-            float rightSwingY = -armSwing * runArmSwingAmount;
-            float rightSwingX = -Mathf.Cos(walkCyclePhase) * (runArmSwingAmount * 0.5f);
-
-            targetLeftPos += raisedArmOffset + new Vector3(leftSwingX, leftSwingY, leftSwingY * 0.5f);
-            targetRightPos += raisedArmOffset + new Vector3(rightSwingX, rightSwingY, rightSwingY * 0.5f);
-
-            float rotZ = armSwing * runArmRotationAmount;
-            targetLeftRot *= Quaternion.Euler(0, 0, rotZ);
-            targetRightRot *= Quaternion.Euler(0, 0, -rotZ);
         }
         else if (isCrouching)
         {
@@ -613,6 +611,34 @@ public class PlayerController3D_InputAction : MonoBehaviour
             rightArmTransform.localPosition = Vector3.Lerp(rightArmTransform.localPosition, targetRightPos, Time.deltaTime * armLerpSpeed);
             rightArmTransform.localRotation = Quaternion.Slerp(rightArmTransform.localRotation, targetRightRot, Time.deltaTime * armLerpSpeed);
         }
+
+    }
+
+    private void HandleSprintSpriteAnimation()
+    {
+        if (sprintSpriteRenderer == null) return;
+
+        if (isSprinting && !isSqueezing && !isEdgeShimmying && !isClimbingVault)
+        {
+            sprintSpriteRenderer.enabled = true;
+
+            if (sprintFrames != null && sprintFrames.Length > 0)
+            {
+                sprintAnimTimer += Time.deltaTime * sprintAnimFPS;
+                if (sprintAnimTimer >= 1f)
+                {
+                    currentSprintFrameIndex = (currentSprintFrameIndex + 1) % sprintFrames.Length;
+                    sprintAnimTimer = 0f;
+                }
+                sprintSpriteRenderer.sprite = sprintFrames[currentSprintFrameIndex];
+            }
+        }
+        else
+        {
+            sprintSpriteRenderer.enabled = false;
+            sprintAnimTimer = 0f;
+            currentSprintFrameIndex = 0;
+        }
     }
 
     private void UpdateArmSprites()
@@ -625,21 +651,13 @@ public class PlayerController3D_InputAction : MonoBehaviour
             if (wallGrabLeftArmSprite != null) targetLeft = wallGrabLeftArmSprite;
             if (wallGrabRightArmSprite != null) targetRight = wallGrabRightArmSprite;
         }
-        else if (isSprinting)
-        {
-            if (sprintLeftArmSprite != null) targetLeft = sprintLeftArmSprite;
-            if (sprintRightArmSprite != null) targetRight = sprintRightArmSprite;
-        }
 
         if (leftArmSpriteRenderer != null && targetLeft != null && leftArmSpriteRenderer.sprite != targetLeft)
         {
             leftArmSpriteRenderer.sprite = targetLeft;
         }
 
-        if (rightArmSpriteRenderer != null && targetRight != null && rightArmSpriteRenderer.sprite != targetRight)
-        {
-            rightArmSpriteRenderer.sprite = targetRight;
-        }
+        if (rightArmSpriteRenderer != null) rightArmSpriteRenderer.sprite = targetRight;
     }
     #endregion
 
@@ -945,6 +963,9 @@ public class PlayerController3D_InputAction : MonoBehaviour
         rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
         currentLandingImpact = landingImpactPitch;
         if (isEdgeShimmying) DetachEdgeShimmy();
+
+        // ✨ สั่งเล่นเสียงตกกระแทกพื้น
+        PlaySingleSoundEffect(fallStunClip, volumeFallStun);
     }
 
     void HandleCrouchingAndSqueezing()

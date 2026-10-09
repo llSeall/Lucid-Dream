@@ -26,6 +26,8 @@ public class SettingsManager : MonoBehaviour
     [Header("🖱️ Controls & Camera Settings")]
     [SerializeField] private Slider sensitivitySlider;
     [SerializeField] private Slider fovSlider;
+    [SerializeField] private float minFOV = 60f; // ✨ ความกว้าง FOV ต่ำสุดที่ยอมให้ปรับได้
+    [SerializeField] private float maxFOV = 110f; // ✨ ความกว้าง FOV สูงสุดที่ยอมให้ปรับได้
 
     [Header("🌐 Language Settings")]
     [SerializeField] private TMP_Dropdown languageDropdown;
@@ -166,10 +168,14 @@ public class SettingsManager : MonoBehaviour
 
         if (fovSlider != null)
         {
-            fovSlider.minValue = Mathf.Max(10f, defaultFOV - 30f);
-            fovSlider.maxValue = defaultFOV + 60f;
+            // ✨ กำหนดระยะ Min / Max ของ Slider จากค่าใน Inspector
+            fovSlider.minValue = minFOV;
+            fovSlider.maxValue = maxFOV;
 
-            float fov = PlayerPrefs.GetFloat(KEY_FOV, defaultFOV);
+            // โหลดค่า FOV เดิม และใช้ Mathf.Clamp บังคับไม่ให้เกิน Min/Max
+            float savedFOV = PlayerPrefs.GetFloat(KEY_FOV, defaultFOV);
+            float fov = Mathf.Clamp(savedFOV, minFOV, maxFOV);
+
             fovSlider.value = fov;
             SetFOV(fov);
         }

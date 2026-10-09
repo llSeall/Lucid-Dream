@@ -3,27 +3,42 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.Localization;          // ✨ เรียกใช้ระบบ Localization
+using UnityEngine.Localization.Settings; // ✨ เรียกใช้ระบบ Settings ของ Localization
+// ✨ เพิ่ม enum กำหนดเงื่อนไขสถานะตาตอนกดตอบ
+public enum RequiredEyeState
+{
+    Either,       // ตอบตอนลืมตาหรือหลับตาก็ได้
+    MustBeClosed, // ต้องกดตอบตอน "หลับตา" เท่านั้น (ถ้าลืมตากดตอบ จะถือว่าผิดทันที)
+    MustBeOpen    // ต้องกดตอบตอน "ลืมตา" เท่านั้น
+}
 [System.Serializable]
 public class QuestionData
 {
-    [TextArea(2, 4)]
-    public string questionText;
+    [Tooltip("โจทย์ข้อความสเกลภาษาที่จะแสดงบนกระดานดำ")]
+    public LocalizedString questionText;
 
-    [Header("คำตอบบนกระดาษ 3 แผ่น")]
-    public string[] normalAnswers = new string[3];
-    public string[] closedEyeAnswers = new string[3];
+    [Header("คำตอบบนกระดาษ 3 แผ่น (ตอนลืมตา)")]
+    public LocalizedString[] normalAnswers = new LocalizedString[3];
+
+    [Header("คำตอบบนกระดาษ 3 แผ่น (ตอนหลับตา)")]
+    public LocalizedString[] closedEyeAnswers = new LocalizedString[3];
 
     [Header("เฉลย")]
     [Range(0, 2)]
     public int correctAnswerIndex = 0;
+
+    [Header("👁️ เงื่อนไขการหลับตา/ลืมตาตอนกดตอบ ✨")]
+    [Tooltip("กำหนดว่าข้อนี้ผู้เล่นต้องหลับตาหรือลืมตากดตอบ")]
+    public RequiredEyeState requiredEyeState = RequiredEyeState.Either;
 }
+
 
 public class QuizClassroomManager : MonoBehaviour
 {
     public static QuizClassroomManager Instance { get; private set; }
 
-    [Header("📝 Question Data (6 ข้อ)")]
+    [Header("📝 Question Data (6 ข้อ) ✨")]
     [SerializeField] private List<QuestionData> questions = new List<QuestionData>();
 
     [Header("🖥️ World Space 3D Text References")]
@@ -38,7 +53,7 @@ public class QuizClassroomManager : MonoBehaviour
     [Header("⚠️ Penalty Objects (ตอบผิดเปิดออปเจกต์สะสม)")]
     [SerializeField] private GameObject[] penaltyObjects = new GameObject[3];
 
-    [Header("🚪 Door Settings (ใช้งานร่วมกับ LockedHingeDoor) ✨")]
+    [Header("🚪 Door Settings (ใช้งานร่วมกับ LockedHingeDoor)")]
     [Tooltip("ประตูทางเข้า (จะสั่ง LockDoor เมื่อผู้เล่นเดินเข้าโซน)")]
     [SerializeField] private LockedHingeDoor entranceDoor;
 
@@ -48,11 +63,11 @@ public class QuizClassroomManager : MonoBehaviour
     [Tooltip("ติ๊กถูก: สั่งดึงประตูทางเข้ากลับมาปิดสนิทก่อนล็อก")]
     [SerializeField] private bool closeEntranceDoorBeforeLock = true;
 
-    [Header("😱 Jumpscare & UI Settings")]
+    [Header("😱 Jumpscare & UI Settings ✨")]
     [SerializeField] private CanvasGroup textOverlayCanvasGroup;
     [SerializeField] private TMP_Text jumpscareWarningText;
-    [TextArea(2, 3)]
-    [SerializeField] private string lastWordsMessage = "คุณตอบผิดครบกำหนดแล้ว...";
+    [SerializeField] private LocalizedString lastWordsMessage;
+    [SerializeField] private LocalizedString passedMessage;
     [SerializeField] private float textDisplayDuration = 2.5f;
 
     [Header("👻 Jumpscare Data")]
@@ -77,6 +92,17 @@ public class QuizClassroomManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
+    private void OnEnable()
+    {
+        // ✨ ดักจับ Event เมื่อผู้เล่นสลับภาษาในเกม ให้รีเฟรชข้อความบนกระดาน/กระดาษทันที
+        LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
+    }
+
+    private void OnDisable()
+    {
+        LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
+    }
+
     private void Start()
     {
         if (eyeManager == null)
@@ -84,7 +110,6 @@ public class QuizClassroomManager : MonoBehaviour
             eyeManager = FindAnyObjectByType<EyeToggleWorldManager>();
         }
 
-        // 1. ซ่อน Penalty Objects ทั้งหมดตอนเริ่ม
         ClearPenaltyObjects();
 
         if (textOverlayCanvasGroup != null)
@@ -92,13 +117,11 @@ public class QuizClassroomManager : MonoBehaviour
             textOverlayCanvasGroup.alpha = 0f;
         }
 
-        // 2. สั่งให้ประตูทางออกไปห้องถัดไปอยู่ในสถานะล็อกไว้ก่อนตั้งแต่เริ่มเกม
         if (exitDoor != null)
         {
             exitDoor.LockDoor(false);
         }
 
-        // 3. ล้างข้อความบนกระดาน/กระดาษทิ้งไว้ก่อน
         ClearAllTexts();
     }
 
@@ -114,16 +137,21 @@ public class QuizClassroomManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// เรียกทำงานเมื่อผู้เล่นเดินเข้า Trigger Zone (ล็อกประตูทางเข้า + เริ่มพัซเซิล)
-    /// </summary>
+    private void OnLocaleChanged(UnityEngine.Localization.Locale newLocale)
+    {
+        // เมื่อมีการเปลี่ยนภาษา ให้โหลดข้อความของข้อปัจจุบันใหม่
+        if (isQuizActive && currentQuestionIndex < questions.Count)
+        {
+            LoadQuestion(currentQuestionIndex);
+        }
+    }
+
     public void ActivateQuizZone()
     {
         if (isQuizActive) return;
 
         isQuizActive = true;
 
-        // สั่งล็อกประตูทางเข้าทันที
         if (entranceDoor != null)
         {
             entranceDoor.LockDoor(closeEntranceDoorBeforeLock);
@@ -133,18 +161,13 @@ public class QuizClassroomManager : MonoBehaviour
         Debug.Log("🚪 [QuizClassroomManager] ผู้เล่นเข้าโซน: ล็อกประตูทางเข้าและเริ่มคำถาม");
     }
 
-    /// <summary>
-    /// ปลดล็อกประตูทั้ง 2 บานเมื่อตอบคำถามครบทุกข้อ
-    /// </summary>
     private void UnlockAllDoors()
     {
-        // 1. ปลดล็อกประตูทางเข้า (ประตูบานที่ 1)
         if (entranceDoor != null)
         {
             entranceDoor.UnlockDoor();
         }
 
-        // 2. ปลดล็อกประตูออกไปห้องถัดไป (ประตูบานที่ 2)
         if (exitDoor != null)
         {
             exitDoor.UnlockDoor();
@@ -172,7 +195,6 @@ public class QuizClassroomManager : MonoBehaviour
 
     private void LoadQuestion(int index)
     {
-        // เมื่อตอบคำถามครบทุกข้อแล้ว
         if (index >= questions.Count)
         {
             OnQuizCompleted();
@@ -181,26 +203,27 @@ public class QuizClassroomManager : MonoBehaviour
 
         QuestionData q = questions[index];
 
-        if (boardText != null)
-            boardText.text = q.questionText;
+        // ✨ ดึงข้อความแปลตามภาษาปัจจุบันแสดงบนกระดานดำ
+        if (boardText != null && q.questionText != null)
+        {
+            boardText.text = q.questionText.GetLocalizedString();
+        }
 
         bool isClosed = (eyeManager != null) && eyeManager.IsEyesClosed;
         UpdatePaperTexts(isClosed);
     }
 
-    /// <summary>
-    /// ทำงานเมื่อเล่นจบ/ตอบคำถามครบทุกข้อแล้ว
-    /// </summary>
     private void OnQuizCompleted()
     {
         isQuizActive = false;
         ClearAllTexts();
-        ClearPenaltyObjects(); // ✨ ปิด/ซ่อน Penalty Objects ทั้งหมดที่เคยเปิดขึ้นมา
-        UnlockAllDoors();      // ✨ ปลดล็อกประตูทั้ง 2 บานผ่าน LockedHingeDoor
+        ClearPenaltyObjects();
+        UnlockAllDoors();
 
         if (boardText != null)
         {
-            boardText.text = "PASSED"; // ข้อความขึ้นบอกว่าผ่านแล้ว
+            // ✨ แสดงข้อความเมื่อผ่านตามภาษาที่เลือก
+            boardText.text = (passedMessage != null && !passedMessage.IsEmpty) ? passedMessage.GetLocalizedString() : "PASSED";
         }
     }
 
@@ -209,13 +232,14 @@ public class QuizClassroomManager : MonoBehaviour
         if (!isQuizActive || currentQuestionIndex >= questions.Count) return;
 
         QuestionData q = questions[currentQuestionIndex];
-        string[] currentAnswers = isEyesClosed ? q.closedEyeAnswers : q.normalAnswers;
+        LocalizedString[] currentAnswers = isEyesClosed ? q.closedEyeAnswers : q.normalAnswers;
 
         for (int i = 0; i < paperTexts.Length; i++)
         {
-            if (paperTexts[i] != null && i < currentAnswers.Length)
+            if (paperTexts[i] != null && i < currentAnswers.Length && currentAnswers[i] != null)
             {
-                paperTexts[i].text = currentAnswers[i];
+                // ✨ ดึงคำตอบแปลตามภาษาปัจจุบันลงบนกระดาษ
+                paperTexts[i].text = currentAnswers[i].GetLocalizedString();
             }
         }
     }
@@ -232,7 +256,22 @@ public class QuizClassroomManager : MonoBehaviour
         isProcessingAnswer = true;
         QuestionData q = questions[currentQuestionIndex];
 
-        bool isCorrect = (selectedIndex == q.correctAnswerIndex);
+        // ✨ 1. เช็กสถานะตาปัจจุบันของผู้เล่น
+        bool isClosed = (eyeManager != null) && eyeManager.IsEyesClosed;
+
+        // ✨ 2. ตรวจสอบว่าสถานะตาตรงตามเงื่อนไขโจทย์หรือไม่
+        bool isEyeStateCorrect = true;
+        if (q.requiredEyeState == RequiredEyeState.MustBeClosed && !isClosed)
+        {
+            isEyeStateCorrect = false; // ต้องหลับตา แต่ผู้เล่นดันลืมตากด
+        }
+        else if (q.requiredEyeState == RequiredEyeState.MustBeOpen && isClosed)
+        {
+            isEyeStateCorrect = false; // ต้องลืมตา แต่ผู้เล่นดันหลับตากด
+        }
+
+        // ✨ 3. คำตอบจะถูกต้องต่อเมื่อ เลือกกระดาษถูกแผ่น AND สถานะตาถูกต้อง
+        bool isCorrect = (selectedIndex == q.correctAnswerIndex) && isEyeStateCorrect;
 
         if (isCorrect)
         {
@@ -242,7 +281,6 @@ public class QuizClassroomManager : MonoBehaviour
         {
             wrongCount++;
 
-            // เปิด Penalty Object สะสมตามจำนวนครั้งที่ผิด
             if (wrongCount <= penaltyObjects.Length && penaltyObjects[wrongCount - 1] != null)
             {
                 penaltyObjects[wrongCount - 1].SetActive(true);
@@ -250,7 +288,6 @@ public class QuizClassroomManager : MonoBehaviour
 
             yield return StartCoroutine(FlickerLightsRoutine());
 
-            // ตอบผิดครั้งที่ 4 เข้าสู่ Jumpscare
             if (wrongCount >= 4)
             {
                 yield return StartCoroutine(TriggerJumpscareSequence());
@@ -284,9 +321,10 @@ public class QuizClassroomManager : MonoBehaviour
 
     private IEnumerator TriggerJumpscareSequence()
     {
-        if (jumpscareWarningText != null)
+        // ✨ ดึงข้อความแจ้งเตือนแปลภาษาตอนตอบผิดครบตามกำหนด
+        if (jumpscareWarningText != null && lastWordsMessage != null)
         {
-            jumpscareWarningText.text = lastWordsMessage;
+            jumpscareWarningText.text = lastWordsMessage.GetLocalizedString();
         }
 
         if (textOverlayCanvasGroup != null)

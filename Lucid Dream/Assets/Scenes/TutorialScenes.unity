@@ -17633,6 +17633,7 @@ MonoBehaviour:
   squeezeMoveClips: []
   wallGrabEnterClip: {fileID: 0}
   wallShimmyClips: []
+  fallStunClip: {fileID: 0}
   baseStepInterval: 0.5
   volumeWalk: 0.6
   volumeRun: 1
@@ -17641,6 +17642,7 @@ MonoBehaviour:
   volumeSqueezeMove: 0.4
   volumeWallGrabEnter: 0.8
   volumeWallShimmy: 0.5
+  volumeFallStun: 1
   maxStamina: 100
   staminaDrainRate: 25
   staminaRegenRate: 15
@@ -17668,6 +17670,9 @@ MonoBehaviour:
   headBobSmoothing: 4
   enableCameraSway: 1
   swayAmount: 0.05
+  sprintSpriteRenderer: {fileID: 0}
+  sprintFrames: []
+  sprintAnimFPS: 12
 --- !u!54 &1827706732
 Rigidbody:
   m_ObjectHideFlags: 0

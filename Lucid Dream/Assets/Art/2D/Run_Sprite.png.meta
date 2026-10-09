@@ -189,7 +189,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 2
+        y: 0
         width: 778
         height: 179
       alignment: 0
@@ -210,8 +210,8 @@ TextureImporter:
       name: Run_Sprite_5
       rect:
         serializedVersion: 2
-        x: 778
-        y: 2
+        x: 779
+        y: 0
         width: 778
         height: 179
       alignment: 0
