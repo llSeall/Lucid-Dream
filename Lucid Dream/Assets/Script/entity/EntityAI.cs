@@ -313,10 +313,12 @@ public class EntityAI : MonoBehaviour
             );
         }
     }
-
     void HandleInvestigate(bool canSee)
     {
         agent.speed = investSpeed;
+
+        // ✨ ปลดล็อกการเดินของ NavMeshAgent ป้องกันผีติดล็อกหยุดเดิน
+        if (agent.isStopped) agent.isStopped = false;
 
         if (canSee)
         {
@@ -324,42 +326,52 @@ public class EntityAI : MonoBehaviour
             return;
         }
 
-        if (!hasReachedLastKnownPos)
+        // ✨ ตรวจสอบว่าคำนวณเส้นทางเสร็จแล้ว (pathPending == false) และเดินถึงจุดหมายหรือยัง
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            if (!hasReachedLastKnownPos)
             {
+                // เมื่อเดินมาถึงจุดสุดท้ายที่เคยเห็นผู้เล่น ให้เริ่มสุ่มเดินสำรวจทันที
                 hasReachedLastKnownPos = true;
                 SetNextWanderDestination();
             }
-        }
-        else
-        {
-            searchTimer -= Time.deltaTime;
-
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            else
             {
-                SetNextWanderDestination();
-            }
+                // นับเวลาถอยหลังการเดินสำรวจ
+                searchTimer -= Time.deltaTime;
 
-            if (searchTimer <= 0f)
-            {
-                currentState = EntityState.Despawn;
+                // หากสุ่มเดินถึงจุดสุ่มเดิมแล้ว ให้สุ่มจุดใหม่เดินไปเรื่อยๆ จนกว่าจะหมดเวลา
+                if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
+                {
+                    SetNextWanderDestination();
+                }
+
+                if (searchTimer <= 0f)
+                {
+                    currentState = EntityState.Despawn;
+                }
             }
         }
     }
 
     void SetNextWanderDestination()
     {
+        // ✨ เปลี่ยนไปสุ่มจุดรอบๆ ตัวผีเอง (transform.position) แทนพิกัดเก่า
         Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
-        randomDirection += lastKnownPosition;
+        randomDirection += transform.position;
 
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(randomDirection, out hit, wanderRadius, NavMesh.AllAreas))
+        // ✨ ขยายระยะตรวจจับ NavMesh (wanderRadius * 2f) เพื่อป้องกันกรณีสุ่มไม่เจอพื้นที่เดิน
+        if (NavMesh.SamplePosition(randomDirection, out hit, wanderRadius * 2f, NavMesh.AllAreas))
         {
             agent.SetDestination(hit.position);
         }
+        else
+        {
+            // Fallback: หากสุ่มไม่เจอจริงๆ ให้ผีเดินกลับไปจุดที่มันยืนอยู่เพื่อไม่ให้ค้าง
+            agent.SetDestination(transform.position);
+        }
     }
-
     void HandleDespawn()
     {
         if (GhostStaticEffectUI.Instance != null)
