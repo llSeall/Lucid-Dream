@@ -176,8 +176,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   isPlayerHiding: 0
-  chaseSpeed: 4
-  investSpeed: 3
+  chaseSpeed: 5
+  investSpeed: 4
   sightDistance: 30
   investigateDuration: 10
   wanderRadius: 15
