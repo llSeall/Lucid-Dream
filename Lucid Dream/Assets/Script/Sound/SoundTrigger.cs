@@ -2,13 +2,16 @@ using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
-[RequireComponent(typeof(AudioSource))]
 public class SoundTrigger : MonoBehaviour
 {
     [Header("Audio Settings")]
     public AudioClip soundClip;
     [Range(0f, 1f)]
     public float volume = 1.0f;
+
+    [Header("🎯 Sound Location Settings ✨")]
+    [Tooltip("ลาก AudioSource ของจุดที่ต้องการให้เสียงเกิดมาใส่ (หากเว้นว่างไว้ เสียงจะเกิดที่ตัวทริกเกอร์เอง)")]
+    public AudioSource targetAudioSource;
 
     [Header("Fade Settings ✨")]
     [Tooltip("ติ๊กถูกหากต้องการให้เสียงค่อยๆ เฟดดังขึ้นมาจาก 0")]
@@ -25,14 +28,30 @@ public class SoundTrigger : MonoBehaviour
     [Header("References")]
     public string playerTag = "Player";
 
-    private AudioSource audioSource;
+    private AudioSource activeAudioSource;
     private bool isCoolingDown = false;
     private bool hasTriggered = false;
 
     void Start()
     {
-        audioSource = GetComponent<AudioSource>();
-        audioSource.playOnAwake = false;
+        // หากมีการใส่ targetAudioSource ให้ใช้จุดนั้น หากไม่มีให้ใช้ AudioSource บนตัวเอง
+        if (targetAudioSource != null)
+        {
+            activeAudioSource = targetAudioSource;
+        }
+        else
+        {
+            activeAudioSource = GetComponent<AudioSource>();
+            if (activeAudioSource == null)
+            {
+                activeAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+
+        if (activeAudioSource != null)
+        {
+            activeAudioSource.playOnAwake = false;
+        }
 
         Collider col = GetComponent<Collider>();
         if (col != null) col.isTrigger = true;
@@ -43,7 +62,7 @@ public class SoundTrigger : MonoBehaviour
         if (hasTriggered && oneTimeUse) return;
         if (isCoolingDown) return;
 
-        if (other.CompareTag(playerTag))
+        if (other.CompareTag(playerTag) || other.transform.root.CompareTag(playerTag))
         {
             PlaySound();
         }
@@ -51,20 +70,18 @@ public class SoundTrigger : MonoBehaviour
 
     void PlaySound()
     {
-        if (soundClip != null)
+        if (soundClip != null && activeAudioSource != null)
         {
             if (useFadeIn)
             {
-                // หากเลือกใช้ Fade In ให้เล่นเสียงผ่าน clip หลักของ AudioSource และเริ่มเล่น Coroutine ค่อยๆ เพิ่มระดับเสียง
-                audioSource.clip = soundClip;
-                audioSource.volume = 0f;
-                audioSource.Play();
+                activeAudioSource.clip = soundClip;
+                activeAudioSource.volume = 0f;
+                activeAudioSource.Play();
                 StartCoroutine(FadeInRoutine());
             }
             else
             {
-                // เล่นแบบปกติ (ไม่มีการเฟด)
-                audioSource.PlayOneShot(soundClip, volume);
+                activeAudioSource.PlayOneShot(soundClip, volume);
             }
         }
 
@@ -72,8 +89,10 @@ public class SoundTrigger : MonoBehaviour
 
         if (oneTimeUse)
         {
-            // ปิด Collider ทันทีไม่ให้เหยียบซ้ำ แล้วลบวัตถุทิ้งหลังจากเสียงเล่นจบ
-            GetComponent<Collider>().enabled = false;
+            // ปิด Collider ทันทีไม่ให้เหยียบซ้ำ
+            Collider col = GetComponent<Collider>();
+            if (col != null) col.enabled = false;
+
             float soundDuration = soundClip != null ? soundClip.length : 1.0f;
             Destroy(gameObject, soundDuration);
         }
@@ -90,12 +109,11 @@ public class SoundTrigger : MonoBehaviour
         while (timer < fadeInDuration)
         {
             timer += Time.deltaTime;
-            // ค่อยๆ เพิ่มระดับเสียงจาก 0f ไปจนถึงค่า volume ที่ตั้งไว้
-            audioSource.volume = Mathf.Lerp(0f, volume, timer / fadeInDuration);
+            activeAudioSource.volume = Mathf.Lerp(0f, volume, timer / fadeInDuration);
             yield return null;
         }
 
-        audioSource.volume = volume;
+        activeAudioSource.volume = volume;
     }
 
     private IEnumerator CooldownRoutine()
@@ -107,12 +125,22 @@ public class SoundTrigger : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = new Color(0f, 0.8f, 1f, 0.3f); // สีฟ้าโปร่งแสงใน Scene View
+        // วาดกล่องทริกเกอร์สีฟ้า
+        Gizmos.color = new Color(0f, 0.8f, 1f, 0.3f);
         Collider col = GetComponent<Collider>();
         if (col is BoxCollider box)
         {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.DrawCube(box.center, box.size);
+        }
+
+        // วาดเส้นสีเหลืองเชื่อมไปยังจุดกำเนิดเสียงใน Scene View
+        if (targetAudioSource != null)
+        {
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, targetAudioSource.transform.position);
+            Gizmos.DrawWireSphere(targetAudioSource.transform.position, 0.4f);
         }
     }
 }
