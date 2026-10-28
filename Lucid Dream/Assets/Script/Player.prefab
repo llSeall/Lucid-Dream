@@ -560,7 +560,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2370224047580390765}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: a7b4504a2a5033c46a3fe45ce77d95db, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -733,6 +733,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Script_Outline
   maxRaycastDistance: 10
+  sphereRadius: 0.15
   interactableLayer:
     serializedVersion: 2
     m_Bits: 4294967295

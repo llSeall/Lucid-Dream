@@ -14302,6 +14302,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 8300000, guid: 87ef0e542aa2ec04a9555a5634b6e516, type: 3}
   volume: 1
+  targetAudioSource: {fileID: 0}
   useFadeIn: 0
   fadeInDuration: 1
   oneTimeUse: 1
@@ -26733,6 +26734,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 547373285434030787, guid: dac8c35310f36924388264dd416d5c45, type: 3}
+      propertyPath: near clip plane
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 547373285434030787, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_BackGroundColor.b
       value: 0
       objectReference: {fileID: 0}
@@ -26998,7 +27003,7 @@ PrefabInstance:
       objectReference: {fileID: 28130837}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.33
+      value: 6.645
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.y
@@ -27006,7 +27011,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -183.39
+      value: -187.006
       objectReference: {fileID: 0}
     - target: {fileID: 6194092327478373680, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_LocalRotation.w
@@ -27039,6 +27044,10 @@ PrefabInstance:
     - target: {fileID: 6918588014186486201, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7222615639082118303, guid: dac8c35310f36924388264dd416d5c45, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8188827822009602205, guid: dac8c35310f36924388264dd416d5c45, type: 3}
       propertyPath: m_Enabled
@@ -45497,6 +45506,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 8300000, guid: 871d2ed7c5fc94844a36573493f9ce16, type: 3}
   volume: 1
+  targetAudioSource: {fileID: 0}
   useFadeIn: 0
   fadeInDuration: 1
   oneTimeUse: 1
@@ -46911,6 +46921,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 0}
   volume: 1
+  targetAudioSource: {fileID: 0}
   useFadeIn: 0
   fadeInDuration: 1
   oneTimeUse: 1
@@ -67879,6 +67890,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 8300000, guid: fa8912bf373f4fd498c0406e6918b513, type: 3}
   volume: 1
+  targetAudioSource: {fileID: 0}
   useFadeIn: 1
   fadeInDuration: 2
   oneTimeUse: 1
@@ -70520,6 +70532,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 0}
   volume: 1
+  targetAudioSource: {fileID: 0}
   useFadeIn: 0
   fadeInDuration: 1
   oneTimeUse: 1
@@ -85742,6 +85755,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 0}
   volume: 1
+  targetAudioSource: {fileID: 0}
   useFadeIn: 0
   fadeInDuration: 1
   oneTimeUse: 1
@@ -86936,6 +86950,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1056674530}
     m_Modifications:
+    - target: {fileID: 829770793059560515, guid: 639d753a23e139b45969a78c830c89c0, type: 3}
+      propertyPath: m_Size.y
+      value: 0.011979538
+      objectReference: {fileID: 0}
+    - target: {fileID: 829770793059560515, guid: 639d753a23e139b45969a78c830c89c0, type: 3}
+      propertyPath: m_Size.z
+      value: 0.011600189
+      objectReference: {fileID: 0}
+    - target: {fileID: 829770793059560515, guid: 639d753a23e139b45969a78c830c89c0, type: 3}
+      propertyPath: m_Center.x
+      value: -0.026585236
+      objectReference: {fileID: 0}
+    - target: {fileID: 829770793059560515, guid: 639d753a23e139b45969a78c830c89c0, type: 3}
+      propertyPath: m_Center.y
+      value: 0.0000001207879
+      objectReference: {fileID: 0}
+    - target: {fileID: 829770793059560515, guid: 639d753a23e139b45969a78c830c89c0, type: 3}
+      propertyPath: m_Center.z
+      value: -0.016086437
+      objectReference: {fileID: 0}
     - target: {fileID: 5820319552674885640, guid: 639d753a23e139b45969a78c830c89c0, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.8626204
@@ -88583,6 +88617,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
+      propertyPath: outlineMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
       propertyPath: outlineWidth
       value: 10
       objectReference: {fileID: 0}
@@ -88737,8 +88775,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.47947344, y: 1.1436718, z: 0.8921551}
-  m_Center: {x: 0.014218362, y: -0.09182159, z: -0.11458128}
+  m_Size: {x: 0.31628478, y: 0.3273224, z: 0.37388054}
+  m_Center: {x: -0.012913928, y: 0.0063252137, z: 0.14455618}
 --- !u!114 &1760264680 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}
@@ -101495,8 +101533,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.37171072, y: 0.59620506, z: 0.5838936}
-  m_Center: {x: 0.013266514, y: -0.02676126, z: -0.14309318}
+  m_Size: {x: 0.37171072, y: 0.5428701, z: 0.47365323}
+  m_Center: {x: 0.013266513, y: 0.054994266, z: -0.00030010124}
 --- !u!114 &2020257590 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7590113415564294601, guid: 4abfca72739982f4491af070cfbdc09f, type: 3}

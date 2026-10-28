@@ -2,8 +2,10 @@ using UnityEngine;
 
 public class Script_Outline : MonoBehaviour
 {
-    [Header("Raycast Settings")]
+    [Header("Raycast & SphereCast Settings")]
     public float maxRaycastDistance = 10f;
+    [Tooltip("รัศมีทรงกลมตรวจจับวัตถุชิ้นเล็ก (แนะนำ 0.1 ถึง 0.25)")]
+    public float sphereRadius = 0.15f;
     public LayerMask interactableLayer = ~0;
 
     private KeyPickup currentKey;
@@ -23,9 +25,12 @@ public class Script_Outline : MonoBehaviour
 
     void Update()
     {
+        if (Camera.main == null) return;
+
         Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
 
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactableLayer))
+        // ✨ เปลี่ยนเป็น SphereCast เพื่อขยายรัศมีตรวจจับวัตถุชิ้นเล็กอย่างกุญแจ
+        if (Physics.SphereCast(ray, sphereRadius, out RaycastHit hit, maxRaycastDistance, interactableLayer))
         {
             KeyPickup key = hit.collider.GetComponentInParent<KeyPickup>();
             EntityTriggerItem entityItem = hit.collider.GetComponentInParent<EntityTriggerItem>();
@@ -102,12 +107,10 @@ public class Script_Outline : MonoBehaviour
                         Clear();
                         currentPaper = paper;
                         currentPaper.SetHighlight(true);
-                        Debug.Log($"👁️ [Script_Outline] ยิง Raycast โดนกระดาษแผ่นที่ {paper.paperIndex} -> เปิด Outline");
                     }
 
                     if (Input.GetKeyDown(KeyCode.E))
                     {
-                        Debug.Log($"⌨️ [Script_Outline] กดปุ่ม E ใส่กระดาษแผ่นที่ {currentPaper.paperIndex}");
                         AnswerPaper targetPaper = currentPaper;
                         Clear();
                         if (targetPaper != null)

@@ -317,7 +317,7 @@ public class EntityAI : MonoBehaviour
     {
         agent.speed = investSpeed;
 
-        // ✨ ปลดล็อกการเดินของ NavMeshAgent ป้องกันผีติดล็อกหยุดเดิน
+        // ปลดล็อกการเดินของ NavMeshAgent ป้องกันผีติดล็อกหยุดเดิน
         if (agent.isStopped) agent.isStopped = false;
 
         if (canSee)
@@ -326,30 +326,31 @@ public class EntityAI : MonoBehaviour
             return;
         }
 
-        // ✨ ตรวจสอบว่าคำนวณเส้นทางเสร็จแล้ว (pathPending == false) และเดินถึงจุดหมายหรือยัง
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        // 1. กรณีผีกำลังเดินไปยังจุดสุดท้ายที่เคยเห็นผู้เล่น (lastKnownPosition)
+        if (!hasReachedLastKnownPos)
         {
-            if (!hasReachedLastKnownPos)
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
             {
-                // เมื่อเดินมาถึงจุดสุดท้ายที่เคยเห็นผู้เล่น ให้เริ่มสุ่มเดินสำรวจทันที
                 hasReachedLastKnownPos = true;
                 SetNextWanderDestination();
             }
-            else
+        }
+        // 2. เมื่อเดินถึงจุดสุดท้ายแล้ว และเริ่มสุ่มเดินสำรวจในพื้นที่
+        else
+        {
+            // ✨ [แก้ไขจุดนี้] นับเวลาถอยหลังการสำรวจทุกเฟรม (นับตลอดเวลาไม่ว่าผีกำลังก้าวเดินหรือยืน)
+            searchTimer -= Time.deltaTime;
+
+            // หากเดินถึงจุดสุ่มปัจจุบันแล้ว ให้สั่งสุ่มจุดใหม่เพื่อเดินต่อ
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
             {
-                // นับเวลาถอยหลังการเดินสำรวจ
-                searchTimer -= Time.deltaTime;
+                SetNextWanderDestination();
+            }
 
-                // หากสุ่มเดินถึงจุดสุ่มเดิมแล้ว ให้สุ่มจุดใหม่เดินไปเรื่อยๆ จนกว่าจะหมดเวลา
-                if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
-                {
-                    SetNextWanderDestination();
-                }
-
-                if (searchTimer <= 0f)
-                {
-                    currentState = EntityState.Despawn;
-                }
+            // หมดเวลาสำรวจ (investigateDuration) -> สลับ State เป็น Despawn ทันที
+            if (searchTimer <= 0f)
+            {
+                currentState = EntityState.Despawn;
             }
         }
     }

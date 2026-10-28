@@ -2007,6 +2007,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 8300000, guid: ed45d9f2b4361c74781ee5783f530dba, type: 3}
   volume: 0.5
+  targetAudioSource: {fileID: 0}
   useFadeIn: 1
   fadeInDuration: 4
   oneTimeUse: 1
@@ -3578,6 +3579,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundTrigger
   soundClip: {fileID: 8300000, guid: 6c14eb122868d9b4385bf1130639f4db, type: 3}
   volume: 0.5
+  targetAudioSource: {fileID: 0}
   useFadeIn: 1
   fadeInDuration: 3
   oneTimeUse: 1
@@ -6113,8 +6115,8 @@ Terrain:
   m_TreeBillboardDistance: 50
   m_TreeCrossFadeLength: 5
   m_TreeMaximumFullLODCount: 50
-  m_DetailObjectDistance: 80
-  m_DetailObjectDensity: 1
+  m_DetailObjectDistance: 50
+  m_DetailObjectDensity: 0.7
   m_HeightmapPixelError: 5
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
@@ -31466,6 +31468,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Script_Outline
   maxRaycastDistance: 10
+  sphereRadius: 0.15
   interactableLayer:
     serializedVersion: 2
     m_Bits: 4294967295
