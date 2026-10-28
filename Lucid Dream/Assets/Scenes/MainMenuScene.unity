@@ -8929,10 +8929,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -18576,6 +18576,8 @@ MonoBehaviour:
   resolutionDropdown: {fileID: 0}
   sensitivitySlider: {fileID: 1301584231}
   fovSlider: {fileID: 1291773589}
+  minFOV: 60
+  maxFOV: 110
   languageDropdown: {fileID: 1056537816}
 --- !u!114 &1672682070
 MonoBehaviour:
@@ -18677,6 +18679,8 @@ MonoBehaviour:
   resolutionDropdown: {fileID: 1571130380}
   sensitivitySlider: {fileID: 1855838496}
   fovSlider: {fileID: 766066188}
+  minFOV: 60
+  maxFOV: 110
   languageDropdown: {fileID: 645182036}
 --- !u!114 &1686310070
 MonoBehaviour:
@@ -21196,6 +21200,8 @@ MonoBehaviour:
   resolutionDropdown: {fileID: 0}
   sensitivitySlider: {fileID: 74539494}
   fovSlider: {fileID: 1479714692}
+  minFOV: 60
+  maxFOV: 110
   languageDropdown: {fileID: 1658123434}
 --- !u!114 &1927919858
 MonoBehaviour:
