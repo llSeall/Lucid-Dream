@@ -46,6 +46,7 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private LocalizedString deleteConfirmLocalizedString;
 
     private MenuMode currentMode;
+    private MenuMode previousMode = MenuMode.NewGame; // ✨ เพิ่มตัวแปรจำโหมดก่อนหน้า
     private int selectedSlotID;
 
     private void OnEnable()
@@ -65,6 +66,11 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start()
     {
+        // ✨ บังคับให้เวลาใน Main Menu เดินตามปกติเสมอ (อนิเมชัน/ฉากหลังไม่หยุดทำงาน)
+        Time.timeScale = 1f;
+        // ✨ แสดงเคอร์เซอร์เมาส์และปลดล็อกเมาส์ให้เลื่อนได้อย่างอิสระ
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         ShowMainMenu();
         CheckAndShowDemoEndPopup();
     }
@@ -80,11 +86,12 @@ public class MainMenuManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ✨ สั่งเปิด Pop-up Demo พร้อมข้อความตามเหตุการณ์
-    /// </summary>
     public void ShowDemoPopup(bool isFromClearedGame)
     {
+        // ✨ บังคับเวลาเดินปกติ ไม่สั่งหยุดเกม และเปิดเมาส์ให้คลิกปุ่มได้
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         if (demoEndPanel != null)
         {
             demoEndPanel.SetActive(true);
@@ -120,6 +127,7 @@ public class MainMenuManager : MonoBehaviour
     public void OnClickNewGameMode()
     {
         currentMode = MenuMode.NewGame;
+        previousMode = MenuMode.NewGame; // ✨ จำโหมด New Game
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
         if (slotSelectionPanel != null) slotSelectionPanel.SetActive(true);
         RefreshSlotUI();
@@ -128,6 +136,7 @@ public class MainMenuManager : MonoBehaviour
     public void OnClickContinueMode()
     {
         currentMode = MenuMode.Continue;
+        previousMode = MenuMode.Continue; // ✨ จำโหมด Continue
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
         if (slotSelectionPanel != null) slotSelectionPanel.SetActive(true);
         RefreshSlotUI();
@@ -189,6 +198,7 @@ public class MainMenuManager : MonoBehaviour
         string path = SaveManager.Instance.GetSaveFilePath(slotID);
         bool saveExists = File.Exists(path);
 
+        // 🟢 โหมดเริ่มเกมใหม่ (New Game)
         if (currentMode == MenuMode.NewGame)
         {
             if (saveExists)
@@ -205,11 +215,11 @@ public class MainMenuManager : MonoBehaviour
                 ExecuteStartNewGame(slotID);
             }
         }
+        // 🔵 โหมดเล่นต่อ (Continue)
         else if (currentMode == MenuMode.Continue)
         {
             if (saveExists)
             {
-                // 🛑 ตรวจสอบก่อนว่าเซฟนี้เล่นจบ Demo ไปแล้วหรือไม่ (currentDay >= 2 และเปิด isDemoMode)
                 bool isDemo = GameManager.Instance != null ? GameManager.Instance.isDemoMode : true;
                 if (isDemo && IsSlotDemoCompleted(slotID))
                 {
@@ -219,12 +229,14 @@ public class MainMenuManager : MonoBehaviour
 
                 ExecuteLoadGame(slotID);
             }
+            else
+            {
+                // ✨ หากเป็นเซฟว่าง (เพิ่งกดลบมาหรือยังไม่มีเซฟ) ให้เริ่มเกมใหม่บนสล็อตนี้ทันที
+                ExecuteStartNewGame(slotID);
+            }
         }
     }
 
-    /// <summary>
-    /// ✨ เช็กว่าข้อมูลในเซฟสล็อตนั้นเป็น Day 2 ขึ้นไปหรือไม่
-    /// </summary>
     private bool IsSlotDemoCompleted(int slotID)
     {
         string path = SaveManager.Instance.GetSaveFilePath(slotID);
@@ -251,6 +263,12 @@ public class MainMenuManager : MonoBehaviour
 
         if (File.Exists(path))
         {
+            // ✨ จำโหมดเดิมไว้ก่อนเข้าโหมดลบ
+            if (currentMode != MenuMode.Delete)
+            {
+                previousMode = currentMode;
+            }
+
             currentMode = MenuMode.Delete;
             confirmationMessageText.text = GetLocalizedString(
                 deleteConfirmLocalizedString,
@@ -274,12 +292,21 @@ public class MainMenuManager : MonoBehaviour
                 SaveManager.Instance.ClearSave(selectedSlotID);
                 RefreshSlotUI();
             }
+
+            // ✨ ลบเสร็จแล้ว คืนค่าโหมดกลับเป็นโหมดเดิมทันที (ไม่ต้องกด Back ออกไปใหม่)
+            currentMode = (previousMode != MenuMode.Delete) ? previousMode : MenuMode.NewGame;
         }
     }
 
     public void OnConfirmNo()
     {
         if (confirmationPanel != null) confirmationPanel.SetActive(false);
+
+        // ✨ ยกเลิกลบ ให้คืนค่าโหมดเดิม
+        if (currentMode == MenuMode.Delete)
+        {
+            currentMode = (previousMode != MenuMode.Delete) ? previousMode : MenuMode.NewGame;
+        }
     }
 
     public void OnClickBackToMainMenu()
@@ -303,12 +330,7 @@ public class MainMenuManager : MonoBehaviour
     {
         if (SaveManager.Instance == null) return;
 
-        SaveManager.Instance.currentSlot = slotID;
-        SaveManager.Instance.ClearSave(slotID);
-
-        SaveManager.Instance.gameData.currentDay = 0;
-        SaveManager.Instance.gameData.currentState = GameState.Nighttime;
-        SaveManager.Instance.SaveGame();
+        SaveManager.Instance.PrepareNewGame(slotID);
 
         if (GameManager.Instance != null)
         {

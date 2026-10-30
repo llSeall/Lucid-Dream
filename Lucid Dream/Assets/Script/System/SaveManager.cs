@@ -62,6 +62,44 @@ public class SaveManager : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        // 🧪 ปุ่ม Debug F10: บังคับเซฟสล็อตปัจจุบันให้กลายเป็น Day 2 (จบ Demo) เพื่อทดสอบ
+        if (Input.GetKeyDown(KeyCode.F10))
+        {
+            Debug.Log($"<color=yellow><b>[DEBUG F10] บังคับเปลี่ยนสล็อต {currentSlot} เป็นจบ Demo (Day 2)!</b></color>");
+            SetSlotAsDemoCleared(currentSlot);
+        }
+    }
+
+    /// <summary>
+    /// ✨ ฟังก์ชัน Debug F10 สำหรับตั้งค่าเซฟให้จบ Demo สดๆ ร้อนๆ
+    /// </summary>
+    public void SetSlotAsDemoCleared(int slot)
+    {
+        currentSlot = slot;
+
+        // กำหนดค่าใน RAM
+        gameData.currentDay = 2;
+        gameData.currentState = GameState.Nighttime;
+
+        if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.currentDay = 2;
+            TimeManager.Instance.currentState = GameState.Nighttime;
+        }
+
+        // เขียนลงไฟล์เซฟ
+        string json = JsonUtility.ToJson(gameData, true);
+        File.WriteAllText(GetSaveFilePath(currentSlot), json);
+
+        // สั่งโหลดฉาก ซึ่ง GameManager จะตรวจพบ Demo Mode และส่งกลับ Main Menu
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.LoadSceneForState(GameState.Nighttime);
+        }
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (scene.name == "MainMenuScene") return;
@@ -73,6 +111,41 @@ public class SaveManager : MonoBehaviour
         {
             PlayerWakeUpEffect.Instance.PlayWakeUpAnimation();
         }
+    }
+
+    /// <summary>
+    /// ✨ ฟังก์ชันเตรียมข้อมูลสำหรับเริ่มเกมใหม่ (ล้างข้อมูลทั้งในเซฟและ RAM Manager ต่างๆ)
+    /// </summary>
+    public void PrepareNewGame(int slot)
+    {
+        currentSlot = slot;
+
+        // 1. ลบไฟล์เซฟเก่าในดิสก์
+        ClearSave(slot);
+
+        // 2. รีเซ็ตค่าใน Manager ต่างๆ ใน RAM ป้องกันข้อมูลค้างจากเกมรอบเดิม
+        if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.currentDay = 0;
+            TimeManager.Instance.currentState = GameState.Nighttime;
+        }
+
+        if (StressManager.Instance != null)
+        {
+            // รีเซ็ตค่าความเครียดใน RAM (ถ้ามีฟังก์ชัน ResetStress หรือปรับค่าตรงๆ)
+            gameData.currentStress = 0f;
+        }
+
+        // 3. ตั้งค่าโครงสร้างข้อมูลใหม่เริ่มต้นที่ Day 0
+        gameData = new GameData();
+        gameData.currentDay = 0;
+        gameData.currentState = GameState.Nighttime;
+
+        // 4. บันทึกไฟล์ใหม่ลงดิสก์
+        string json = JsonUtility.ToJson(gameData, true);
+        File.WriteAllText(GetSaveFilePath(currentSlot), json);
+
+        Debug.Log($"<color=green><b>[SaveManager] เตรียมข้อมูล New Game สล็อต {slot} เรียบร้อย! เริ่มต้นที่ Day 0</b></color>");
     }
 
     public void SaveGame()
@@ -119,7 +192,7 @@ public class SaveManager : MonoBehaviour
 
         if (!File.Exists(path))
         {
-            ResetData();
+            PrepareNewGame(slot);
             if (GameManager.Instance != null)
                 GameManager.Instance.LoadSceneForState(GameState.Nighttime);
             return;
@@ -135,12 +208,11 @@ public class SaveManager : MonoBehaviour
                 SetLanguageByCode(gameData.selectedLanguage);
             }
 
-            // ✨ ถ้าผู้เล่นกดโหลดเกมมาจาก Main Menu และอยู่ในช่วงกลางคืน ให้ย้อนกลับไปเริ่มตอนเช้า (Daytime) ของวันนั้นแทน
             GameState targetState = gameData.currentState;
             if (targetState == GameState.Nighttime && gameData.currentDay > 0)
             {
                 targetState = GameState.Daytime;
-                gameData.currentState = GameState.Daytime; // ปรับ State ใน RAM ให้ตรงกัน
+                gameData.currentState = GameState.Daytime;
             }
 
             if (GameManager.Instance != null)
