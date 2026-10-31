@@ -75082,11 +75082,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1479278699}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!108 &1482756273 stripped
-Light:
-  m_CorrespondingSourceObject: {fileID: 7082652587487628537, guid: 0f93478fc9e68c347ba520345c4572b9, type: 3}
-  m_PrefabInstance: {fileID: 2076460200}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1483137216
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -75160,11 +75155,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2343657010823422918, guid: 80e2409bf829f7844a93fe3903103ed0, type: 3}
   m_PrefabInstance: {fileID: 1483137216}
-  m_PrefabAsset: {fileID: 0}
---- !u!82 &1484237691 stripped
-AudioSource:
-  m_CorrespondingSourceObject: {fileID: 4627260815516652273, guid: 0f93478fc9e68c347ba520345c4572b9, type: 3}
-  m_PrefabInstance: {fileID: 2076460200}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1486797738
 GameObject:
@@ -76852,7 +76842,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -97159,11 +97149,6 @@ MonoBehaviour:
     bulbRenderer: {fileID: 1292234701}
     materialIndex: 0
     lightAudioSource: {fileID: 1090047034}
-  - name: Light3
-    lightComponent: {fileID: 1482756273}
-    bulbRenderer: {fileID: 1292234701}
-    materialIndex: 0
-    lightAudioSource: {fileID: 1484237691}
   - name: Light4
     lightComponent: {fileID: 96944432}
     bulbRenderer: {fileID: 1292234701}
