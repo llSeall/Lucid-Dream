@@ -14,7 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Localization-Assets-Thai (th)
   m_GUID: 302a885ce4a927440a8d07c2ee4f3dad
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 6f2b89e72777c814995beb354c97c3df
+    m_Address: TH
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-th
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 2edf38acec138ac4d881904a6296c02a, type: 2}
   m_SchemaSet:

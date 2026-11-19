@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(NavMeshAgent))]
 public class ZoneGhostAI : MonoBehaviour
 {
-    [Header("🏃 Speed & Movement Mode (ช่องเลือกเดิน/วิ่ง) ✨")]
+    [Header("🏃 Speed & Movement Mode (ช่องเลือกเดิน/วิ่ง)")]
     [Tooltip("ติ๊กถูก = ผีจะวิ่งเข้าหาผู้เล่น | เอาออก = ผีจะเดินเข้าหาผู้เล่น")]
     public bool isRunner = false;
     [Tooltip("ความเร็วในการเดินปกติ")]
@@ -14,22 +14,18 @@ public class ZoneGhostAI : MonoBehaviour
     [Tooltip("ความเร็วในการวิ่ง")]
     public float runSpeed = 5.5f;
 
-    [Header("🎯 Target & Detection Settings")]
+    [Header("🎯 Target & Catch Settings")]
     public Transform playerTransform;
-    public Camera playerCamera;
-    [Tooltip("LayerMask ของสิ่งกีดขวาง (เช่น Wall, Obstacle) เพื่อใช้ Raycast ตรวจว่ามีอะไรบังหน้าผีไหม")]
-    public LayerMask obstacleMask;
     [Tooltip("ระยะจับผู้เล่นเพื่อเริ่มเล่น Jumpscare")]
     public float catchDistance = 1.5f;
 
-    [Header("2.5D Sprite & Animation")]
+    [Header("🎞️ 2.5D Sprite & Freeze-Frame Animation")]
     public SpriteRenderer ghostSprite;
     public Animator ghostAnimator;
-    public string speedParamName = "Speed";
-    public string isMovingParamName = "IsMoving";
+    [Tooltip("ติ๊กถูกหากไฟล์ภาพ Sprite ต้นฉบับหันหน้าไปทางซ้าย")]
     public bool defaultFacingLeft = false;
 
-    [Header("😱 Jumpscare Settings ✨")]
+    [Header("😱 Jumpscare Settings")]
     public Sprite[] jumpscareFrames;
     public float jumpscareFrameRate = 12f;
     public AudioClip jumpscareScreamClip;
@@ -50,15 +46,23 @@ public class ZoneGhostAI : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
 
+        // ดูดตัวผีลงพื้น NavMesh อัตโนมัติหากวางลอยหรือเหลื่อมจากพื้นเล็กน้อย
+        if (agent != null && !agent.isOnNavMesh)
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 3.0f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                Debug.LogWarning($"[ZoneGhostAI] {gameObject.name} อยู่นอกพื้นที่ NavMesh ไกลเกินไป กรุณาเช็กการ Bake NavMesh!");
+            }
+        }
+
         if (playerTransform == null)
         {
             GameObject p = GameObject.FindWithTag("Player");
             if (p != null) playerTransform = p.transform;
-        }
-
-        if (playerCamera == null && Camera.main != null)
-        {
-            playerCamera = Camera.main;
         }
 
         eyeManager = FindAnyObjectByType<EyeToggleWorldManager>();
@@ -78,37 +82,37 @@ public class ZoneGhostAI : MonoBehaviour
     {
         if (isPlayerCaught || playerTransform == null) return;
 
-        // ตรวจสอบพฤติกรรมและการเคลื่อนที่
+        // 1. ตรวจสอบเงื่อนไขหลับตา/ลืมตาและการเคลื่อนที่
         HandleGhostBehavior();
 
-        // อัปเดตอนิเมชันและการกลับด้าน Sprite 2.5D
+        // 2. อัปเดตการแช่แข็งเฟรมอนิเมชันและการกลับด้าน Sprite 2.5D
         UpdateSpriteFacingAndAnimation();
 
-        // เล่นเสียงเท้าขณะเคลื่อนที่
+        // 3. เล่นเสียงเท้าขณะเคลื่อนที่
         HandleFootsteps();
     }
+
     private void HandleGhostBehavior()
     {
-        // 1. ถ้าผู้เล่นไม่ได้อยู่ในโซน ให้ยืนนิ่งๆ
+        // ถ้าผู้เล่นไม่ได้อยู่ในโซน ให้ยืนนิ่งค้างไว้
         if (!isPlayerInZone)
         {
             StopGhost();
             return;
         }
 
-        // 2. เช็กสถานะการหลับตาและการมองเห็น
+        // เช็กสถานะการหลับตาเพียงอย่างเดียว (ไม่สนว่าผู้เล่นจะหันมองผีอยู่หรือไม่)
         bool isEyesClosed = (eyeManager != null) && eyeManager.IsEyesClosed;
-        bool isPlayerLookingAtGhost = IsPlayerLookingAtGhost();
 
-        // ✨ เงื่อนไขใหม่: ต้อง "หลับตา" AND "หันหลัง/ไม่ได้จ้องผี" พร้อมกันทั้ง 2 อย่างเท่านั้น!
-        bool shouldMove = isEyesClosed && !isPlayerLookingAtGhost;
-
-        if (shouldMove)
+        if (isEyesClosed)
         {
-            // ผีพุ่งเข้าหาผู้เล่น
-            agent.isStopped = false;
-            agent.speed = isRunner ? runSpeed : walkSpeed;
-            agent.SetDestination(playerTransform.position);
+            // หลับตาอยู่ -> ผีเดิน/วิ่งเข้าหาผู้เล่นทันที
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+                agent.speed = isRunner ? runSpeed : walkSpeed;
+                agent.SetDestination(playerTransform.position);
+            }
 
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer <= catchDistance)
@@ -118,49 +122,18 @@ public class ZoneGhostAI : MonoBehaviour
         }
         else
         {
-            // ทำอย่างใดอย่างหนึ่ง หรือไม่ทำเลย ➔ ยืนนิ่งค้างไว้
+            // ลืมตาอยู่ -> ผีหยุดนิ่งค้างท่าทันที
             StopGhost();
         }
     }
 
     private void StopGhost()
     {
-        if (agent != null && agent.isOnNavMesh)
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
         {
             agent.isStopped = true;
             agent.velocity = Vector3.zero;
         }
-    }
-
-    /// <summary>
-    /// เช็กว่าผีอยู่ในขอบเขตสายตากล้องผู้เล่น และไม่มีสิ่งกีดขวาง (Raycast) บังอยู่หรือไม่
-    /// </summary>
-    private bool IsPlayerLookingAtGhost()
-    {
-        if (playerCamera == null) return false;
-
-        // จุดอ้างอิงลำตัวผี (ยกขึ้นเล็กน้อยจากพื้น)
-        Vector3 ghostCenter = transform.position + Vector3.up * 1.0f;
-        Vector3 viewportPos = playerCamera.WorldToViewportPoint(ghostCenter);
-
-        // เช็ก 1: ตำแหน่งผีต้องอยู่ในขอบเขตหน้าจอผู้เล่น (Z > 0 คืออยู่ด้านหน้ากล้อง)
-        bool inViewport = viewportPos.z > 0 &&
-                          viewportPos.x >= 0f && viewportPos.x <= 1f &&
-                          viewportPos.y >= 0f && viewportPos.y <= 1f;
-
-        if (!inViewport) return false;
-
-        // เช็ก 2: ยิง Raycast จากตาผู้เล่นไปยังตัวผีเพื่อดูว่ามีกำแพง/สิ่งของบังสายตาอยู่ไหม
-        Vector3 dirToGhost = (ghostCenter - playerCamera.transform.position).normalized;
-        float distToGhost = Vector3.Distance(playerCamera.transform.position, ghostCenter);
-
-        if (Physics.Raycast(playerCamera.transform.position, dirToGhost, out RaycastHit hit, distToGhost, obstacleMask))
-        {
-            // ถ้าระหว่างทางยิงชน Layer สิ่งกีดขวาง ถือว่าผู้เล่นมองไม่เห็นผี
-            return false;
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -220,6 +193,7 @@ public class ZoneGhostAI : MonoBehaviour
         if (agent == null) return;
         float currentSpeed = agent.velocity.magnitude;
 
+        // สลับด้านซ้าย-ขวาตามทิศทางการเดิน
         if (ghostSprite != null)
         {
             if (agent.velocity.x > 0.1f)
@@ -232,23 +206,16 @@ public class ZoneGhostAI : MonoBehaviour
             }
         }
 
+        // วิธีที่ 1: กำลังเดิน = เล่นอนิเมชันปกติ (1) | หยุดเดิน = แช่แข็งเฟรมค้างท่าไว้ (0)
         if (ghostAnimator != null)
         {
-            if (!string.IsNullOrEmpty(speedParamName))
-            {
-                ghostAnimator.SetFloat(speedParamName, currentSpeed);
-            }
-
-            if (!string.IsNullOrEmpty(isMovingParamName))
-            {
-                ghostAnimator.SetBool(isMovingParamName, currentSpeed > 0.1f);
-            }
+            ghostAnimator.speed = (currentSpeed > 0.1f) ? 1f : 0f;
         }
     }
 
     private void HandleFootsteps()
     {
-        if (isPlayerCaught || agent == null || agent.isStopped) return;
+        if (isPlayerCaught || agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh || agent.isStopped) return;
 
         float currentSpeed = agent.velocity.magnitude;
         if (currentSpeed < 0.1f)

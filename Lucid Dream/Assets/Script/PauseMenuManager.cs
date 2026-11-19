@@ -38,6 +38,7 @@ public class PauseMenuManager : MonoBehaviour
         // ตรวจจับการกดปุ่ม Esc
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            if (NewspaperObject.IsReadingNewspaper || NewspaperObject.JustClosedThisFrame) return;
             // ✨ [เพิ่มส่วนนี้] ถ้าผู้เล่นกำลังส่องจอคอมพิวเตอร์อยู่ ให้ข้ามการเปิด Pause Menu 
             // เพื่อปล่อยให้ ComputerInteraction.cs ทำหน้าที่พาผู้เล่นออกจากหน้าจอคอมก่อน
             if (ComputerInteraction.IsInteractingWithPC)

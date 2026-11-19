@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: Localization-Asset-Tables-Thai (th)
   m_GUID: 5b56949b470f574479d34ac4aa2a1e85
   m_SerializeEntries:
+  - m_GUID: 3c5f3adad3cbedf41b57ee14b263a1e7
+    m_Address: News_th
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-th
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ceb8878dc33b0d4429e0139f9856b49a
     m_Address: FotPhotographic Wall_th
     m_ReadOnly: 1

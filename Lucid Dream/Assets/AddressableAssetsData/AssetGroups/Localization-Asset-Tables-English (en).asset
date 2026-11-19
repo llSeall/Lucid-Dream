@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: Localization-Asset-Tables-English (en)
   m_GUID: 0a8fa6a4306aa244faf081f61a5b6fab
   m_SerializeEntries:
+  - m_GUID: 83e3566c70d9a784d9734411ec2e85f2
+    m_Address: News_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: fe14cb4f8b461de46809e4b2a4ed55eb
     m_Address: FotPhotographic Wall_en
     m_ReadOnly: 1

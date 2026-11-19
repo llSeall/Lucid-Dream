@@ -26,6 +26,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ScenesNight/Day1/House.unity
     guid: ffa420b8b904b4145bfb79bb339fed98
+  - enabled: 1
+    path: Assets/Scenes/ScenesNight/Day2/school01.unity
+    guid: 989736ca5ee35e84ab94a8b5a7347325
+  - enabled: 1
+    path: Assets/Scenes/ScenesNight/Day2/Gym.unity
+    guid: d2b86a55c70dca8428930e52483395d3
   - enabled: 0
     path: Assets/Scenes/ScenesNight/Day1/Room00.unity
     guid: c5b22c874ede8d94a98aca4293254dc7

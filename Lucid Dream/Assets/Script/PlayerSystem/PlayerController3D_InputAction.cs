@@ -396,7 +396,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     void Update()
     {
         if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) return;
-        if (ComputerInteraction.IsInteractingWithPC) return;
+        if (ComputerInteraction.IsInteractingWithPC || NewspaperObject.IsReadingNewspaper) return;
 
         if (climbCooldownTimer > 0f)
         {

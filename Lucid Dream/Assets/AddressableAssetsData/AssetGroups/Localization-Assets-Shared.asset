@@ -35,6 +35,11 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33966f71212aa02498e77f55208d0ec5
+    m_Address: Assets/Script/Localization/News Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3c93e93ef0b530e4bbc1cf40c22229e8
     m_Address: Assets/PCDataLocalization/Chat/ChatPC Shared Data.asset
     m_ReadOnly: 1
@@ -43,6 +48,11 @@ MonoBehaviour:
   - m_GUID: 5fdf52eb41c84064281edcc814684333
     m_Address: Assets/Script/Localization/Photographic Wall/FotPhotographic Wall
       Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9b1b405f3e230dd448beb58c8a22e1e7
+    m_Address: Assets/Script/Localization/PuzzleSence Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
