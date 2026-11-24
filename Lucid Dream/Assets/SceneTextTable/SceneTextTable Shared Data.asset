@@ -71,6 +71,10 @@ MonoBehaviour:
     m_Key: Stop comparing yourself to your sibling
     m_Metadata:
       m_Items: []
+  - m_Id: 23374043506446336
+    m_Key: Gym01
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

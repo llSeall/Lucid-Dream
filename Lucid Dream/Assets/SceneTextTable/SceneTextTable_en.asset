@@ -75,6 +75,10 @@ MonoBehaviour:
     m_Localized: Stop comparing yourself to your sibling
     m_Metadata:
       m_Items: []
+  - m_Id: 23374043506446336
+    m_Localized: The first physical fitness test will begin shortly
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
