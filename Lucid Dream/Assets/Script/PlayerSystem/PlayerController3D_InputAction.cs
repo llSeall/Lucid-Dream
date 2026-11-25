@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CapsuleCollider))]
 public class PlayerController3D_InputAction : MonoBehaviour
 {
+    public static PlayerController3D_InputAction Instance { get; private set; }
+
     [Header("References")]
     [SerializeField] Transform playerCamera;
     [SerializeField] Transform groundCheck;
@@ -42,6 +44,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float crouchSpeed = 2f;
     [SerializeField] float acceleration = 30f;
     private float walkCyclePhase = 0f;
+
+    [Header("Sprint Camera Zoom ✨")]
+    [Tooltip("ค่า FOV ที่ซูมออกเพิ่มเล็กน้อยเวลาวิ่งปกติ (เช่น 5 = กว้างขึ้น 5 องศา)")]
+    [SerializeField] float sprintFOVBoost = 5f;
+    [Tooltip("ความนุ่มนวลในการซูมเข้า-ออกตอนเริ่ม/หยุดวิ่ง")]
+    [SerializeField] float sprintFOVSmoothSpeed = 6f;
+    [Tooltip("ความเร็วในการซูมออกตอนเริ่มหนีผีไล่ล่า")]
+    [SerializeField] float chaseFOVSmoothSpeed = 8f;
 
     [Header("Fall Stun Settings ✨")]
     [SerializeField] float minFallStunDistance = 5f;
@@ -84,7 +94,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] AudioClip[] squeezeMoveClips;
     [SerializeField] AudioClip wallGrabEnterClip;
     [SerializeField] AudioClip[] wallShimmyClips;
-    [SerializeField] AudioClip fallStunClip; // ✨ เพิ่มช่องใส่ไฟล์เสียงตอนตกกระแทกจนติดสตั้น
+    [SerializeField] AudioClip fallStunClip;
 
     [Header("Audio Tuning")]
     [SerializeField] float baseStepInterval = 0.5f;
@@ -95,7 +105,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [SerializeField] float volumeSqueezeMove = 0.4f;
     [SerializeField] float volumeWallGrabEnter = 0.8f;
     [SerializeField] float volumeWallShimmy = 0.5f;
-    [SerializeField] float volumeFallStun = 1.0f; // ✨ ความดังของเสียงตกกระแทก
+    [SerializeField] float volumeFallStun = 1.0f;
 
     [Header("Stamina Settings ✨")]
     [SerializeField] float maxStamina = 100f;
@@ -137,12 +147,14 @@ public class PlayerController3D_InputAction : MonoBehaviour
     [Header("Camera Sway")]
     [SerializeField] bool enableCameraSway = true;
     [SerializeField] float swayAmount = 0.05f;
+
     [Header("Sprint Frame-by-Frame Animation ✨")]
-    [SerializeField] SpriteRenderer sprintSpriteRenderer; // SpriteRenderer ของภาพวิ่งขนาดเต็มจอ
-    [SerializeField] Sprite[] sprintFrames;               // เฟรมภาพสไปร์ทวิ่งทั้งหมด
-    [SerializeField] float sprintAnimFPS = 12f;           // ความเร็วการเล่นเฟรม (เฟรม/วินาที)
+    [SerializeField] SpriteRenderer sprintSpriteRenderer;
+    [SerializeField] Sprite[] sprintFrames;
+    [SerializeField] float sprintAnimFPS = 12f;
     private float sprintAnimTimer = 0f;
     private int currentSprintFrameIndex = 0;
+
     // Input Action references
     private InputActionMap playerActionMap;
     private InputAction moveAction;
@@ -183,10 +195,17 @@ public class PlayerController3D_InputAction : MonoBehaviour
     private Transform currentShimmyTrigger;
     private Vector3 shimmyWallNormal;
 
-    // Stamina
+    // Stamina & Chase Infinite Stamina ✨
     private float currentStamina;
     private float staminaRegenTimer;
     private bool isSprinting;
+    private bool isChaseInfiniteStamina = false;
+    public bool IsChaseInfiniteStamina => isChaseInfiniteStamina;
+
+    // External Camera Effects (จาก LinearChaserGhost) ✨
+    private float externalFOVBoost = 0f;
+    private Vector3 externalShakePosOffset = Vector3.zero;
+    private Vector3 externalShakeRotOffset = Vector3.zero;
 
     // Crouch
     private float defaultHeight;
@@ -228,6 +247,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
+
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
 
@@ -311,6 +332,35 @@ public class PlayerController3D_InputAction : MonoBehaviour
         {
             staminaCanvasGroup.alpha = 0f;
         }
+    }
+
+    /// <summary>
+    /// เปิด/ปิดโหมดวิ่งสเตมิน่าไม่ลดระหว่างหนีผีไล่ล่า
+    /// </summary>
+    public void SetChaseInfiniteStamina(bool active)
+    {
+        isChaseInfiniteStamina = active;
+        if (active)
+        {
+            RefillStaminaToMax();
+        }
+    }
+
+    /// <summary>
+    /// รับค่าเอฟเฟกต์กล้องซูมออก + สั่นจากสคริปต์ผีไล่ล่า
+    /// </summary>
+    public void SetExternalCameraEffects(float fovBoost, Vector3 shakePosOffset, Vector3 shakeRotOffset)
+    {
+        externalFOVBoost = fovBoost;
+        externalShakePosOffset = shakePosOffset;
+        externalShakeRotOffset = shakeRotOffset;
+    }
+
+    public void ClearExternalCameraEffects()
+    {
+        externalFOVBoost = 0f;
+        externalShakePosOffset = Vector3.zero;
+        externalShakeRotOffset = Vector3.zero;
     }
 
     /// <summary>
@@ -512,7 +562,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
 
         if (playerCamera != null)
         {
-            playerCamera.localEulerAngles = new Vector3(pitch + currentLandingImpact, 0f, currentCameraTiltZ);
+            playerCamera.localEulerAngles = new Vector3(
+                pitch + currentLandingImpact + externalShakeRotOffset.x,
+                externalShakeRotOffset.y,
+                currentCameraTiltZ + externalShakeRotOffset.z
+            );
         }
 
         if (grounded)
@@ -537,8 +591,8 @@ public class PlayerController3D_InputAction : MonoBehaviour
             isCrouching = false;
         }
 
-        HandleCrouchingAndSqueezing();
         HandleStamina();
+        HandleCrouchingAndSqueezing();
         HandleFootsteps();
 
         if (Time.time - lastJumpPressedTime <= jumpBufferTime && !isSqueezing && !isStunned && !isClimbingVault)
@@ -560,13 +614,11 @@ public class PlayerController3D_InputAction : MonoBehaviour
         bool isWakingUp = PlayerWakeUpEffect.Instance != null && PlayerWakeUpEffect.Instance.IsWakingUp;
         bool shouldHideArms = isWakingUp || isSqueezing || isEdgeShimmying;
 
-        // ซ่อนมือซ้าย-ขวาเดิมเมื่ออยูในสถานะพิเศษ หรือเมื่อ "กำลังวิ่ง"
         bool hideNormalArms = shouldHideArms || isSprinting;
 
         if (leftArmSpriteRenderer != null) leftArmSpriteRenderer.enabled = !hideNormalArms;
         if (rightArmSpriteRenderer != null) rightArmSpriteRenderer.enabled = !hideNormalArms;
 
-        // เล่นอนิเมชันวิ่งแบบ Frame-by-Frame
         HandleSprintSpriteAnimation();
 
         if (hideNormalArms) return;
@@ -611,7 +663,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
             rightArmTransform.localPosition = Vector3.Lerp(rightArmTransform.localPosition, targetRightPos, Time.deltaTime * armLerpSpeed);
             rightArmTransform.localRotation = Quaternion.Slerp(rightArmTransform.localRotation, targetRightRot, Time.deltaTime * armLerpSpeed);
         }
-
     }
 
     private void HandleSprintSpriteAnimation()
@@ -964,7 +1015,6 @@ public class PlayerController3D_InputAction : MonoBehaviour
         currentLandingImpact = landingImpactPitch;
         if (isEdgeShimmying) DetachEdgeShimmy();
 
-        // ✨ สั่งเล่นเสียงตกกระแทกพื้น
         PlaySingleSoundEffect(fallStunClip, volumeFallStun);
     }
 
@@ -989,14 +1039,21 @@ public class PlayerController3D_InputAction : MonoBehaviour
             currentBaseCameraPos = Vector3.Lerp(currentBaseCameraPos, originalCameraPosition + targetOffset, squeezeSmoothing * Time.deltaTime);
             currentBaseCameraPos.y = Mathf.Lerp(currentBaseCameraPos.y, targetCameraY, crouchSmoothing * Time.deltaTime);
 
-            float targetFOV = isSqueezing ? squeezedFOV : defaultFOV;
-            float targetTilt = isSqueezing ? squeezedCameraTiltZ : 0f;
+            // คำนวณ FOV รวม: (FOV ปกติ + ซูมออกเล็กน้อยตอนวิ่ง + ซูมออกไกลตลอดช่วงหนีผี)
+            float sprintExtra = (isSprinting && !isSqueezing) ? sprintFOVBoost : 0f;
+            float rawTargetFOV = defaultFOV + sprintExtra + externalFOVBoost;
+            float targetFOV = isSqueezing ? squeezedFOV : Mathf.Clamp(rawTargetFOV, 30f, 115f);
+
+            float activeFOVSmooth = isSqueezing
+                ? squeezeSmoothing
+                : (externalFOVBoost > 0.01f ? chaseFOVSmoothSpeed : sprintFOVSmoothSpeed);
 
             if (camComponent != null)
             {
-                camComponent.fieldOfView = Mathf.Lerp(camComponent.fieldOfView, targetFOV, squeezeSmoothing * Time.deltaTime);
+                camComponent.fieldOfView = Mathf.Lerp(camComponent.fieldOfView, targetFOV, activeFOVSmooth * Time.deltaTime);
             }
 
+            float targetTilt = isSqueezing ? squeezedCameraTiltZ : 0f;
             currentCameraTiltZ = Mathf.Lerp(currentCameraTiltZ, targetTilt, squeezeSmoothing * Time.deltaTime);
         }
     }
@@ -1007,18 +1064,36 @@ public class PlayerController3D_InputAction : MonoBehaviour
         bool wantsToSprint = ((sprintAction != null) && sprintAction.IsPressed()) || shiftKeyPressed;
         bool isMoving = targetInput.sqrMagnitude > 0.01f;
 
-        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && !isEdgeShimmying && !isStunned && currentStamina > 0f)
+        // ✨ ระหว่างหนีผี (หลังเสียงนกหวีด) สเตมิน่าจะไม่ลดและวิ่งได้ตลอด
+        bool canSprintWithStamina = isChaseInfiniteStamina || currentStamina > 0f;
+
+        if (wantsToSprint && isMoving && !isCrouching && !isSqueezing && !isEdgeShimmying && !isStunned && canSprintWithStamina)
         {
             isSprinting = true;
-            currentStamina -= staminaDrainRate * Time.deltaTime;
-            currentStamina = Mathf.Max(currentStamina, 0f);
-            staminaRegenTimer = staminaRegenDelay;
+
+            if (!isChaseInfiniteStamina)
+            {
+                currentStamina -= staminaDrainRate * Time.deltaTime;
+                currentStamina = Mathf.Max(currentStamina, 0f);
+                staminaRegenTimer = staminaRegenDelay;
+            }
+            else
+            {
+                currentStamina = maxStamina;
+            }
         }
         else
         {
             isSprinting = false;
 
-            if (staminaRegenTimer > 0f) staminaRegenTimer -= Time.deltaTime;
+            if (isChaseInfiniteStamina)
+            {
+                currentStamina = maxStamina;
+            }
+            else if (staminaRegenTimer > 0f)
+            {
+                staminaRegenTimer -= Time.deltaTime;
+            }
             else
             {
                 currentStamina += staminaRegenRate * Time.deltaTime;
@@ -1234,7 +1309,7 @@ public class PlayerController3D_InputAction : MonoBehaviour
         }
 
         currentCameraOffset = Vector3.Lerp(currentCameraOffset, targetCameraOffset, headBobSmoothing * Time.deltaTime);
-        playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset;
+        playerCamera.localPosition = currentBaseCameraPos + currentCameraOffset + externalShakePosOffset;
     }
 
     void OnDisable()

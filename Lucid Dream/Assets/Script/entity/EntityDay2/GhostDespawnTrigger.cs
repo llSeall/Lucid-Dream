@@ -22,7 +22,6 @@ public class GhostDespawnTrigger : MonoBehaviour
 
     private void Start()
     {
-        // บังคับให้ BoxCollider เป็น Trigger
         GetComponent<BoxCollider>().isTrigger = true;
 
         if (audioSource == null)
@@ -45,7 +44,16 @@ public class GhostDespawnTrigger : MonoBehaviour
                 audioSource.PlayOneShot(despawnSoundClip);
             }
 
-            // 2. สั่งทำลาย/ลบ GameObject ผีเป้าหมายทั้งหมดออกจากฉากทันที
+            // 2. คืนค่าระบบสเตมิน่าลดตามปกติ และล้างเอฟเฟกต์กล้องสั่น/ซูมให้ผู้เล่นทันที
+            PlayerController3D_InputAction player = other.GetComponentInParent<PlayerController3D_InputAction>();
+            if (player == null) player = PlayerController3D_InputAction.Instance;
+            if (player != null)
+            {
+                player.SetChaseInfiniteStamina(false);
+                player.ClearExternalCameraEffects();
+            }
+
+            // 3. สั่งทำลาย/ลบ GameObject ผีเป้าหมายทั้งหมดออกจากฉากทันที
             if (targetGhosts != null && targetGhosts.Length > 0)
             {
                 foreach (GameObject ghost in targetGhosts)
@@ -53,12 +61,12 @@ public class GhostDespawnTrigger : MonoBehaviour
                     if (ghost != null)
                     {
                         Debug.Log($"👻 [GhostDespawnTrigger] ผู้เล่นเหยียบทริกเกอร์: ผี '{ghost.name}' หายไปแล้ว!");
-                        Destroy(ghost); // หรือเปลี่ยนเป็น ghost.SetActive(false); หากต้องการซ่อนไว้ก่อน
+                        Destroy(ghost);
                     }
                 }
             }
 
-            // 3. ปิดการทำงานของทริกเกอร์กันการทำงานซ้ำ
+            // 4. ปิดการทำงานของทริกเกอร์กันการทำงานซ้ำ
             if (triggerOnce)
             {
                 Collider col = GetComponent<Collider>();
@@ -69,7 +77,6 @@ public class GhostDespawnTrigger : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        // วาดเส้นสีฟ้าเชื่อมไปยังตัวผีในหน้า Scene View เพื่อให้เช็กตำแหน่งได้ง่ายขึ้น
         if (targetGhosts != null)
         {
             Gizmos.color = Color.cyan;
